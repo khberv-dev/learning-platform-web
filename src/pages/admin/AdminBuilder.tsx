@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Button from "../../components/ui/Button";
 import Tag from "../../components/ui/Tag";
 import { useUi } from "../../state/ui";

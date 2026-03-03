@@ -1,4 +1,4 @@
-import React from "react";
+
 import Button from "../../components/ui/Button";
 import Avatar from "../../components/ui/Avatar";
 import Progress from "../../components/ui/Progress";

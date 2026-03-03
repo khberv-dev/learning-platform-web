@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { NavLink } from "react-router-dom";
 import { useUi } from "../state/ui";
 import { adminNav, teacherNav } from "../data/routes";
