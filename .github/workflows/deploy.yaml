@@ -1,0 +1,22 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: deploy
+        run: |
+          echo "Host: ${{ secrets.SSH_HOST }}"
+          mkdir ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          ssh root@${{ secrets.SSH_HOST }} << EOF
+            cd /var/www/learning-platform-web-dev
+            git pull
+            npm i --force
+            npm run build
+          EOF
