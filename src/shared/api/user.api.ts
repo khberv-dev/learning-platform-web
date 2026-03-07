@@ -9,8 +9,8 @@ export interface UpdateMePayload {
 }
 
 export async function getMe() {
-  const response = await api.get<AuthUser>("/user/me");
-  return response.data;
+  const { data } = await api.get("/user/me");
+  return data;
 }
 
 export async function updateMe(payload: UpdateMePayload) {

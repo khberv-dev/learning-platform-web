@@ -17,6 +17,7 @@ import TeacherChat from "./pages/teacher/TeacherChat";
 import Settings from "./pages/Settings";
 import { useAuth } from "./state/auth";
 import LoginPage from "./pages/Login/LoginPage";
+import AuthWatcher from "./app/AuthWatcher";
 
 // 👉 добавь/подключи свою страницу логина
 
@@ -43,6 +44,8 @@ function RequireRole({ allow }: { allow: Array<"admin" | "teacher"> }) {
 
 export default function App() {
   return (
+    <>
+    <AuthWatcher />
     <Routes>
       {/* Public */}
       <Route path="/login" element={<LoginPage />} />
@@ -77,5 +80,6 @@ export default function App() {
         </Route>
       </Route>
     </Routes>
+    </>
   );
 }

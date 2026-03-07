@@ -76,7 +76,7 @@ export default function Topbar() {
       </div> */}
 
       <div id="topbar-actions" style={{ marginLeft: 12 }}>
-        {action}
+        {/* {action} */}
       </div>
     </div>
   );

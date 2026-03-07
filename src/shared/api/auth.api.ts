@@ -24,7 +24,10 @@ export interface SignInResponse {
   roles: string[];
 }
 
-export async function signIn(data: SignInPayload) {
-  const response = await api.post<SignInResponse>("/auth/sign-in", data);
-  return response.data;
+export async function signIn(payload: {
+  email: string;
+  password: string;
+}) {
+  const { data } = await api.post("/auth/sign-in", payload);
+  return data;
 }
