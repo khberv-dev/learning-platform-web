@@ -1,4 +1,3 @@
-
 import Button from "../../components/ui/Button";
 import Avatar from "../../components/ui/Avatar";
 import Tag from "../../components/ui/Tag";
@@ -16,9 +15,15 @@ export default function AdminTeachers() {
             <table>
               <thead>
                 <tr>
-                  <th>Teacher</th><th>Email</th><th>Courses</th><th>Students</th><th>Status</th><th></th>
+                  <th>Teacher</th>
+                  <th>Email</th>
+                  <th>Courses</th>
+                  <th>Students</th>
+                  <th>Status</th>
+                  <th></th>
                 </tr>
               </thead>
+
               <tbody>
                 {teacherTable.map((t) => (
                   <tr key={t.email}>
@@ -31,17 +36,27 @@ export default function AdminTeachers() {
                         </div>
                       </div>
                     </td>
+
                     <td className="tm">{t.email}</td>
                     <td>{t.courses}</td>
                     <td>{t.students}</td>
+
                     <td>
                       {t.status === "Active" && <Tag kind="active">Active</Tag>}
                       {t.status === "Pending" && <Tag kind="pending">Pending</Tag>}
                       {t.status === "Inactive" && <Tag kind="inactive">Inactive</Tag>}
                     </td>
+
                     <td>
-                      <Button variant="ghost" size="sm" onClick={() => openModal("edit-teacher")}>
-                        <svg><use href="#i-pen" /></svg>Edit
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openModal("edit-teacher")}
+                      >
+                        <svg>
+                          <use href="#i-pen" />
+                        </svg>
+                        Edit
                       </Button>
                     </td>
                   </tr>
@@ -49,12 +64,6 @@ export default function AdminTeachers() {
               </tbody>
             </table>
           </div>
-        </div>
-
-        <div style={{ marginTop: 12 }}>
-          <Button variant="primary" onClick={() => openModal("add-teacher")}>
-            <svg><use href="#i-plus" /></svg>Add Teacher
-          </Button>
         </div>
       </div>
     </div>

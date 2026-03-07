@@ -37,7 +37,7 @@ function HomeRedirect() {
 /** Опционально: защита по роли */
 function RequireRole({ allow }: { allow: Array<"admin" | "teacher"> }) {
   const role = useAuth((s) => s.role);
-  if (!allow.includes(role)) return <Navigate to="/" replace />;
+  if (!role || !allow.includes(role)) return <Navigate to="/" replace />;
   return <Outlet />;
 }
 

@@ -1,33 +1,61 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { NavLink } from "react-router-dom";
-import { useUi } from "../state/ui";
 import { adminNav, teacherNav } from "../data/routes";
+import { useAuth } from "../state/auth";
 
 export default function Sidebar() {
-  const { role } = useUi();
+  const role = useAuth((s) => s.role);
+  const user = useAuth((s) => s.user);
 
-  const navItems = useMemo(() => (role === "admin" ? adminNav : teacherNav), [role]);
+  const navItems = useMemo(() => {
+    return role === "teacher" ? teacherNav : adminNav;
+  }, [role]);
+
+  const initials = useMemo(() => {
+    const first = user?.firstName?.[0] ?? "U";
+    const last = user?.lastName?.[0] ?? "";
+    return `${first}${last}`.toUpperCase();
+  }, [user]);
+
+  const fullName = useMemo(() => {
+    return [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User";
+  }, [user]);
 
   return (
     <div className="sidebar">
       <div className="sidebar-logo">
-        <div className="logo-mark"><svg><use href="#i-hat" /></svg></div>
-        <span><span style={{ color: "var(--accent)", fontStyle: "italic" }}>i</span>Teach</span>
+        <div className="logo-mark">
+          <img
+            src="/logotip.png"
+            alt="iTeach"
+            style={{ width: 28, height: 28, objectFit: "contain" }}
+          />
+        </div>
+        <span>
+          <span style={{ color: "var(--accent)", fontStyle: "italic" }}>i</span>Teach
+        </span>
       </div>
 
       <div className="sidebar-body">
         {navItems.map((section) => (
           <div key={section.label}>
             <div className="nav-section">{section.label}</div>
+
             {section.items.map((it) => (
               <NavLink
                 key={it.to}
                 to={it.to}
                 className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
               >
-                <svg><use href={it.icon} /></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <use href={it.icon} />
+                </svg>
+
                 {it.label}
-                {it.badge ? <span className={`badge ${it.badgeTone ?? ""}`}>{it.badge}</span> : null}
+
+                {it.badge ? (
+                  <span className={`badge ${it.badgeTone ?? ""}`}>{it.badge}</span>
+                ) : null}
               </NavLink>
             ))}
           </div>
@@ -35,10 +63,15 @@ export default function Sidebar() {
       </div>
 
       <div className="sidebar-footer">
-        <div className="avatar av-blue">AD</div>
+        <div className={`avatar ${role === "teacher" ? "av-purple" : "av-blue"}`}>
+          {initials}
+        </div>
+
         <div>
-          <div className="sidebar-user-name">Alex Daniels</div>
-          <div className="sidebar-user-role">{role === "admin" ? "Administrator" : "Teacher"}</div>
+          <div className="sidebar-user-name">{fullName}</div>
+          <div className="sidebar-user-role">
+            {role === "teacher" ? "Teacher" : "Administrator"}
+          </div>
         </div>
       </div>
     </div>
