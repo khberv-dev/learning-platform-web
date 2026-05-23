@@ -1,12 +1,12 @@
 import {api} from "@/services/api.js";
 
-export async function createUnit(courseId, dto) {
-    const res = await api.post(`courses/${courseId}/units`, dto)
+export async function createUnit(courseId, data) {
+    const res = await api.post(`courses/${courseId}/units`, data)
     return res.data
 }
 
-export async function updateUnit(courseId, unitId, dto) {
-    const res = await api.patch(`courses/${courseId}/units/${unitId}`, dto)
+export async function updateUnit(courseId, unitId, data) {
+    const res = await api.patch(`courses/${courseId}/units/${unitId}`, data)
     return res.data
 }
 

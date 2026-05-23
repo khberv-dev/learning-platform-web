@@ -1,101 +1,67 @@
-import {useEffect, useState} from "react";
-import {useNavigate} from "react-router";
-import {Button, TextInput} from "@gravity-ui/uikit";
-import {useHeader} from "@/providers/header.jsx";
-import Icon from "@/ui/components/icon/index.jsx";
-import Avatar from "@/ui/components/avatar/index.jsx";
-import DataTable from "@/ui/components/data-table/index.jsx";
-import ResourceBadge from "@/ui/components/resource-badge/index.jsx";
+import {useEffect, useState} from 'react'
+import {useNavigate} from 'react-router'
+import {useHeader} from '@/providers/header.jsx'
+import {useGetStudents} from '@/services/student/query.js'
+import {Avatar} from '@/ui/components/avatar/index.jsx'
+import {DataTable} from '@/ui/components/data-table/index.jsx'
+import {Toolbar} from '@/ui/components/toolbar/index.jsx'
+import {Pagination} from '@/ui/components/pagination/index.jsx'
+import {ResourceBadge} from '@/ui/components/resource-badge/index.jsx'
+import {IconButton} from '@/ui/components/button/index.jsx'
+import {fullName} from '@/utils/lib.js'
 
-const PALETTES = ['gray', 'purple', 'blue', 'green']
-
-const STUDENTS = [
-    {id: 1, name: 'Anton Tomas', initials: 'AT', phoneNumber: '+998901112233', courses: 3, paid: true, active: true},
-    {id: 2, name: 'Yuliya Misyura', initials: 'YM', phoneNumber: '+998937770000', courses: 2, paid: true, active: true},
-    {id: 3, name: 'Farrux Nuriddinov', initials: 'FN', phoneNumber: '+998904567890', courses: 4, paid: false, active: true},
-    {id: 4, name: 'Madina Yusupova', initials: 'MY', phoneNumber: '+998931233444', courses: 1, paid: true, active: false},
-    {id: 5, name: 'Bekzod Ergashev', initials: 'BE', phoneNumber: '+998945556677', courses: 5, paid: true, active: true},
-]
-
-export default function AdminStudentsPage() {
+export function AdminStudentsPage() {
     const {setHeader} = useHeader()
     const navigate = useNavigate()
+    const [page, setPage] = useState(1)
     const [search, setSearch] = useState('')
+    const limit = 10
 
-    useEffect(() => {
-        setHeader({title: 'Students'})
-    }, [setHeader])
+    useEffect(() => { setHeader({title: 'Students'}); return () => setHeader({}) }, [setHeader])
 
-    const filtered = STUDENTS.filter(t => t.name.toLowerCase().includes(search.toLowerCase()))
+    const {data, isLoading} = useGetStudents({page, limit})
+    const items = data?.data ?? []
+    const filtered = search ? items.filter(s => fullName(s.user).toLowerCase().includes(search.toLowerCase())) : items
+    const totalPages = data?.totalPages ?? 1
+    const total = data?.total ?? 0
 
     return (
-        <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12}}>
-                <TextInput
-                    size={'l'}
-                    placeholder={'Search students...'}
-                    value={search}
-                    onUpdate={setSearch}
-                    style={{maxWidth: 360}}
-                    startContent={
-                        <span style={{paddingLeft: 8, display: 'inline-flex'}}>
-                            <Icon name={'search'} size={16} color={'var(--it-text-secondary)'}/>
-                        </span>
-                    }
-                />
-                <Button
-                    view={'action'}
-                    size={'l'}
-                >
-                    <span style={{display: 'inline-flex', alignItems: 'center', gap: 6}}>
-                        <Icon name={'plus'} size={16} color={'#FFFFFF'}/>
-                        Add Student
-                    </span>
-                </Button>
-            </div>
-
+        <>
+            <Toolbar search={search} onSearchChange={setSearch} placeholder="Search students..."/>
             <DataTable
+                loading={isLoading}
+                empty="No students yet"
+                data={filtered}
                 columns={[
-                    {title: '#', render: (_, i) => <span style={{color: 'var(--it-text-secondary)'}}>{i + 1}</span>},
-                    {
-                        title: 'Full Name',
-                        render: (r) => (
-                            <div
-                                style={{display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer'}}
-                                onClick={() => navigate(`/admin/students/${r.id}`)}
-                            >
-                                <Avatar initials={r.initials} palette={PALETTES[r.id % PALETTES.length]} size={32}/>
-                                <span style={{fontWeight: 600}}>{r.name}</span>
-                            </div>
-                        ),
-                    },
-                    {title: 'Phone', key: 'phoneNumber'},
-                    {title: 'Courses', key: 'courses'},
-                    {
-                        title: 'Payment',
-                        render: (r) => (
-                            <ResourceBadge theme={r.paid ? 'success' : 'neutral'}>
-                                {r.paid ? 'Paid' : 'Free'}
-                            </ResourceBadge>
-                        ),
-                    },
-                    {title: 'Status', render: (r) => <ResourceBadge active={r.active}/>},
-                    {
-                        title: 'Actions', align: 'right',
-                        render: (r) => (
-                            <div style={{display: 'inline-flex', gap: 8}}>
-                                <Button view={'flat'} onClick={() => navigate(`/admin/students/${r.id}/edit`)}>
-                                    <Icon name={'pencil'} size={16} color={'var(--it-text-secondary)'}/>
-                                </Button>
-                                <Button view={'flat'}>
-                                    <Icon name={'trash'} size={16} color={'var(--it-danger-text)'}/>
-                                </Button>
-                            </div>
-                        ),
-                    },
+                    {key: 'num', header: '#', width: 40, muted: true, render: (_, i) => (page - 1) * limit + i + 1},
+                    {key: 'name', header: 'Full Name', gap: 12, render: (s) => (
+                        <>
+                            <Avatar name={fullName(s.user)} src={s.user?.avatar}/>
+                            <span style={{color: 'var(--it-text-primary)', fontWeight: 500}}>{fullName(s.user)}</span>
+                        </>
+                    )},
+                    {key: 'phone', header: 'Phone Number', width: 180, render: (s) => s.user?.phoneNumber ? `+${s.user.phoneNumber}` : '—'},
+                    {key: 'level', header: 'Level', width: 90, render: (s) => s.level ?? '—'},
+                    {key: 'status', header: 'Status', width: 110, render: (s) => (
+                        <ResourceBadge status={s.user?.isActive === false ? 'inactive' : 'active'}/>
+                    )},
+                    {key: 'actions', header: 'Actions', width: 100, render: (s) => (
+                        <div style={{display: 'flex', gap: 8}}>
+                            <IconButton icon="pencil" title="Edit" onClick={(e) => {e.stopPropagation(); navigate(`/admin/students/${s.id}/edit`)}}/>
+                            <IconButton icon="eye" title="View" onClick={(e) => {e.stopPropagation(); navigate(`/admin/students/${s.id}`)}}/>
+                        </div>
+                    )},
                 ]}
-                rows={filtered}
+                onRowClick={(s) => navigate(`/admin/students/${s.id}`)}
+                footer={
+                    <>
+                        <span>Showing {filtered.length === 0 ? 0 : (page - 1) * limit + 1}–{(page - 1) * limit + filtered.length} of {total} students</span>
+                        <Pagination page={page} totalPages={totalPages} onChange={setPage}/>
+                    </>
+                }
             />
-        </div>
+        </>
     )
 }
+
+export default AdminStudentsPage

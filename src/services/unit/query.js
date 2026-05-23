@@ -1,17 +1,20 @@
 import {useInfoMutation} from "@/services/query.js";
-import {createUnit, deleteUnit, updateUnit} from "@/services/unit/api.js";
+import {createUnit, updateUnit, deleteUnit} from "@/services/unit/api.js";
 
-export const useCreateUnit = () => useInfoMutation({
+export const useCreateUnit = (opts) => useInfoMutation({
     queryKey: ['course'],
-    mutationFn: ({courseId, dto}) => createUnit(courseId, dto),
+    mutationFn: ({courseId, data}) => createUnit(courseId, data),
+    onSuccess: opts?.onSuccess,
 })
 
-export const useUpdateUnit = () => useInfoMutation({
+export const useUpdateUnit = (opts) => useInfoMutation({
     queryKey: ['course'],
-    mutationFn: ({courseId, unitId, dto}) => updateUnit(courseId, unitId, dto),
+    mutationFn: ({courseId, unitId, data}) => updateUnit(courseId, unitId, data),
+    onSuccess: opts?.onSuccess,
 })
 
-export const useDeleteUnit = () => useInfoMutation({
+export const useDeleteUnit = (opts) => useInfoMutation({
     queryKey: ['course'],
     mutationFn: ({courseId, unitId}) => deleteUnit(courseId, unitId),
+    onSuccess: opts?.onSuccess,
 })

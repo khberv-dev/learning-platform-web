@@ -1,101 +1,70 @@
-import {useEffect} from "react";
-import {useNavigate, useParams} from "react-router";
-import {useForm} from "react-hook-form";
-import {Button} from "@gravity-ui/uikit";
-import {useHeader} from "@/providers/header.jsx";
-import SectionCard from "@/ui/components/section-card/index.jsx";
-import {FormText, FormTextArea} from "@/ui/components/form-field/index.jsx";
-import Icon from "@/ui/components/icon/index.jsx";
-import {useGetCourse} from "@/services/course/query.js";
-import {useDeleteLesson, useUpdateLesson} from "@/services/lesson/query.js";
+import {useEffect, useMemo} from 'react'
+import {useForm, Controller} from 'react-hook-form'
+import {useNavigate, useParams} from 'react-router'
+import {useHeader} from '@/providers/header.jsx'
+import {useGetCourse} from '@/services/course/query.js'
+import {useUpdateLesson} from '@/services/lesson/query.js'
+import {Button} from '@/ui/components/button/index.jsx'
+import {Input, Textarea} from '@/ui/components/input/index.jsx'
+import {FormField} from '@/ui/components/form-field/index.jsx'
+import {Card} from '@/ui/components/card/index.jsx'
+import {FileUpload} from '@/ui/components/image-upload/index.jsx'
 
-export default function AdminLessonEditPage() {
-    const {setHeader} = useHeader()
+export function AdminLessonEditPage() {
+    const {id: courseId, unitId, lessonId} = useParams()
     const navigate = useNavigate()
-    const {id, unitId, lessonId} = useParams()
+    const {setHeader} = useHeader()
+    const {data: course} = useGetCourse(courseId)
+    const update = useUpdateLesson({onSuccess: () => navigate(`/admin/courses/${courseId}`)})
 
-    const {data: course} = useGetCourse(id)
-    const updateLesson = useUpdateLesson()
-    const deleteLesson = useDeleteLesson()
+    const lesson = useMemo(() => {
+        const u = course?.units?.find(u => u.id === unitId)
+        return u?.lessons?.find(l => l.id === lessonId)
+    }, [course, unitId, lessonId])
 
     useEffect(() => {
         setHeader({title: 'Edit Lesson', onBack: () => navigate(-1)})
-        return () => setHeader({title: '', onBack: null})
+        return () => setHeader({})
     }, [setHeader, navigate])
 
-    const unit = course?.units?.find(u => u.id === unitId)
-    const lesson = unit?.lessons?.find(l => l.id === lessonId)
-
-    const {register, handleSubmit, reset} = useForm({
-        defaultValues: {title: '', description: ''},
-    })
+    const {register, handleSubmit, reset} = useForm({defaultValues: {title: '', description: ''}})
 
     useEffect(() => {
-        if (lesson) {
-            reset({title: lesson.title ?? '', description: lesson.description ?? ''})
-        }
+        if (!lesson) return
+        reset({title: lesson.title ?? '', description: lesson.description ?? ''})
     }, [lesson, reset])
 
-    if (!course || !unit || !lesson) {
-        return <SectionCard>Loading...</SectionCard>
+    const onSubmit = (v) => {
+        update.mutate({courseId, unitId, lessonId, data: {title: v.title, description: v.description || undefined}})
     }
 
-    const onSubmit = (values) => {
-        updateLesson.mutate(
-            {
-                courseId: id,
-                unitId,
-                lessonId,
-                dto: {title: values.title, description: values.description || undefined},
-            },
-            {onSuccess: () => navigate(`/admin/courses/${id}`)},
-        )
-    }
-
-    const onDelete = () => {
-        if (!window.confirm('Delete this lesson?')) return
-        deleteLesson.mutate(
-            {courseId: id, unitId, lessonId},
-            {onSuccess: () => navigate(`/admin/courses/${id}`)},
-        )
-    }
+    if (!lesson) return <div style={{color: 'var(--it-text-secondary)'}}>Loading…</div>
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} style={{display: 'flex', flexDirection: 'column', gap: 20}}>
-            {lesson.media && (
-                <SectionCard title={'Current Video'}>
-                    <video
-                        controls
-                        style={{width: '100%', borderRadius: 10, background: '#000'}}
-                        src={lesson.media}
-                    />
-                </SectionCard>
-            )}
+        <form onSubmit={handleSubmit(onSubmit)} style={{display: 'flex', flex: 1}}>
+            <Card padding={32} gap={24} style={{width: '100%'}}>
+                <FormField label="Title">
+                    <Input placeholder="Lesson title" {...register('title', {required: true})}/>
+                </FormField>
+                <FormField label="Description">
+                    <Textarea rows={4} placeholder="Lesson description..." {...register('description')}/>
+                </FormField>
+                <FormField label="Lesson Video" hint="MP4 or WebM video. Upload not currently supported on patch — re-upload by recreating the lesson.">
+                    <Controller name="media" defaultValue={null} render={({field}) => (
+                        <FileUpload onChange={field.onChange} icon="video" accept="video/*" label="Choose video file"/>
+                    )}/>
+                </FormField>
 
-            <SectionCard title={'Lesson Details'}>
-                <FormText label={'Title'} required {...register('title', {required: true})}/>
-                <FormTextArea label={'Description'} {...register('description')}/>
-            </SectionCard>
-
-            <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                <Button view={'outlined'} size={'l'} onClick={onDelete} loading={deleteLesson.isPending}>
-                    <span style={{display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--it-danger-text)'}}>
-                        <Icon name={'trash'} size={14} color={'var(--it-danger-text)'}/>
-                        Delete Lesson
-                    </span>
-                </Button>
-                <div style={{display: 'flex', gap: 8}}>
-                    <Button view={'outlined'} size={'l'} onClick={() => navigate(-1)}>Cancel</Button>
-                    <Button
-                        type={'submit'}
-                        view={'action'}
-                        size={'l'}
-                        loading={updateLesson.isPending}
-                    >
-                        Save
+                <div style={{flex: 1}}/>
+                <div style={{display: 'flex', justifyContent: 'flex-end', gap: 12}}>
+                    <Button variant="secondary" size="lg" onClick={() => navigate(-1)}>Cancel</Button>
+                    <Button type="submit" size="lg" disabled={update.isPending}>
+                        {update.isPending ? 'Saving…' : 'Save Changes'}
                     </Button>
                 </div>
-            </div>
+            </Card>
         </form>
     )
 }
+
+export default AdminLessonEditPage

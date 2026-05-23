@@ -1,83 +1,34 @@
-import Icon from "@/ui/components/icon/index.jsx";
+import {Icon} from '@/ui/components/icon/index.jsx'
 
-const ICON_THEMES = {
-    green: {bg: 'var(--it-green-tint)', color: 'var(--it-green-700)'},
-    orange: {bg: 'var(--it-avatar-orange-bg)', color: 'var(--it-avatar-orange-text)'},
-    purple: {bg: 'var(--it-avatar-purple-bg)', color: 'var(--it-avatar-purple-text)'},
-    blue: {bg: 'var(--it-avatar-blue-bg)', color: 'var(--it-avatar-blue-text)'},
+const tones = {
+    blue:   {bg: 'var(--it-info-bg)',   fg: 'var(--it-info-text)'},
+    orange: {bg: 'var(--it-orange-bg)', fg: 'var(--it-orange-text)'},
+    violet: {bg: 'var(--it-violet-bg)', fg: 'var(--it-violet-text)'},
+    green:  {bg: 'var(--it-success-bg)', fg: 'var(--it-success-text)'},
+    red:    {bg: 'var(--it-danger-bg)', fg: 'var(--it-danger-text)'},
+    yellow: {bg: 'var(--it-warning-bg)', fg: 'var(--it-warning-text)'},
 }
 
-export default function StatCard({value, label, icon, iconTheme = 'green', delta, deltaTone = 'success'}) {
-    const t = ICON_THEMES[iconTheme] ?? ICON_THEMES.green
-
-    const deltaBg = deltaTone === 'success' ? 'var(--it-success-bg)' : 'var(--it-danger-bg)'
-    const deltaColor = deltaTone === 'success' ? 'var(--it-success-text)' : 'var(--it-danger-text)'
+export function StatCard({icon, tone = 'blue', value, label, delta}) {
+    const t = tones[tone] ?? tones.blue
 
     return (
-        <div
-            style={{
-                background: 'var(--it-surface)',
-                border: '1px solid var(--it-border)',
-                borderRadius: 'var(--it-radius-lg)',
-                boxShadow: 'var(--it-shadow-sm)',
-                padding: '20px 22px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-                minHeight: 140,
-            }}
-        >
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                }}
-            >
-                <div
-                    style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 10,
-                        background: t.bg,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}
-                >
-                    <Icon name={icon} color={t.color} size={20}/>
-                </div>
-
+        <div className="it-stat">
+            <div className="it-stat__head">
+                <span className="it-stat__icon" style={{background: t.bg, color: t.fg}}>
+                    <Icon name={icon} size={20}/>
+                </span>
                 {delta && (
-                    <span
-                        style={{
-                            color: deltaColor,
-                            background: deltaBg,
-                            fontSize: 12,
-                            fontWeight: 600,
-                            padding: '4px 10px',
-                            borderRadius: 999,
-                        }}
-                    >
-                        {delta}
+                    <span className={`it-stat__delta ${delta.dir === 'down' ? 'it-stat__delta--down' : 'it-stat__delta--up'}`}>
+                        <Icon name={delta.dir === 'down' ? 'arrow-down-right' : 'arrow-up-right'} size={12}/>
+                        {delta.value}
                     </span>
                 )}
             </div>
-
-            <div style={{display: 'flex', flexDirection: 'column', gap: 4}}>
-                <span
-                    style={{
-                        fontSize: 30,
-                        fontWeight: 700,
-                        color: 'var(--it-text-primary)',
-                        letterSpacing: -0.5,
-                        lineHeight: 1.1,
-                    }}
-                >
-                    {value}
-                </span>
-                <span style={{fontSize: 13, color: 'var(--it-text-secondary)'}}>{label}</span>
-            </div>
+            <div className="it-stat__value">{value}</div>
+            <div className="it-stat__label">{label}</div>
         </div>
     )
 }
+
+export default StatCard

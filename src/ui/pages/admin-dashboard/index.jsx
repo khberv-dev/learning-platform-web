@@ -1,89 +1,48 @@
-import {useEffect} from "react";
-import {useHeader} from "@/providers/header.jsx";
-import StatCard from "@/ui/components/stat-card/index.jsx";
-import SectionCard from "@/ui/components/section-card/index.jsx";
-import ResourceBadge from "@/ui/components/resource-badge/index.jsx";
-import {useGetAllTeachers} from "@/services/teacher/query.js";
-import {useGetAllCourses} from "@/services/course/query.js";
-import {useGetAllAssignments} from "@/services/assignment/query.js";
-import {getFullName} from "@/utils/user.js";
+import {useEffect} from 'react'
+import {useHeader} from '@/providers/header.jsx'
+import {StatCard} from '@/ui/components/stat-card/index.jsx'
+import {SectionCard} from '@/ui/components/section-card/index.jsx'
+import {LineChart} from '@/ui/components/line-chart/index.jsx'
+import {Badge} from '@/ui/components/badge/index.jsx'
 
-export default function AdminDashboardPage() {
+const chartData = Array.from({length: 12}, (_, i) => ({
+    label: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i],
+    value: 1800 + Math.round(Math.sin(i / 1.7) * 380 + i * 80),
+}))
+const paidData = Array.from({length: 12}, (_, i) => ({
+    label: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i],
+    value: 700 + Math.round(Math.cos(i / 2.1) * 220 + i * 40),
+}))
+
+export function AdminDashboardPage() {
     const {setHeader} = useHeader()
-
-    const {data: teachers} = useGetAllTeachers()
-    const {data: courses} = useGetAllCourses()
-    const {data: assignments} = useGetAllAssignments()
-
-    useEffect(() => {
-        setHeader({title: 'Dashboard'})
-    }, [setHeader])
-
-    const activeTeachers = (teachers ?? []).filter(t => t.status === 'active').length
-    const activeCourses = (courses ?? []).filter(c => c.isActive).length
-    const totalLessons = (courses ?? []).reduce((s, c) => s + (c.lessonsCount ?? 0), 0)
-    const pendingAssignments = (assignments ?? []).filter(a => a.status === 'pending').length
-    const recent = (assignments ?? []).slice(0, 5)
+    useEffect(() => { setHeader({title: 'Dashboard'}); return () => setHeader({}) }, [setHeader])
 
     return (
-        <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
-            <div style={{display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16}}>
-                <StatCard value={activeTeachers} label={'Active Teachers'} icon={'users'} iconTheme={'green'}/>
-                <StatCard value={activeCourses} label={'Active Courses'} icon={'book-open'} iconTheme={'orange'}/>
-                <StatCard value={totalLessons} label={'Total Lessons'} icon={'video'} iconTheme={'purple'}/>
-                <StatCard value={pendingAssignments} label={'Pending Assignments'} icon={'shield-check'} iconTheme={'blue'}/>
+        <>
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 16}}>
+                <StatCard icon="users" tone="blue" value="2,847" label="Total Students" delta={{dir: 'up', value: '+12%'}}/>
+                <StatCard icon="user-cog" tone="orange" value="148" label="Total Teachers" delta={{dir: 'up', value: '+4%'}}/>
+                <StatCard icon="book-open" tone="violet" value="356" label="Total Courses" delta={{dir: 'up', value: '+8%'}}/>
+                <StatCard icon="credit-card" tone="green" value="1,203" label="Paid Students" delta={{dir: 'up', value: '+18%'}}/>
             </div>
-
-            <SectionCard
-                title={
-                    <>
-                        <span style={{fontSize: 16, fontWeight: 700}}>Recent Assignments</span>
-                        <span style={{fontSize: 12, color: 'var(--it-text-secondary)'}}>
-                            Latest student-teacher matchings
-                        </span>
-                    </>
-                }
-            >
-                {recent.length === 0 && (
-                    <span style={{fontSize: 13, color: 'var(--it-text-secondary)'}}>
-                        No assignments yet.
-                    </span>
-                )}
-                {recent.map(a => (
-                    <div
-                        key={a.id}
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: 12,
-                            border: '1px solid var(--it-border)',
-                            borderRadius: 10,
-                            gap: 12,
-                        }}
-                    >
-                        <div style={{display: 'flex', flexDirection: 'column', gap: 2}}>
-                            <span style={{fontSize: 14, fontWeight: 600}}>
-                                {a.student?.user ? getFullName(a.student.user) : 'Student'} →{' '}
-                                {a.teacher?.user ? getFullName(a.teacher.user) : 'Teacher'}
-                            </span>
-                            <span style={{fontSize: 12, color: 'var(--it-text-secondary)'}}>
-                                {new Date(a.startDate).toLocaleDateString()} → {new Date(a.endDate).toLocaleDateString()}
-                            </span>
-                        </div>
-                        <ResourceBadge
-                            theme={
-                                a.status === 'active' ? 'success' :
-                                    a.status === 'rejected' ? 'danger' :
-                                        a.status === 'expired' ? 'neutral' :
-                                            'info'
-                            }
-                        >
-                            {a.status}
-                        </ResourceBadge>
-                    </div>
-                ))}
-            </SectionCard>
-        </div>
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20}}>
+                <SectionCard
+                    title="Growth Overview"
+                    action={<Badge variant="neutral" size="sm">Last 12 months</Badge>}
+                >
+                    <LineChart data={chartData}/>
+                </SectionCard>
+                <SectionCard
+                    title="Paid Students"
+                    action={<Badge variant="success" size="sm">+18%</Badge>}
+                >
+                    <div style={{fontSize: 28, fontWeight: 700, color: 'var(--it-text-primary)'}}>1,203</div>
+                    <LineChart data={paidData}/>
+                </SectionCard>
+            </div>
+        </>
     )
 }
+
+export default AdminDashboardPage

@@ -1,4 +1,5 @@
 import './index.css'
+import './ui/components.css'
 import '@gravity-ui/uikit/styles/fonts.css';
 import '@gravity-ui/uikit/styles/styles.css';
 import {createRoot} from 'react-dom/client'

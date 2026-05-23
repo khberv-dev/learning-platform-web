@@ -1,140 +1,89 @@
-import {useEffect, useState} from "react";
-import {useNavigate} from "react-router";
-import {useForm} from "react-hook-form";
-import {Button} from "@gravity-ui/uikit";
-import {useHeader} from "@/providers/header.jsx";
-import SectionCard from "@/ui/components/section-card/index.jsx";
-import {FormText, FormTextArea} from "@/ui/components/form-field/index.jsx";
-import Icon from "@/ui/components/icon/index.jsx";
-import {useCreateCourse} from "@/services/course/query.js";
+import {useEffect} from 'react'
+import {useForm, Controller} from 'react-hook-form'
+import {useNavigate} from 'react-router'
+import {useHeader} from '@/providers/header.jsx'
+import {useCreateCourse} from '@/services/course/query.js'
+import {Button} from '@/ui/components/button/index.jsx'
+import {Input, Textarea} from '@/ui/components/input/index.jsx'
+import {FormField} from '@/ui/components/form-field/index.jsx'
+import {Card} from '@/ui/components/card/index.jsx'
+import {ImageUpload} from '@/ui/components/image-upload/index.jsx'
+import {Switch} from '@/ui/components/switch/index.jsx'
 
-export default function AdminAddCoursePage() {
-    const {setHeader} = useHeader()
+export function AdminAddCoursePage() {
     const navigate = useNavigate()
-    const createCourse = useCreateCourse()
-    const [imageFile, setImageFile] = useState(null)
+    const {setHeader} = useHeader()
+    const create = useCreateCourse({onSuccess: () => navigate('/admin/courses')})
 
     useEffect(() => {
         setHeader({title: 'Add Course', onBack: () => navigate(-1)})
-        return () => setHeader({title: '', onBack: null})
+        return () => setHeader({})
     }, [setHeader, navigate])
 
-    const {register, handleSubmit, watch, setValue} = useForm({
-        defaultValues: {title: '', description: '', price: 0, isActive: false},
+    const {register, handleSubmit, control, formState: {errors}} = useForm({
+        defaultValues: {title: '', description: '', price: 0, isActive: true, image: null},
     })
 
-    const isActive = watch('isActive')
-
-    const onSubmit = (values) => {
-        const dto = {
-            title: values.title,
-            description: values.description || undefined,
-            price: values.price !== '' ? Number(values.price) : 0,
-            isActive: !!values.isActive,
-        }
-        createCourse.mutate(
-            {dto, image: imageFile ?? undefined},
-            {onSuccess: () => navigate('/admin/courses')},
-        )
+    const onSubmit = (v) => {
+        create.mutate({
+            title: v.title,
+            description: v.description || undefined,
+            price: Number(v.price) || 0,
+            isActive: v.isActive,
+            image: v.image || undefined,
+        })
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} style={{display: 'flex', flexDirection: 'column', gap: 20}}>
-            <SectionCard title={'Course Cover'}>
-                <label
-                    style={{
-                        position: 'relative',
-                        height: 180,
-                        background: '#F9FAFB',
-                        border: '1px dashed var(--it-border)',
-                        borderRadius: 12,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 8,
-                        cursor: 'pointer',
-                        overflow: 'hidden',
-                    }}
-                >
-                    <input
-                        type={'file'}
-                        accept={'image/*'}
-                        style={{display: 'none'}}
-                        onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-                    />
-                    {imageFile ? (
-                        <span style={{fontSize: 14, color: 'var(--it-text-primary)'}}>
-                            Selected: {imageFile.name}
-                        </span>
-                    ) : (
-                        <>
-                            <Icon name={'upload'} size={24} color={'var(--it-text-secondary)'}/>
-                            <span style={{fontSize: 14, color: 'var(--it-text-secondary)'}}>
-                                Drop image here or click to upload
-                            </span>
-                        </>
+        <form onSubmit={handleSubmit(onSubmit)} style={{display: 'flex', flex: 1}}>
+            <Card padding={32} gap={24} style={{width: '100%'}}>
+                <Controller
+                    control={control}
+                    name="image"
+                    render={({field}) => (
+                        <ImageUpload value={field.value} onChange={field.onChange} hint="JPG or PNG. Recommended ratio 16:9."/>
                     )}
-                </label>
-            </SectionCard>
-
-            <SectionCard title={'Course Details'}>
-                <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16}}>
-                    <FormText
-                        label={'Course Title'}
-                        required
-                        placeholder={'e.g. Algebra & Functions'}
-                        {...register('title', {required: true})}
-                    />
-                    <FormText
-                        label={'Price'}
-                        placeholder={'0'}
-                        type={'number'}
-                        {...register('price')}
-                    />
-                </div>
-                <FormTextArea
-                    label={'Description'}
-                    placeholder={'Brief description of the course'}
-                    {...register('description')}
                 />
 
-                <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
-                    <span style={{fontSize: 13, fontWeight: 600}}>Status</span>
-                    <div style={{display: 'flex', gap: 8}}>
-                        <Button
-                            view={isActive ? 'action' : 'outlined'}
-                            onClick={(e) => {
-                                e.preventDefault()
-                                setValue('isActive', true)
-                            }}
-                        >
-                            Active
-                        </Button>
-                        <Button
-                            view={!isActive ? 'action' : 'outlined'}
-                            onClick={(e) => {
-                                e.preventDefault()
-                                setValue('isActive', false)
-                            }}
-                        >
-                            Draft
-                        </Button>
-                    </div>
-                </div>
-            </SectionCard>
+                <FormField label="Title" error={errors.title?.message}>
+                    <Input placeholder="e.g. English A1 Foundations" {...register('title', {required: 'Required'})}/>
+                </FormField>
 
-            <div style={{display: 'flex', justifyContent: 'flex-end', gap: 8}}>
-                <Button view={'outlined'} size={'l'} onClick={() => navigate(-1)}>Cancel</Button>
-                <Button
-                    type={'submit'}
-                    view={'action'}
-                    size={'l'}
-                    loading={createCourse.isPending}
-                >
-                    Create Course
-                </Button>
-            </div>
+                <FormField label="Description">
+                    <Textarea rows={4} placeholder="Short summary..." {...register('description')}/>
+                </FormField>
+
+                <Row>
+                    <FormField label="Price (UZS)">
+                        <Input type="number" min={0} step={1000} placeholder="0" {...register('price')}/>
+                    </FormField>
+                    <FormField label="Status">
+                        <Controller
+                            control={control}
+                            name="isActive"
+                            render={({field}) => (
+                                <div style={{height: 44, display: 'flex', alignItems: 'center'}}>
+                                    <Switch checked={field.value} onChange={field.onChange} label={field.value ? 'Active' : 'Inactive'}/>
+                                </div>
+                            )}
+                        />
+                    </FormField>
+                </Row>
+
+                <div style={{flex: 1}}/>
+                <div style={{display: 'flex', justifyContent: 'flex-end', gap: 12}}>
+                    <Button variant="secondary" size="lg" onClick={() => navigate(-1)}>Cancel</Button>
+                    <Button type="submit" size="lg" disabled={create.isPending}>
+                        {create.isPending ? 'Saving…' : 'Add Course'}
+                    </Button>
+                </div>
+            </Card>
         </form>
     )
 }
+
+function Row({children}) {
+    return <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20}}>{children}</div>
+}
+
+export default AdminAddCoursePage

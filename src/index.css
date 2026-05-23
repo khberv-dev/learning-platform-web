@@ -5,67 +5,100 @@
 }
 
 :root {
-    /* iTeach brand palette */
+    /* Brand */
     --it-green: #18C96A;
     --it-green-600: #14B25E;
     --it-green-700: #0F9C53;
     --it-green-50: #ECFDF5;
-    --it-green-100: #D1FAE5;
-    --it-green-tint: rgba(24, 201, 106, 0.12);
+    --it-green-100: #DCFCE7;
+    --it-green-tint: rgba(24, 201, 106, 0.15);
     --it-green-ring: rgba(24, 201, 106, 0.20);
 
-    /* Surfaces */
-    --it-sidebar-bg: #0F172A;
-    --it-sidebar-divider: rgba(255, 255, 255, 0.08);
-    --it-bg: #F6F8FB;
+    /* Surfaces (from design) */
+    --it-sidebar-bg: #111827;
+    --it-sidebar-divider: #1F2937;
+    --it-sidebar-muted: #6B7280;
+    --it-bg: #F8FAFC;
     --it-surface: #FFFFFF;
     --it-surface-hover: #F9FAFB;
     --it-surface-alt: #F3F4F6;
+    --it-surface-input: #F9FAFB;
 
     /* Borders */
     --it-border: #E5E7EB;
     --it-border-strong: #D1D5DB;
+    --it-border-row: #F3F4F6;
 
     /* Text */
-    --it-text-primary: #0F172A;
+    --it-text-primary: #111827;
+    --it-text-strong: #0F172A;
+    --it-text-body: #374151;
     --it-text-secondary: #6B7280;
     --it-text-tertiary: #9CA3AF;
     --it-text-on-dark: #F9FAFB;
-    --it-text-on-dark-soft: #9CA3AF;
+    --it-text-on-dark-soft: #6B7280;
 
     /* Status */
     --it-success-bg: #ECFDF5;
-    --it-success-border: #A7F3D0;
-    --it-success-text: #047857;
+    --it-success-bg-strong: #DCFCE7;
+    --it-success-border: #BBF7D0;
+    --it-success-text: #16A34A;
+    --it-success-text-strong: #047857;
+
     --it-info-bg: #EFF6FF;
     --it-info-border: #BFDBFE;
-    --it-info-text: #1D4ED8;
+    --it-info-text: #3B82F6;
+    --it-info-text-strong: #1D4ED8;
+
+    --it-warning-bg: #FFFBEB;
+    --it-warning-bg-soft: #FEF3C7;
+    --it-warning-border: #FDE68A;
+    --it-warning-text: #F59E0B;
+    --it-warning-text-strong: #B45309;
+
     --it-danger-bg: #FEF2F2;
     --it-danger-border: #FECACA;
-    --it-danger-text: #B91C1C;
-    --it-warning-bg: #FFFBEB;
-    --it-warning-border: #FCD34D;
-    --it-warning-text: #B45309;
+    --it-danger-text: #EF4444;
+    --it-danger-text-strong: #B91C1C;
+    --it-danger-soft: #FEE2E2;
 
-    /* Avatars */
+    --it-violet-bg: #F5F3FF;
+    --it-violet-bg-soft: #EDE9FE;
+    --it-violet-border: #DDD6FE;
+    --it-violet-text: #8B5CF6;
+    --it-violet-text-strong: #7C3AED;
+
+    --it-orange-bg: #FFF7ED;
+    --it-orange-border: #FED7AA;
+    --it-orange-text: #F97316;
+    --it-orange-text-strong: #C2410C;
+
+    /* Avatar palette (used by initials avatars) */
     --it-avatar-purple-bg: #EDE9FE;
     --it-avatar-purple-text: #7C3AED;
-    --it-avatar-blue-bg: #DBEAFE;
+    --it-avatar-blue-bg: #EFF6FF;
     --it-avatar-blue-text: #1D4ED8;
-    --it-avatar-orange-bg: #FFEDD5;
-    --it-avatar-orange-text: #C2410C;
+    --it-avatar-orange-bg: #FFF7ED;
+    --it-avatar-orange-text: #EA580C;
+    --it-avatar-green-bg: #DCFCE7;
+    --it-avatar-green-text: #16A34A;
+    --it-avatar-red-bg: #FEE2E2;
+    --it-avatar-red-text: #DC2626;
 
     /* Elevation */
     --it-shadow-xs: 0 1px 1px rgba(15, 23, 42, 0.04);
     --it-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.03);
     --it-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
     --it-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.10), 0 4px 8px rgba(15, 23, 42, 0.06);
+    --it-shadow-focus: 0 0 0 3px var(--it-green-ring);
 
     /* Radii */
+    --it-radius-xs: 4px;
     --it-radius-sm: 6px;
-    --it-radius-md: 10px;
-    --it-radius-lg: 14px;
+    --it-radius-md: 8px;
+    --it-radius-lg: 12px;
     --it-radius-xl: 18px;
+    --it-radius-pill: 999px;
 
     /* Override Gravity UI brand color → iTeach green */
     --g-color-base-brand: var(--it-green);
@@ -82,45 +115,9 @@
     --g-color-text-brand-contrast: #FFFFFF;
     --g-color-private-brand-50-solid: #F0FDF4;
     --g-color-private-brand-100-solid: #DCFCE7;
-    --g-color-private-brand-150-solid: #BBF7D0;
-    --g-color-private-brand-200-solid: #BBF7D0;
-    --g-color-private-brand-250-solid: #86EFAC;
-    --g-color-private-brand-300-solid: #86EFAC;
-    --g-color-private-brand-350-solid: #4ADE80;
-    --g-color-private-brand-400-solid: #4ADE80;
-    --g-color-private-brand-450-solid: #22C55E;
     --g-color-private-brand-500-solid: var(--it-green);
-    --g-color-private-brand-550-solid: var(--it-green-600);
     --g-color-private-brand-600-solid: var(--it-green-600);
-    --g-color-private-brand-650-solid: var(--it-green-700);
     --g-color-private-brand-700-solid: var(--it-green-700);
-
-    /* Gravity TextInput / TextArea — explicit surface + text colors */
-    --g-text-input-background-color: var(--it-surface);
-    --g-text-input-text-color: var(--it-text-primary);
-    --g-text-input-placeholder-color: var(--it-text-tertiary);
-    --g-text-input-border-color: var(--it-border);
-    --g-text-input-border-color-hover: var(--it-border-strong);
-    --g-text-input-border-color-active: var(--it-green);
-    --g-text-input-focus-outline-color: var(--it-green-ring);
-    --g-text-input-border-radius: var(--it-radius-md);
-
-    --g-text-area-background-color: var(--it-surface);
-    --g-text-area-text-color: var(--it-text-primary);
-    --g-text-area-placeholder-color: var(--it-text-tertiary);
-    --g-text-area-border-color: var(--it-border);
-    --g-text-area-border-color-hover: var(--it-border-strong);
-    --g-text-area-border-color-active: var(--it-green);
-    --g-text-area-focus-outline-color: var(--it-green-ring);
-    --g-text-area-border-radius: var(--it-radius-md);
-
-    /* Standardize text/line tokens Gravity reads */
-    --g-color-text-primary: var(--it-text-primary);
-    --g-color-text-secondary: var(--it-text-secondary);
-    --g-color-text-hint: var(--it-text-tertiary);
-    --g-color-line-generic: var(--it-border);
-    --g-color-line-generic-hover: var(--it-border-strong);
-    --g-color-line-generic-active: var(--it-green);
 }
 
 html, body, #root {
@@ -131,7 +128,6 @@ html, body, #root {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    font-feature-settings: "ss01", "cv01";
 }
 
 body {
@@ -144,12 +140,11 @@ a {
     text-decoration: none;
 }
 
-a:hover {
-    color: var(--it-green-700);
-}
-
 button {
     font-family: inherit;
+    cursor: pointer;
+    border: 0;
+    background: transparent;
 }
 
 input, textarea, select {
@@ -161,7 +156,6 @@ input, textarea, select {
     color: var(--it-text-primary);
 }
 
-/* Scrollbars */
 *::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -183,17 +177,3 @@ input, textarea, select {
     background-clip: padding-box;
     border: 2px solid transparent;
 }
-
-/* iTeach utility classes */
-.it-card {
-    background: var(--it-surface);
-    border: 1px solid var(--it-border);
-    border-radius: var(--it-radius-lg);
-    box-shadow: var(--it-shadow-sm);
-}
-
-.it-focus-ring:focus-visible {
-    outline: 2px solid var(--it-green-ring);
-    outline-offset: 2px;
-}
-

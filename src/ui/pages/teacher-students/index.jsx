@@ -1,83 +1,105 @@
-import {useEffect, useState} from "react";
-import {TextInput} from "@gravity-ui/uikit";
-import {useHeader} from "@/providers/header.jsx";
-import Icon from "@/ui/components/icon/index.jsx";
-import Avatar from "@/ui/components/avatar/index.jsx";
-import DataTable from "@/ui/components/data-table/index.jsx";
-import ResourceBadge from "@/ui/components/resource-badge/index.jsx";
+import {useEffect, useMemo, useState} from 'react'
+import {useHeader} from '@/providers/header.jsx'
+import {
+    useGetPendingAssignments,
+    useAcceptAssignment,
+    useRejectAssignment,
+    useGetTeacherAssignmentHistory,
+} from '@/services/assignment/query.js'
+import {Avatar} from '@/ui/components/avatar/index.jsx'
+import {Button, IconButton} from '@/ui/components/button/index.jsx'
+import {Card} from '@/ui/components/card/index.jsx'
+import {DataTable} from '@/ui/components/data-table/index.jsx'
+import {Toolbar} from '@/ui/components/toolbar/index.jsx'
+import {Pagination} from '@/ui/components/pagination/index.jsx'
+import {ResourceBadge} from '@/ui/components/resource-badge/index.jsx'
+import {fullName, formatDate} from '@/utils/lib.js'
 
-const STUDENTS = [
-    {id: 1, name: 'Anton Tomas', initials: 'AT', course: 'Algebra & Functions', progress: 78, active: true},
-    {id: 2, name: 'Yuliya Misyura', initials: 'YM', course: 'Calculus Fundamentals', progress: 42, active: true},
-    {id: 3, name: 'Farrux Nuriddinov', initials: 'FN', course: 'Algebra & Functions', progress: 92, active: true},
-    {id: 4, name: 'Madina Yusupova', initials: 'MY', course: 'Linear Algebra', progress: 18, active: false},
-]
-
-const PALETTES = ['gray', 'purple', 'blue', 'green']
-
-export default function TeacherStudentsPage() {
+export function TeacherStudentsPage() {
     const {setHeader} = useHeader()
     const [search, setSearch] = useState('')
+    const [page, setPage] = useState(1)
+    const limit = 10
 
-    useEffect(() => {
-        setHeader({title: 'My Students'})
-    }, [setHeader])
+    useEffect(() => { setHeader({title: 'My Students'}); return () => setHeader({}) }, [setHeader])
 
-    const filtered = STUDENTS.filter(s => s.name.toLowerCase().includes(search.toLowerCase()))
+    const {data: pending = []} = useGetPendingAssignments()
+    const {data: history, isLoading} = useGetTeacherAssignmentHistory({page, limit})
+    const accept = useAcceptAssignment()
+    const reject = useRejectAssignment()
+
+    const pendingItems = useMemo(
+        () => (pending ?? []).filter(p => p.status === 'pending'),
+        [pending],
+    )
+
+    const historyItems = history?.data ?? []
+    const totalPages = history?.totalPages ?? 1
+    const total = history?.total ?? 0
+
+    const filtered = search
+        ? historyItems.filter(a => fullName(a.student?.user).toLowerCase().includes(search.toLowerCase()))
+        : historyItems
 
     return (
-        <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
-            <TextInput
-                size={'l'}
-                placeholder={'Search students...'}
-                value={search}
-                onUpdate={setSearch}
-                style={{maxWidth: 360}}
-                startContent={
-                    <span style={{paddingLeft: 8, display: 'inline-flex'}}>
-                        <Icon name={'search'} size={16} color={'var(--it-text-secondary)'}/>
-                    </span>
-                }
-            />
+        <>
+            {pendingItems.length > 0 && (
+                <Card padding={20} gap={16} style={{background: 'var(--it-warning-bg)', borderColor: 'var(--it-warning-border)'}}>
+                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                        <span style={{fontSize: 15, fontWeight: 700, color: 'var(--it-warning-text-strong)'}}>
+                            Pending Requests
+                        </span>
+                        <span style={{
+                            width: 24, height: 24, borderRadius: 12,
+                            background: 'var(--it-danger-text)', color: '#FFFFFF',
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            fontWeight: 700, fontSize: 12,
+                        }}>{pendingItems.length}</span>
+                    </div>
+                    {pendingItems.map((p) => (
+                        <div key={p.id} style={{display: 'flex', alignItems: 'center', gap: 12, height: 56, padding: '0 16px', background: 'var(--it-surface)', border: '1px solid var(--it-border)', borderRadius: 10}}>
+                            <Avatar name={fullName(p.student?.user)} src={p.student?.user?.avatar}/>
+                            <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: 2}}>
+                                <span style={{fontWeight: 600}}>{fullName(p.student?.user) || 'Student'}</span>
+                                <span style={{fontSize: 12, color: 'var(--it-text-secondary)'}}>
+                                    {formatDate(p.startDate)} → {formatDate(p.endDate)}
+                                </span>
+                            </div>
+                            <Button size="sm" onClick={() => accept.mutate(p.id)} disabled={accept.isPending}>Accept</Button>
+                            <Button size="sm" variant="secondary" onClick={() => reject.mutate(p.id)} disabled={reject.isPending}>Reject</Button>
+                        </div>
+                    ))}
+                </Card>
+            )}
+
+            <Toolbar search={search} onSearchChange={setSearch} placeholder="Search students..." searchWidth={280}/>
 
             <DataTable
+                loading={isLoading}
+                empty="No students yet"
+                data={filtered}
                 columns={[
-                    {title: '#', render: (_, i) => <span style={{color: 'var(--it-text-secondary)'}}>{i + 1}</span>},
-                    {
-                        title: 'Student',
-                        render: (r) => (
-                            <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                <Avatar initials={r.initials} palette={PALETTES[r.id % PALETTES.length]} size={32}/>
-                                <span style={{fontWeight: 600}}>{r.name}</span>
-                            </div>
-                        ),
-                    },
-                    {title: 'Course', key: 'course'},
-                    {
-                        title: 'Progress',
-                        render: (r) => (
-                            <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                                <div style={{
-                                    width: 100,
-                                    height: 6,
-                                    borderRadius: 3,
-                                    background: '#F3F4F6',
-                                    overflow: 'hidden'
-                                }}>
-                                    <div style={{
-                                        width: `${r.progress}%`,
-                                        height: '100%',
-                                        background: 'var(--it-green)'
-                                    }}/>
-                                </div>
-                                <span style={{fontSize: 12, color: 'var(--it-text-secondary)'}}>{r.progress}%</span>
-                            </div>
-                        ),
-                    },
-                    {title: 'Status', render: (r) => <ResourceBadge active={r.active}/>},
+                    {key: 'num', header: '#', width: 40, muted: true, render: (_, i) => (page - 1) * limit + i + 1},
+                    {key: 'name', header: 'Student Name', gap: 12, render: (a) => (
+                        <>
+                            <Avatar name={fullName(a.student?.user)} src={a.student?.user?.avatar}/>
+                            <span style={{color: 'var(--it-text-primary)', fontWeight: 500}}>{fullName(a.student?.user)}</span>
+                        </>
+                    )},
+                    {key: 'phone', header: 'Phone', width: 180, render: (a) => a.student?.user?.phoneNumber ? `+${a.student.user.phoneNumber}` : '—'},
+                    {key: 'enrolled', header: 'Period', width: 220, render: (a) => `${formatDate(a.startDate)} → ${formatDate(a.endDate)}`},
+                    {key: 'status', header: 'Status', width: 110, render: (a) => <ResourceBadge status={a.status}/>},
+                    {key: 'actions', header: 'Action', width: 60, render: () => <IconButton icon="message-circle" title="Message"/>},
                 ]}
-                rows={filtered}
+                footer={
+                    <>
+                        <span>Showing {filtered.length === 0 ? 0 : (page - 1) * limit + 1}–{(page - 1) * limit + filtered.length} of {total} students</span>
+                        <Pagination page={page} totalPages={totalPages} onChange={setPage}/>
+                    </>
+                }
             />
-        </div>
+        </>
     )
 }
+
+export default TeacherStudentsPage

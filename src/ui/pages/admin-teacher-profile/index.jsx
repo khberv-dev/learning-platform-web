@@ -1,140 +1,113 @@
-import {useEffect} from "react";
-import {useNavigate, useParams} from "react-router";
-import {Button} from "@gravity-ui/uikit";
-import {useHeader} from "@/providers/header.jsx";
-import Avatar from "@/ui/components/avatar/index.jsx";
-import SectionCard from "@/ui/components/section-card/index.jsx";
-import ResourceBadge from "@/ui/components/resource-badge/index.jsx";
-import Icon from "@/ui/components/icon/index.jsx";
-import {useChangeTeacherStatus, useGetTeacher} from "@/services/teacher/query.js";
-import {getAvatarPalette, getFullName, getInitials} from "@/utils/user.js";
+import {useEffect} from 'react'
+import {useNavigate, useParams} from 'react-router'
+import {useHeader} from '@/providers/header.jsx'
+import {useGetTeacher} from '@/services/teacher/query.js'
+import {Avatar} from '@/ui/components/avatar/index.jsx'
+import {Button} from '@/ui/components/button/index.jsx'
+import {Card} from '@/ui/components/card/index.jsx'
+import {SectionCard} from '@/ui/components/section-card/index.jsx'
+import {ResourceBadge} from '@/ui/components/resource-badge/index.jsx'
+import {Icon} from '@/ui/components/icon/index.jsx'
+import {fullName, formatDate} from '@/utils/lib.js'
 
-export default function AdminTeacherProfilePage() {
-    const {setHeader} = useHeader()
-    const navigate = useNavigate()
+export function AdminTeacherProfilePage() {
     const {id} = useParams()
-
+    const navigate = useNavigate()
+    const {setHeader} = useHeader()
     const {data: teacher, isLoading} = useGetTeacher(id)
-    const changeStatus = useChangeTeacherStatus()
 
     useEffect(() => {
-        setHeader({title: 'Teacher Profile', onBack: () => navigate(-1)})
-        return () => setHeader({title: '', onBack: null})
-    }, [setHeader, navigate])
+        setHeader({
+            title: 'Teacher Profile',
+            onBack: () => navigate('/admin/teachers'),
+            actions: (
+                <Button variant="secondary" size="sm" leftIcon="pencil" onClick={() => navigate(`/admin/teachers/${id}/edit`)}>
+                    Edit
+                </Button>
+            ),
+        })
+        return () => setHeader({})
+    }, [setHeader, navigate, id])
 
-    if (isLoading || !teacher) {
-        return <SectionCard>Loading...</SectionCard>
-    }
+    if (isLoading || !teacher) return <div style={{color: 'var(--it-text-secondary)'}}>Loading…</div>
 
-    const onSetStatus = (status) => {
-        if (teacher.status === status) return
-        changeStatus.mutate({id, status})
-    }
+    const name = fullName(teacher.user)
+    const status = teacher.user?.isActive === false ? 'inactive' : (teacher.status ?? 'active')
+    const feedbacks = teacher.feedbacks ?? []
 
     return (
-        <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
-            <div style={{display: 'flex', justifyContent: 'flex-end', gap: 8}}>
-                <Button view={'outlined'} size={'l'} onClick={() => navigate(`/admin/teachers/${id}/edit`)}>
-                    <span style={{display: 'inline-flex', alignItems: 'center', gap: 6}}>
-                        <Icon name={'pencil'} size={14}/>
-                        Edit
-                    </span>
-                </Button>
+        <div style={{display: 'grid', gridTemplateColumns: '320px 1fr', gap: 16, flex: 1}}>
+            <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                <Card padding={24} gap={16} style={{alignItems: 'center'}}>
+                    <Avatar name={name} src={teacher.user?.avatar} size={80} fontSize={28}/>
+                    <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4}}>
+                        <div style={{fontSize: 18, fontWeight: 700, color: 'var(--it-text-primary)'}}>{name}</div>
+                        <div style={{fontSize: 13, color: 'var(--it-text-secondary)'}}>{teacher.profession ?? 'Teacher'}</div>
+                    </div>
+                    <ResourceBadge status={status} withDot/>
+                    <div style={{height: 1, background: 'var(--it-border-row)', width: '100%'}}/>
+                    <div style={{display: 'flex', justifyContent: 'space-between', width: '100%'}}>
+                        <Stat value={feedbacks.length} label="Reviews"/>
+                        <Sep/>
+                        <Stat value={teacher.summaryRating?.toFixed?.(1) ?? '—'} label="Rating"/>
+                        <Sep/>
+                        <Stat value={formatDate(teacher.createdAt).split(',')[1]?.trim() ?? '—'} label="Since"/>
+                    </div>
+                </Card>
+
+                <SectionCard title="Contact Info">
+                    <InfoRow icon="phone" label="Phone" value={teacher.user?.phoneNumber ? `+${teacher.user.phoneNumber}` : '—'}/>
+                    <InfoRow icon="mail" label="Email" value={teacher.user?.email ?? '—'}/>
+                    <InfoRow icon="calendar" label="Joined" value={formatDate(teacher.createdAt)}/>
+                </SectionCard>
             </div>
 
-            <div style={{display: 'grid', gridTemplateColumns: '320px 1fr', gap: 20}}>
-                <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
-                    <SectionCard>
-                        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12}}>
-                            <Avatar
-                                initials={getInitials(teacher.user)}
-                                palette={getAvatarPalette(teacher.id)}
-                                size={80}
-                            />
-                            <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4}}>
-                                <span style={{fontSize: 18, fontWeight: 700}}>{getFullName(teacher.user)}</span>
-                                <span style={{fontSize: 13, color: 'var(--it-text-secondary)'}}>
-                                    {teacher.profession ?? '—'}
-                                </span>
+            <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                <SectionCard title="Status History">
+                    {(teacher.statusHistories?.length ? teacher.statusHistories : [{newStatus: status, changedAt: teacher.createdAt}]).map((h, i) => (
+                        <div key={i} style={{display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--it-border-row)'}}>
+                            <div style={{width: 40, height: 40, borderRadius: 10, background: 'var(--it-info-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                                <Icon name="activity" size={18} color="var(--it-info-text)"/>
                             </div>
-                            <ResourceBadge active={teacher.status === 'active'}>{teacher.status}</ResourceBadge>
-                        </div>
-                        <div style={{display: 'flex', justifyContent: 'space-around', textAlign: 'center'}}>
-                            <Stat value={teacher.feedbacks?.length ?? 0} label={'Feedbacks'}/>
-                            <Stat
-                                value={teacher.summaryRating != null ? teacher.summaryRating.toFixed(1) : '—'}
-                                label={'Rating'}
-                            />
-                        </div>
-                    </SectionCard>
-
-                    <SectionCard title={'Contact Info'}>
-                        <ContactRow icon={'phone'} text={teacher.user?.phoneNumber ?? '—'}/>
-                        <ContactRow icon={'mail'} text={teacher.user?.email ?? '—'}/>
-                        <ContactRow
-                            icon={'calendar'}
-                            text={teacher.createdAt ? new Date(teacher.createdAt).toLocaleDateString() : '—'}
-                        />
-                    </SectionCard>
-
-                    <SectionCard title={'Change Status'}>
-                        <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
-                            {['active', 'suspended', 'fired'].map(s => (
-                                <Button
-                                    key={s}
-                                    view={teacher.status === s ? 'action' : 'outlined'}
-                                    onClick={() => onSetStatus(s)}
-                                    loading={changeStatus.isPending}
-                                >
-                                    {s}
-                                </Button>
-                            ))}
-                        </div>
-                    </SectionCard>
-                </div>
-
-                <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
-                    <SectionCard title={'Feedbacks'}>
-                        {(teacher.feedbacks ?? []).length === 0 && (
-                            <span style={{fontSize: 13, color: 'var(--it-text-secondary)'}}>
-                                No feedbacks yet.
-                            </span>
-                        )}
-                        {(teacher.feedbacks ?? []).map(f => (
-                            <div
-                                key={f.id}
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: 8,
-                                    padding: 14,
-                                    border: '1px solid var(--it-border)',
-                                    borderRadius: 10,
-                                }}
-                            >
-                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                    <span style={{fontSize: 13, fontWeight: 600}}>
-                                        {f.student?.user ? getFullName(f.student.user) : 'Student'}
-                                    </span>
-                                    <span style={{fontSize: 13, color: 'var(--it-green-700)', fontWeight: 700}}>
-                                        ★ {f.rate}
-                                    </span>
+                            <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: 2}}>
+                                <div style={{fontSize: 14, fontWeight: 600, color: 'var(--it-text-primary)'}}>
+                                    {h.oldStatus ? `${h.oldStatus} → ${h.newStatus}` : `Marked ${h.newStatus}`}
                                 </div>
-                                <span style={{fontSize: 13, color: 'var(--it-text-secondary)'}}>{f.text}</span>
+                                <div style={{fontSize: 12, color: 'var(--it-text-secondary)'}}>
+                                    {formatDate(h.changedAt, true)} {h.changedBy?.user ? `by ${fullName(h.changedBy.user)}` : ''}
+                                </div>
                             </div>
-                        ))}
-                    </SectionCard>
+                        </div>
+                    ))}
+                </SectionCard>
 
-                    {teacher.introVideo && (
-                        <SectionCard title={'Intro Video'}>
-                            <video
-                                controls
-                                style={{width: '100%', borderRadius: 10, background: '#000'}}
-                                src={teacher.introVideo}
-                            />
-                        </SectionCard>
-                    )}
-                </div>
+                <SectionCard title={`Reviews (${feedbacks.length})`}>
+                    {feedbacks.length === 0 ? (
+                        <div style={{color: 'var(--it-text-tertiary)', padding: 12}}>No feedback yet.</div>
+                    ) : feedbacks.map((f) => (
+                        <div key={f.id} style={{display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 0', borderBottom: '1px solid var(--it-border-row)'}}>
+                            <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                                <span style={{fontWeight: 600, color: 'var(--it-text-primary)'}}>{fullName(f.student?.user) || 'Student'}</span>
+                                <span style={{color: 'var(--it-warning-text)'}}>{'★'.repeat(f.rate ?? 0)}{'☆'.repeat(5 - (f.rate ?? 0))}</span>
+                            </div>
+                            <div style={{color: 'var(--it-text-secondary)', fontSize: 13}}>{f.text}</div>
+                        </div>
+                    ))}
+                </SectionCard>
+            </div>
+        </div>
+    )
+}
+
+function InfoRow({icon, label, value}) {
+    return (
+        <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+            <div style={{width: 32, height: 32, borderRadius: 8, background: 'var(--it-surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                <Icon name={icon} size={14} color="var(--it-text-secondary)"/>
+            </div>
+            <div style={{display: 'flex', flexDirection: 'column', gap: 2}}>
+                <span style={{fontSize: 11, color: 'var(--it-text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4}}>{label}</span>
+                <span style={{fontSize: 14, color: 'var(--it-text-primary)', fontWeight: 500}}>{value}</span>
             </div>
         </div>
     )
@@ -142,27 +115,15 @@ export default function AdminTeacherProfilePage() {
 
 function Stat({value, label}) {
     return (
-        <div style={{display: 'flex', flexDirection: 'column', gap: 2}}>
-            <span style={{fontSize: 22, fontWeight: 700}}>{value}</span>
-            <span style={{fontSize: 12, color: 'var(--it-text-secondary)'}}>{label}</span>
+        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4}}>
+            <span style={{fontSize: 18, fontWeight: 700, color: 'var(--it-text-primary)'}}>{value}</span>
+            <span style={{fontSize: 11, color: 'var(--it-text-secondary)'}}>{label}</span>
         </div>
     )
 }
 
-function ContactRow({icon, text}) {
-    return (
-        <div
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '8px 12px',
-                background: '#F9FAFB',
-                borderRadius: 8,
-            }}
-        >
-            <Icon name={icon} size={16} color={'var(--it-text-secondary)'}/>
-            <span style={{fontSize: 13}}>{text}</span>
-        </div>
-    )
+function Sep() {
+    return <div style={{width: 1, height: 40, background: 'var(--it-border)'}}/>
 }
+
+export default AdminTeacherProfilePage

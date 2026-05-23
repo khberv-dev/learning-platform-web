@@ -1,111 +1,128 @@
-import {useEffect} from "react";
-import {useNavigate, useParams} from "react-router";
-import {useForm} from "react-hook-form";
-import {Button} from "@gravity-ui/uikit";
-import {useHeader} from "@/providers/header.jsx";
-import SectionCard from "@/ui/components/section-card/index.jsx";
-import {FormText} from "@/ui/components/form-field/index.jsx";
-import Avatar from "@/ui/components/avatar/index.jsx";
-import {useGetTeacher, useUpdateTeacher} from "@/services/teacher/query.js";
-import {getAvatarPalette, getInitials} from "@/utils/user.js";
-import {cleanPhoneNumber} from "@/utils/lib.js";
+import {useEffect} from 'react'
+import {useForm, Controller} from 'react-hook-form'
+import {useNavigate, useParams} from 'react-router'
+import {useHeader} from '@/providers/header.jsx'
+import {useGetTeacher, useUpdateTeacher, useChangeTeacherStatus} from '@/services/teacher/query.js'
+import {Button} from '@/ui/components/button/index.jsx'
+import {Input} from '@/ui/components/input/index.jsx'
+import {FormField} from '@/ui/components/form-field/index.jsx'
+import {Card} from '@/ui/components/card/index.jsx'
+import {Avatar} from '@/ui/components/avatar/index.jsx'
+import {fullName} from '@/utils/lib.js'
 
-export default function AdminTeacherEditPage() {
-    const {setHeader} = useHeader()
-    const navigate = useNavigate()
+export function AdminTeacherEditPage() {
     const {id} = useParams()
-
-    const {data: teacher, isLoading} = useGetTeacher(id)
-    const updateTeacher = useUpdateTeacher()
+    const navigate = useNavigate()
+    const {setHeader} = useHeader()
+    const {data: teacher} = useGetTeacher(id)
+    const update = useUpdateTeacher({onSuccess: () => navigate(`/admin/teachers/${id}`)})
+    const changeStatus = useChangeTeacherStatus()
 
     useEffect(() => {
         setHeader({title: 'Edit Teacher', onBack: () => navigate(-1)})
-        return () => setHeader({title: '', onBack: null})
+        return () => setHeader({})
     }, [setHeader, navigate])
 
-    const {register, handleSubmit, reset} = useForm({
-        defaultValues: {firstName: '', lastName: '', phoneNumber: '', email: '', profession: '', password: ''},
+    const {register, handleSubmit, control, reset, formState: {errors}} = useForm({
+        defaultValues: {firstName: '', lastName: '', email: '', phoneNumber: '', profession: '', status: 'active'},
     })
 
     useEffect(() => {
-        if (teacher) {
-            reset({
-                firstName: teacher.user?.firstName ?? '',
-                lastName: teacher.user?.lastName ?? '',
-                phoneNumber: teacher.user?.phoneNumber ?? '',
-                email: teacher.user?.email ?? '',
-                profession: teacher.profession ?? '',
-                password: '',
-            })
-        }
+        if (!teacher) return
+        reset({
+            firstName: teacher.user?.firstName ?? '',
+            lastName: teacher.user?.lastName ?? '',
+            email: teacher.user?.email ?? '',
+            phoneNumber: teacher.user?.phoneNumber?.replace(/^998/, '') ?? '',
+            profession: teacher.profession ?? '',
+            status: teacher.status ?? 'active',
+        })
     }, [teacher, reset])
 
-    const onSubmit = (values) => {
-        const data = {
-            firstName: values.firstName,
-            lastName: values.lastName || undefined,
-            email: values.email || undefined,
-            phoneNumber: cleanPhoneNumber(values.phoneNumber),
-            profession: values.profession || undefined,
+    const onSubmit = (v) => {
+        const phone = '998' + String(v.phoneNumber).replace(/\D/g, '').slice(-9)
+        update.mutate({
+            id,
+            data: {
+                firstName: v.firstName,
+                lastName: v.lastName || undefined,
+                email: v.email || undefined,
+                phoneNumber: phone,
+                profession: v.profession || undefined,
+            },
+        })
+        if (v.status && teacher && v.status !== teacher.status) {
+            changeStatus.mutate({id, status: v.status})
         }
-        if (values.password) data.password = values.password
-        updateTeacher.mutate(
-            {id, data},
-            {onSuccess: () => navigate(`/admin/teachers/${id}`)},
-        )
     }
 
-    if (isLoading || !teacher) {
-        return <SectionCard>Loading...</SectionCard>
-    }
+    if (!teacher) return <div style={{color: 'var(--it-text-secondary)'}}>Loading…</div>
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} style={{display: 'flex', flexDirection: 'column', gap: 20}}>
-            <SectionCard>
-                <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
-                    <Avatar
-                        initials={getInitials(teacher.user)}
-                        palette={getAvatarPalette(teacher.id)}
-                        size={72}
-                    />
+        <form onSubmit={handleSubmit(onSubmit)} style={{display: 'flex', flex: 1}}>
+            <Card padding={32} gap={24} style={{width: '100%'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: 20}}>
+                    <Avatar name={fullName(teacher.user)} src={teacher.user?.avatar} size={80} fontSize={28}/>
                     <div style={{display: 'flex', flexDirection: 'column', gap: 4}}>
-                        <span style={{fontSize: 14, fontWeight: 600}}>Profile</span>
-                        <span style={{fontSize: 12, color: 'var(--it-text-secondary)'}}>
-                            Teacher status is managed from the profile page.
-                        </span>
+                        <div style={{fontSize: 16, fontWeight: 700, color: 'var(--it-text-primary)'}}>{fullName(teacher.user)}</div>
+                        <div style={{fontSize: 13, color: 'var(--it-text-secondary)'}}>Update teacher details</div>
                     </div>
                 </div>
-            </SectionCard>
 
-            <SectionCard>
-                <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16}}>
-                    <FormText label={'First Name'} required {...register('firstName')}/>
-                    <FormText label={'Last Name'} {...register('lastName')}/>
-                    <FormText label={'Phone Number'} {...register('phoneNumber')}/>
-                    <FormText label={'Email Address'} type={'email'} {...register('email')}/>
-                    <FormText label={'Profession'} {...register('profession')}/>
-                    <FormText
-                        label={'New Password'}
-                        type={'password'}
-                        placeholder={'Leave blank to keep current'}
-                        {...register('password')}
-                    />
+                <Row>
+                    <FormField label="First Name" error={errors.firstName?.message}>
+                        <Input {...register('firstName', {required: 'Required'})}/>
+                    </FormField>
+                    <FormField label="Last Name">
+                        <Input {...register('lastName')}/>
+                    </FormField>
+                </Row>
+
+                <Row>
+                    <FormField label="Email">
+                        <Input leftIcon="mail" {...register('email')}/>
+                    </FormField>
+                    <FormField label="Phone Number">
+                        <div className="it-input it-input--lg">
+                            <span style={{paddingRight: 12, borderRight: '1px solid var(--it-border-strong)', color: 'var(--it-text-body)'}}>+998</span>
+                            <input type="tel" className="it-input__el" {...register('phoneNumber')}/>
+                        </div>
+                    </FormField>
+                </Row>
+
+                <Row>
+                    <FormField label="Subject / Specialization">
+                        <Input leftIcon="book-open" {...register('profession')}/>
+                    </FormField>
+                    <FormField label="Status">
+                        <Controller
+                            control={control}
+                            name="status"
+                            render={({field}) => (
+                                <select className="it-input__el" {...field} style={{height: 44, padding: '0 14px', borderRadius: 8, border: '1px solid var(--it-border-strong)', background: 'var(--it-surface-input)'}}>
+                                    <option value="active">Active</option>
+                                    <option value="suspended">Suspended</option>
+                                    <option value="fired">Fired</option>
+                                </select>
+                            )}
+                        />
+                    </FormField>
+                </Row>
+
+                <div style={{flex: 1}}/>
+                <div style={{display: 'flex', justifyContent: 'flex-end', gap: 12}}>
+                    <Button variant="secondary" size="lg" onClick={() => navigate(-1)}>Cancel</Button>
+                    <Button type="submit" size="lg" disabled={update.isPending}>
+                        {update.isPending ? 'Saving…' : 'Save Changes'}
+                    </Button>
                 </div>
-            </SectionCard>
-
-            <div style={{display: 'flex', justifyContent: 'flex-end', gap: 8}}>
-                <Button view={'outlined'} size={'l'} onClick={() => navigate(-1)}>
-                    Cancel
-                </Button>
-                <Button
-                    type={'submit'}
-                    view={'action'}
-                    size={'l'}
-                    loading={updateTeacher.isPending}
-                >
-                    Save Changes
-                </Button>
-            </div>
+            </Card>
         </form>
     )
 }
+
+function Row({children}) {
+    return <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20}}>{children}</div>
+}
+
+export default AdminTeacherEditPage

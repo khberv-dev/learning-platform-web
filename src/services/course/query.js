@@ -1,30 +1,19 @@
 import {useQuery} from "@tanstack/react-query";
 import {useInfoMutation} from "@/services/query.js";
 import {
-    createCourse,
-    deleteCourse,
-    getActiveCourses,
-    getAllCourses,
-    getAvailableCourses,
-    getCourseById,
-    getMyCourses,
-    updateCourse,
+    getCourses, getCourse, getAvailableCourses, getMyCourses,
+    createCourse, updateCourse, deleteCourse,
 } from "@/services/course/api.js";
 
-export const useGetAllCourses = () => useQuery({
-    queryKey: ['course', 'all'],
-    queryFn: getAllCourses,
+export const useGetCourses = () => useQuery({
+    queryKey: ['course', 'list'],
+    queryFn: getCourses,
 })
 
 export const useGetCourse = (id) => useQuery({
-    queryKey: ['course', 'one', id],
-    queryFn: () => getCourseById(id),
+    queryKey: ['course', 'detail', id],
+    queryFn: () => getCourse(id),
     enabled: !!id,
-})
-
-export const useGetActiveCourses = () => useQuery({
-    queryKey: ['course', 'active'],
-    queryFn: getActiveCourses,
 })
 
 export const useGetAvailableCourses = () => useQuery({
@@ -37,17 +26,20 @@ export const useGetMyCourses = () => useQuery({
     queryFn: getMyCourses,
 })
 
-export const useCreateCourse = () => useInfoMutation({
+export const useCreateCourse = (opts) => useInfoMutation({
     queryKey: ['course'],
-    mutationFn: ({dto, image}) => createCourse(dto, image),
+    mutationFn: (data) => createCourse(data),
+    onSuccess: opts?.onSuccess,
 })
 
-export const useUpdateCourse = () => useInfoMutation({
+export const useUpdateCourse = (opts) => useInfoMutation({
     queryKey: ['course'],
-    mutationFn: ({id, dto, image}) => updateCourse(id, dto, image),
+    mutationFn: ({id, data}) => updateCourse(id, data),
+    onSuccess: opts?.onSuccess,
 })
 
-export const useDeleteCourse = () => useInfoMutation({
+export const useDeleteCourse = (opts) => useInfoMutation({
     queryKey: ['course'],
     mutationFn: (id) => deleteCourse(id),
+    onSuccess: opts?.onSuccess,
 })

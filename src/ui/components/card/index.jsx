@@ -1,37 +1,17 @@
-export default function Card({
-                                 elevation = 'sm',
-                                 padding = 20,
-                                 gap = 16,
-                                 interactive = false,
-                                 style,
-                                 children,
-                                 ...props
-                             }) {
-    const shadow = elevation === 'none' ? 'none' : `var(--it-shadow-${elevation})`
-
+export function Card({children, padding = 0, gap, style, className = '', shadow = false, ...rest}) {
+    const cls = ['it-card', shadow && 'it-card--shadow', className].filter(Boolean).join(' ')
+    const composed = {
+        padding,
+        display: 'flex',
+        flexDirection: 'column',
+        gap,
+        ...style,
+    }
     return (
-        <div
-            style={{
-                background: 'var(--it-surface)',
-                border: '1px solid var(--it-border)',
-                borderRadius: 'var(--it-radius-lg)',
-                boxShadow: shadow,
-                padding,
-                display: 'flex',
-                flexDirection: 'column',
-                gap,
-                transition: interactive ? 'box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease' : undefined,
-                cursor: interactive ? 'pointer' : undefined,
-                ...(interactive && {
-                    ':hover': {
-                        borderColor: 'var(--it-border-strong)',
-                    },
-                }),
-                ...style,
-            }}
-            {...props}
-        >
+        <div className={cls} style={composed} {...rest}>
             {children}
         </div>
     )
 }
+
+export default Card

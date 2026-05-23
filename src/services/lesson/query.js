@@ -1,17 +1,20 @@
 import {useInfoMutation} from "@/services/query.js";
-import {createLesson, deleteLesson, updateLesson} from "@/services/lesson/api.js";
+import {createLesson, updateLesson, deleteLesson} from "@/services/lesson/api.js";
 
-export const useCreateLesson = () => useInfoMutation({
+export const useCreateLesson = (opts) => useInfoMutation({
     queryKey: ['course'],
-    mutationFn: ({courseId, unitId, dto, media}) => createLesson(courseId, unitId, dto, media),
+    mutationFn: ({courseId, unitId, data}) => createLesson(courseId, unitId, data),
+    onSuccess: opts?.onSuccess,
 })
 
-export const useUpdateLesson = () => useInfoMutation({
+export const useUpdateLesson = (opts) => useInfoMutation({
     queryKey: ['course'],
-    mutationFn: ({courseId, unitId, lessonId, dto}) => updateLesson(courseId, unitId, lessonId, dto),
+    mutationFn: ({courseId, unitId, lessonId, data}) => updateLesson(courseId, unitId, lessonId, data),
+    onSuccess: opts?.onSuccess,
 })
 
-export const useDeleteLesson = () => useInfoMutation({
+export const useDeleteLesson = (opts) => useInfoMutation({
     queryKey: ['course'],
     mutationFn: ({courseId, unitId, lessonId}) => deleteLesson(courseId, unitId, lessonId),
+    onSuccess: opts?.onSuccess,
 })

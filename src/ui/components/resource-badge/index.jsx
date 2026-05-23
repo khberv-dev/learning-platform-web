@@ -1,45 +1,33 @@
-const THEMES = {
-    success: {bg: 'var(--it-success-bg)', border: 'var(--it-success-border)', text: 'var(--it-success-text)'},
-    info: {bg: 'var(--it-info-bg)', border: 'var(--it-info-border)', text: 'var(--it-info-text)'},
-    danger: {bg: 'var(--it-danger-bg)', border: 'var(--it-danger-border)', text: 'var(--it-danger-text)'},
-    warning: {bg: 'var(--it-warning-bg)', border: 'var(--it-warning-border)', text: 'var(--it-warning-text)'},
-    neutral: {bg: '#F3F4F6', border: '#E5E7EB', text: '#374151'},
+const map = {
+    active: {label: 'Active', bg: 'var(--it-success-bg)', fg: 'var(--it-success-text)'},
+    inactive: {label: 'Inactive', bg: 'var(--it-danger-bg)', fg: 'var(--it-danger-text)'},
+    suspended: {label: 'Suspended', bg: 'var(--it-warning-bg)', fg: 'var(--it-warning-text-strong)'},
+    fired: {label: 'Fired', bg: 'var(--it-danger-bg)', fg: 'var(--it-danger-text)'},
+    pending: {label: 'Pending', bg: 'var(--it-warning-bg)', fg: 'var(--it-warning-text-strong)'},
+    expired: {label: 'Expired', bg: 'var(--it-surface-alt)', fg: 'var(--it-text-secondary)'},
+    rejected: {label: 'Rejected', bg: 'var(--it-danger-bg)', fg: 'var(--it-danger-text)'},
 }
 
-export default function ResourceBadge({active, theme, children, dot = true}) {
-    const resolved =
-        theme ?? (active === undefined ? 'neutral' : active ? 'success' : 'danger')
-    const c = THEMES[resolved] ?? THEMES.neutral
-
+export function ResourceBadge({status, label, withDot = false, size = 'md'}) {
+    const key = typeof status === 'string' ? status.toLowerCase() : status
+    const s = map[key] ?? {label: label ?? status, bg: 'var(--it-surface-alt)', fg: 'var(--it-text-body)'}
     return (
         <span
+            className="it-badge"
             style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '4px 10px',
-                borderRadius: 999,
-                background: c.bg,
-                border: `1px solid ${c.border}`,
-                color: c.text,
-                fontSize: 12,
-                fontWeight: 600,
-                lineHeight: 1,
-                whiteSpace: 'nowrap',
+                background: s.bg,
+                color: s.fg,
+                height: size === 'sm' ? 22 : 26,
+                fontSize: size === 'sm' ? 11 : 12,
+                padding: size === 'sm' ? '0 10px' : '0 12px',
             }}
         >
-            {dot && (
-                <span
-                    style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: 999,
-                        background: c.text,
-                        display: 'inline-block',
-                    }}
-                />
+            {withDot && (
+                <span style={{width: 8, height: 8, borderRadius: 999, background: s.fg}}/>
             )}
-            {children ?? (active ? 'Active' : 'Inactive')}
+            {label ?? s.label}
         </span>
     )
 }
+
+export default ResourceBadge

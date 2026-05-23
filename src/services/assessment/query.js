@@ -7,7 +7,8 @@ export const useGetMyAssessments = () => useQuery({
     queryFn: getMyAssessments,
 })
 
-export const useCreateAssessment = () => useInfoMutation({
+export const useCreateAssessment = (opts) => useInfoMutation({
     queryKey: ['assessment'],
-    mutationFn: (audio) => createAssessment(audio),
+    mutationFn: (file) => createAssessment(file),
+    onSuccess: opts?.onSuccess,
 })

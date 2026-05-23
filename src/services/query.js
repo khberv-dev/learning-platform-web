@@ -16,7 +16,9 @@ export const useInfoMutation = ({queryKey, mutationFn, onSuccess, onError}) => {
     return useMutation({
         mutationFn,
         onSuccess: async (data) => {
-            await client.invalidateQueries({queryKey, exact: false})
+            if (queryKey) {
+                await client.invalidateQueries({queryKey, exact: false})
+            }
 
             if (data?.message) {
                 toaster.add({

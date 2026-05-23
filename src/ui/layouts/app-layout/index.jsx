@@ -1,50 +1,61 @@
-import {Outlet} from "react-router";
-import Sidebar from "@/ui/components/sidebar/index.jsx";
-import Topbar from "@/ui/components/topbar/index.jsx";
-import {useAuth} from "@/providers/auth.jsx";
-import {getFullName, getInitials} from "@/utils/user.js";
+import {Outlet, Navigate} from 'react-router'
+import {Sidebar} from '@/ui/components/sidebar/index.jsx'
+import {Topbar} from '@/ui/components/topbar/index.jsx'
+import {useAuth} from '@/providers/auth.jsx'
 
-const BASE_NAV = [
-    {to: '/admin', icon: 'layout-dashboard', label: 'Home', end: true},
-    {to: '/admin/teachers', icon: 'users', label: 'Teachers'},
-    {to: '/admin/students', icon: 'graduation-cap', label: 'Students'},
-    {to: '/admin/courses', icon: 'book-open', label: 'Courses'},
-    {to: '/admin/assignments', icon: 'shield-check', label: 'Assignments'},
-    {spacer: true},
-    {to: '/admin/settings', icon: 'settings', label: 'Settings'},
+const ADMIN_NAV = [
+    {to: '/admin', label: 'Home', icon: 'layout-dashboard', end: true},
+    {to: '/admin/teachers', label: 'Teachers', icon: 'users'},
+    {to: '/admin/students', label: 'Students', icon: 'graduation-cap'},
+    {to: '/admin/courses', label: 'Courses', icon: 'book-open'},
+]
+const ADMIN_BOTTOM = [
+    {to: '/admin/settings', label: 'Settings', icon: 'settings'},
 ]
 
-export default function AppLayout() {
-    const {user, logout} = useAuth() ?? {}
+const TEACHER_NAV = [
+    {to: '/teacher', label: 'Home', icon: 'layout-dashboard', end: true},
+    {to: '/teacher/students', label: 'Students', icon: 'graduation-cap'},
+    {to: '/teacher/groups', label: 'Groups', icon: 'users-round'},
+    {to: '/teacher/sessions', label: 'Live Sessions', icon: 'video'},
+    {to: '/teacher/chat', label: 'Messages', icon: 'message-circle'},
+]
+const TEACHER_BOTTOM = [
+    {to: '/teacher/settings', label: 'Settings', icon: 'settings'},
+]
 
-    const nav = [
-        ...BASE_NAV,
-        {icon: 'log-out', label: 'Logout', tone: 'danger', onClick: logout},
-    ]
+export function AppLayout({role}) {
+    const auth = useAuth()
 
-    const userInfo = {
-        initials: user ? getInitials(user) : 'A',
-        name: user ? getFullName(user) : 'Admin User',
-        role: 'Administrator',
-        palette: 'green',
+    if (auth?.isLoading) {
+        return (
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--it-text-secondary)'}}>
+                Loading…
+            </div>
+        )
     }
 
+    if (auth?.user && role && !auth?.roles?.includes(role)) {
+        if (auth.isAdmin) return <Navigate to="/admin" replace/>
+        if (auth.isTeacher) return <Navigate to="/teacher" replace/>
+        return <Navigate to="/login" replace/>
+    }
+
+    const isAdmin = role === 'admin'
+    const items = isAdmin ? ADMIN_NAV : TEACHER_NAV
+    const bottom = isAdmin ? ADMIN_BOTTOM : TEACHER_BOTTOM
+
     return (
-        <div style={{display: 'flex', height: '100vh', background: 'var(--it-bg)'}}>
-            <Sidebar items={nav} user={userInfo}/>
-            <main
-                style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    minWidth: 0,
-                }}
-            >
+        <div className="it-app">
+            <Sidebar items={items} bottomItems={bottom}/>
+            <div className="it-main">
                 <Topbar/>
-                <div style={{flex: 1, padding: 28, overflow: 'auto'}}>
+                <main className="it-content">
                     <Outlet/>
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
     )
 }
+
+export default AppLayout

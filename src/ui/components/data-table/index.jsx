@@ -1,81 +1,65 @@
-export default function DataTable({columns, rows, emptyText = 'No data'}) {
+export function DataTable({
+    columns,
+    data,
+    loading = false,
+    empty = 'No data',
+    rowKey = 'id',
+    footer,
+    onRowClick,
+}) {
+    const rows = data ?? []
+
     return (
-        <div
-            style={{
-                background: 'var(--it-surface)',
-                border: '1px solid var(--it-border)',
-                borderRadius: 'var(--it-radius-lg)',
-                boxShadow: 'var(--it-shadow-sm)',
-                overflow: 'hidden',
-            }}
-        >
-            <table style={{width: '100%', borderCollapse: 'collapse'}}>
-                <thead>
-                <tr>
-                    {columns.map((c, i) => (
-                        <th
-                            key={i}
-                            style={{
-                                textAlign: c.align ?? 'left',
-                                padding: '14px 22px',
-                                fontSize: 11,
-                                fontWeight: 600,
-                                color: 'var(--it-text-tertiary)',
-                                textTransform: 'uppercase',
-                                letterSpacing: 0.6,
-                                background: 'var(--it-surface-hover)',
-                                borderBottom: '1px solid var(--it-border)',
-                            }}
-                        >
-                            {c.title}
-                        </th>
-                    ))}
-                </tr>
-                </thead>
-                <tbody>
-                {rows.length === 0 && (
-                    <tr>
-                        <td
-                            colSpan={columns.length}
-                            style={{
-                                padding: 32,
-                                textAlign: 'center',
-                                color: 'var(--it-text-secondary)',
-                                fontSize: 14,
-                            }}
-                        >
-                            {emptyText}
-                        </td>
-                    </tr>
-                )}
-                {rows.map((row, ri) => (
-                    <tr
-                        key={row.id ?? ri}
-                        style={{
-                            borderTop: '1px solid var(--it-border)',
-                            transition: 'background 0.12s ease',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--it-surface-hover)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+        <div className="it-table">
+            <div className="it-table__head">
+                {columns.map((col, i) => (
+                    <div
+                        key={col.key ?? i}
+                        className="it-table__cell"
+                        style={cellStyle(col)}
                     >
-                        {columns.map((c, ci) => (
-                            <td
-                                key={ci}
-                                style={{
-                                    padding: '14px 22px',
-                                    fontSize: 14,
-                                    color: 'var(--it-text-primary)',
-                                    verticalAlign: 'middle',
-                                    textAlign: c.align ?? 'left',
-                                }}
-                            >
-                                {c.render ? c.render(row, ri) : row[c.key]}
-                            </td>
-                        ))}
-                    </tr>
+                        {col.header}
+                    </div>
                 ))}
-                </tbody>
-            </table>
+            </div>
+            {loading && rows.length === 0 ? (
+                <div className="it-table__empty">Loading…</div>
+            ) : rows.length === 0 ? (
+                <div className="it-table__empty">{empty}</div>
+            ) : rows.map((row, idx) => (
+                <div
+                    key={row[rowKey] ?? idx}
+                    className="it-table__row"
+                    onClick={onRowClick ? () => onRowClick(row, idx) : undefined}
+                    style={{cursor: onRowClick ? 'pointer' : 'default'}}
+                >
+                    {columns.map((col, i) => (
+                        <div
+                            key={col.key ?? i}
+                            className="it-table__cell"
+                            style={cellStyle(col)}
+                        >
+                            {col.render ? col.render(row, idx) : row[col.key]}
+                        </div>
+                    ))}
+                </div>
+            ))}
+            {footer && <div className="it-table__footer">{footer}</div>}
         </div>
     )
 }
+
+function cellStyle(col) {
+    return {
+        width: col.width,
+        flex: col.width ? 'none' : 1,
+        textAlign: col.align ?? 'left',
+        color: col.muted ? 'var(--it-text-tertiary)' : undefined,
+        display: 'flex',
+        alignItems: 'center',
+        gap: col.gap,
+        justifyContent: col.align === 'center' ? 'center' : col.align === 'right' ? 'flex-end' : 'flex-start',
+    }
+}
+
+export default DataTable

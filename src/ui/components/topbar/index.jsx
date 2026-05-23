@@ -1,95 +1,36 @@
-import {useNavigate} from "react-router";
-import Icon from "@/ui/components/icon/index.jsx";
-import Avatar from "@/ui/components/avatar/index.jsx";
-import {useHeader} from "@/providers/header.jsx";
-import {useAuth} from "@/providers/auth.jsx";
+import {Icon} from '@/ui/components/icon/index.jsx'
+import {Avatar} from '@/ui/components/avatar/index.jsx'
+import {useHeader} from '@/providers/header.jsx'
+import {useAuth} from '@/providers/auth.jsx'
+import {fullName} from '@/utils/lib.js'
 
-export default function Topbar() {
-    const {title, onBack} = useHeader()
+export function Topbar() {
+    const {title, subtitle, onBack, actions} = useHeader()
     const {user} = useAuth() ?? {}
-    const navigate = useNavigate()
+    const name = fullName(user) || 'User'
 
     return (
-        <header
-            style={{
-                height: 64,
-                background: 'var(--it-surface)',
-                borderBottom: '1px solid var(--it-border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 32px',
-                flexShrink: 0,
-            }}
-        >
-            <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+        <header className="it-topbar">
+            <div className="it-topbar__left">
                 {onBack && (
-                    <button
-                        type={'button'}
-                        onClick={() => (typeof onBack === 'function' ? onBack() : navigate(-1))}
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: 36,
-                            height: 36,
-                            borderRadius: 10,
-                            background: 'var(--it-surface-alt)',
-                            border: 'none',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        <Icon name={'chevron-left'} size={18} color={'var(--it-text-primary)'}/>
+                    <button className="it-topbar__back" onClick={onBack} aria-label="Back">
+                        <Icon name="chevron-left" size={20}/>
                     </button>
                 )}
-                <span
-                    style={{
-                        fontSize: 20,
-                        fontWeight: 700,
-                        color: 'var(--it-text-primary)',
-                        letterSpacing: -0.2,
-                    }}
-                >
-                    {title}
-                </span>
+                <div style={{display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0}}>
+                    <h1 className="it-topbar__title">{title}</h1>
+                    {subtitle && <span className="it-topbar__subtitle">{subtitle}</span>}
+                </div>
             </div>
-
-            <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                <button
-                    type={'button'}
-                    style={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: 10,
-                        background: 'var(--it-surface-alt)',
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        position: 'relative',
-                    }}
-                >
-                    <Icon name={'bell'} size={18} color={'var(--it-text-secondary)'}/>
-                    <span
-                        style={{
-                            position: 'absolute',
-                            top: 8,
-                            right: 8,
-                            width: 8,
-                            height: 8,
-                            borderRadius: 999,
-                            background: 'var(--it-green)',
-                            border: '2px solid var(--it-surface)',
-                        }}
-                    />
-                </button>
-                <Avatar
-                    initials={user?.initials ?? 'A'}
-                    palette={user?.palette ?? 'green'}
-                    size={38}
-                />
+            <div className="it-topbar__right">
+                {actions}
+                <span className="it-topbar__bell" role="button" aria-label="Notifications">
+                    <Icon name="bell" size={20}/>
+                </span>
+                <Avatar name={name} size={36}/>
             </div>
         </header>
     )
 }
+
+export default Topbar
