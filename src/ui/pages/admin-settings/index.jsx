@@ -7,7 +7,7 @@ import {Input} from '@/ui/components/input/index.jsx'
 import {FormField} from '@/ui/components/form-field/index.jsx'
 import {Card} from '@/ui/components/card/index.jsx'
 import {Icon} from '@/ui/components/icon/index.jsx'
-import {Avatar} from '@/ui/components/avatar/index.jsx'
+import {AvatarUpload} from '@/ui/components/avatar-upload/index.jsx'
 import {fullName} from '@/utils/lib.js'
 import {toaster} from '@/services/toaster.js'
 
@@ -27,7 +27,7 @@ export function AdminSettingsPage() {
         <>
             <Card padding={28} gap={24}>
                 <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
-                    <Avatar name={fullName(user)} src={user?.avatar} size={64} fontSize={22}/>
+                    <AvatarUpload user={user} size={64}/>
                     <div>
                         <div style={{fontSize: 16, fontWeight: 700}}>{fullName(user) || 'Admin User'}</div>
                         <div style={{fontSize: 13, color: 'var(--it-text-secondary)'}}>Update your personal information.</div>
