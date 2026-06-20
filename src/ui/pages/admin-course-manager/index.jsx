@@ -7,6 +7,9 @@ import {useCreateLesson, useDeleteLesson} from '@/services/lesson/query.js'
 import {Button, IconButton} from '@/ui/components/button/index.jsx'
 import {Card} from '@/ui/components/card/index.jsx'
 import {Icon} from '@/ui/components/icon/index.jsx'
+import {Input} from '@/ui/components/input/index.jsx'
+import {FormField} from '@/ui/components/form-field/index.jsx'
+import {FileUpload} from '@/ui/components/image-upload/index.jsx'
 import {ConfirmDialog} from '@/ui/components/confirm-dialog/index.jsx'
 import {cdnUrl} from '@/services/config.js'
 
@@ -53,6 +56,44 @@ function FieldDialog({open, title, placeholder, defaultValue = '', submitLabel =
     )
 }
 
+function LessonDialog({open, onClose, onSubmit, loading}) {
+    const [title, setTitle] = useState('')
+    const [file, setFile] = useState(null)
+
+    if (!open) return null
+
+    const handleSubmit = (e) => {
+        e.preventDefault()
+        if (!title.trim()) return
+        onSubmit({title: title.trim(), media: file || undefined})
+    }
+
+    return (
+        <div className="it-dialog__backdrop" onClick={onClose}>
+            <form className="it-dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+                <div className="it-dialog__title">Add Lesson</div>
+                <FormField label="Title">
+                    <Input
+                        placeholder="Lesson title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        autoFocus
+                    />
+                </FormField>
+                <FormField label="Video (optional)">
+                    <FileUpload onChange={setFile} icon="video" accept="video/*" label="Choose video file"/>
+                </FormField>
+                <div className="it-dialog__actions">
+                    <Button variant="secondary" size="lg" type="button" onClick={onClose} disabled={loading}>Cancel</Button>
+                    <Button type="submit" size="lg" disabled={!title.trim() || loading}>
+                        {loading ? 'Adding…' : 'Add Lesson'}
+                    </Button>
+                </div>
+            </form>
+        </div>
+    )
+}
+
 export function AdminCourseManagerPage() {
     const {id} = useParams()
     const navigate = useNavigate()
@@ -65,6 +106,7 @@ export function AdminCourseManagerPage() {
     const deleteLesson = useDeleteLesson()
 
     const [dialog, setDialog] = useState(null)
+    const [lessonDialog, setLessonDialog] = useState(null)   // null | { unitId }
     const [confirm, setConfirm] = useState(null)
 
     useEffect(() => {
@@ -76,22 +118,19 @@ export function AdminCourseManagerPage() {
 
     const closeDialog = () => setDialog(null)
 
-    const dialogLoading = createUnit.isPending || updateUnit.isPending || createLesson.isPending
+    const dialogLoading = createUnit.isPending || updateUnit.isPending
 
     const handleDialogSubmit = (value) => {
         if (dialog?.kind === 'unit-add') {
             createUnit.mutate({courseId: course.id, data: {title: value}}, {onSuccess: closeDialog})
         } else if (dialog?.kind === 'unit-edit') {
             updateUnit.mutate({courseId: course.id, unitId: dialog.unitId, data: {title: value}}, {onSuccess: closeDialog})
-        } else if (dialog?.kind === 'lesson-add') {
-            createLesson.mutate({courseId: course.id, unitId: dialog.unitId, data: {title: value}}, {onSuccess: closeDialog})
         }
     }
 
     const dialogProps = {
-        'unit-add':   {title: 'Add Unit',      placeholder: 'Unit title',   submitLabel: 'Add Unit',    defaultValue: ''},
-        'unit-edit':  {title: 'Rename Unit',   placeholder: 'Unit title',   submitLabel: 'Save',         defaultValue: dialog?.currentTitle ?? ''},
-        'lesson-add': {title: 'Add Lesson',    placeholder: 'Lesson title', submitLabel: 'Add Lesson',   defaultValue: ''},
+        'unit-add':  {title: 'Add Unit',    placeholder: 'Unit title', submitLabel: 'Add Unit', defaultValue: ''},
+        'unit-edit': {title: 'Rename Unit', placeholder: 'Unit title', submitLabel: 'Save',      defaultValue: dialog?.currentTitle ?? ''},
     }[dialog?.kind] ?? {}
 
     return (
@@ -190,7 +229,7 @@ export function AdminCourseManagerPage() {
                             variant="secondary"
                             size="sm"
                             leftIcon="plus"
-                            onClick={() => setDialog({kind: 'lesson-add', unitId: unit.id})}
+                            onClick={() => setLessonDialog({unitId: unit.id})}
                         >
                             Add Lesson
                         </Button>
@@ -205,6 +244,17 @@ export function AdminCourseManagerPage() {
                 onClose={closeDialog}
                 onSubmit={handleDialogSubmit}
                 {...dialogProps}
+            />
+
+            <LessonDialog
+                key={lessonDialog?.unitId}
+                open={!!lessonDialog}
+                loading={createLesson.isPending}
+                onClose={() => setLessonDialog(null)}
+                onSubmit={(data) => createLesson.mutate(
+                    {courseId: course.id, unitId: lessonDialog.unitId, data},
+                    {onSuccess: () => setLessonDialog(null)},
+                )}
             />
 
             <ConfirmDialog

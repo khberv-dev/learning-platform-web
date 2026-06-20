@@ -35,7 +35,7 @@ export function AvatarUpload({user, size = 64}) {
     return (
         <div
             style={{position: 'relative', width: size, height: size, flexShrink: 0, cursor: upload.isPending ? 'wait' : 'pointer'}}
-            onClick={() => !upload.isPending && inputRef.current?.click()}
+            onClick={(e) => { if (e.target === inputRef.current) return; !upload.isPending && inputRef.current?.click() }}
             title="Change photo"
         >
             <Avatar name={fullName(user)} src={preview ?? user?.avatar} size={size} fontSize={Math.round(size * 0.34)}/>

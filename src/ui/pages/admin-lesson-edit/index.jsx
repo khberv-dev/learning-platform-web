@@ -1,5 +1,5 @@
 import {useEffect, useMemo, useState} from 'react'
-import {useForm, Controller} from 'react-hook-form'
+import {useForm} from 'react-hook-form'
 import {useNavigate, useParams} from 'react-router'
 import {useHeader} from '@/providers/header.jsx'
 import {useGetCourse} from '@/services/course/query.js'
@@ -11,7 +11,7 @@ import {FormField} from '@/ui/components/form-field/index.jsx'
 import {Card} from '@/ui/components/card/index.jsx'
 import {Icon} from '@/ui/components/icon/index.jsx'
 import {ConfirmDialog} from '@/ui/components/confirm-dialog/index.jsx'
-import {FileUpload} from '@/ui/components/image-upload/index.jsx'
+import {cdnUrl} from '@/services/config.js'
 
 // ── Task dialog (create / edit) ───────────────────────────────────────────────
 
@@ -206,7 +206,7 @@ export function AdminLessonEditPage() {
         return () => setHeader({})
     }, [setHeader, navigate])
 
-    const {register, control, handleSubmit, reset} = useForm({defaultValues: {title: '', description: ''}})
+    const {register, handleSubmit, reset} = useForm({defaultValues: {title: '', description: ''}})
 
     useEffect(() => {
         if (!lesson) return
@@ -247,11 +247,22 @@ export function AdminLessonEditPage() {
                     <FormField label="Description">
                         <Textarea rows={4} placeholder="Lesson description…" {...register('description')}/>
                     </FormField>
-                    <FormField label="Lesson Video" hint="MP4 or WebM. To replace the video, delete this lesson and recreate it.">
-                        <Controller name="media" control={control} defaultValue={null} render={({field}) => (
-                            <FileUpload onChange={field.onChange} icon="video" accept="video/*" label="Choose video file"/>
-                        )}/>
-                    </FormField>
+                    {lesson.media ? (
+                        <FormField label="Lesson Video" hint="To replace the video, delete this lesson and recreate it.">
+                            <video
+                                src={cdnUrl(lesson.media)}
+                                controls
+                                style={{width: '100%', maxWidth: 480, aspectRatio: '16 / 9', borderRadius: 10, background: '#000', border: '1px solid var(--it-border)'}}
+                            />
+                        </FormField>
+                    ) : (
+                        <FormField label="Lesson Video" hint="Video can only be added when creating a lesson.">
+                            <div style={{display: 'flex', alignItems: 'center', gap: 8, height: 40, color: 'var(--it-text-tertiary)', fontSize: 13}}>
+                                <Icon name="video-off" size={16}/>
+                                No video — delete and recreate the lesson to add one.
+                            </div>
+                        </FormField>
+                    )}
                     <div style={{display: 'flex', justifyContent: 'flex-end', gap: 12}}>
                         <Button variant="secondary" size="lg" type="button" onClick={() => navigate(-1)}>Cancel</Button>
                         <Button type="submit" size="lg" disabled={update.isPending}>

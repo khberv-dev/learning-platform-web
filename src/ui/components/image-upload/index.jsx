@@ -1,9 +1,8 @@
-import {useRef, useState} from 'react'
+import {useState} from 'react'
 import {Icon} from '@/ui/components/icon/index.jsx'
 import {cdnUrl} from '@/services/config.js'
 
 export function ImageUpload({value, onChange, hint = 'Click to upload an image.', accept = 'image/*'}) {
-    const inputRef = useRef(null)
     const [preview, setPreview] = useState(null)
 
     const url = preview || (typeof value === 'string' ? cdnUrl(value) : null)
@@ -16,8 +15,8 @@ export function ImageUpload({value, onChange, hint = 'Click to upload an image.'
     }
 
     return (
-        <div className="it-upload" onClick={() => inputRef.current?.click()}>
-            <input ref={inputRef} type="file" accept={accept} hidden onChange={onPick}/>
+        <label className="it-upload" style={{cursor: 'pointer'}}>
+            <input type="file" accept={accept} hidden onChange={onPick}/>
             {url ? (
                 <img src={url} alt="" style={{maxHeight: 140, borderRadius: 8, objectFit: 'cover'}}/>
             ) : (
@@ -27,12 +26,11 @@ export function ImageUpload({value, onChange, hint = 'Click to upload an image.'
                 </>
             )}
             <span className="it-upload__hint">{hint}</span>
-        </div>
+        </label>
     )
 }
 
 export function FileUpload({onChange, hint = 'Click to upload a file.', accept, icon = 'upload-cloud', label = 'Upload file'}) {
-    const inputRef = useRef(null)
     const [name, setName] = useState(null)
 
     const onPick = (e) => {
@@ -43,12 +41,12 @@ export function FileUpload({onChange, hint = 'Click to upload a file.', accept, 
     }
 
     return (
-        <div className="it-upload" onClick={() => inputRef.current?.click()}>
-            <input ref={inputRef} type="file" accept={accept} hidden onChange={onPick}/>
+        <label className="it-upload" style={{cursor: 'pointer'}}>
+            <input type="file" accept={accept} hidden onChange={onPick}/>
             <Icon name={icon} size={28}/>
             <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>{name ?? label}</span>
             <span className="it-upload__hint">{hint}</span>
-        </div>
+        </label>
     )
 }
 
