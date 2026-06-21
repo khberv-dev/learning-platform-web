@@ -10,8 +10,8 @@ export async function getLiveLesson(id) {
     return res.data
 }
 
-export async function createLiveLesson(data) {
-    const res = await api.post('live-lessons', data)
+export async function createLiveLesson({name, meetLink, startTime, endTime, assignmentId}) {
+    const res = await api.post('live-lessons', {name, meetLink, startTime, endTime, assignmentId})
     return res.data
 }
 
