@@ -1,4 +1,5 @@
 import {useEffect, useMemo, useState} from 'react'
+import {useNavigate} from 'react-router'
 import {useHeader} from '@/providers/header.jsx'
 import {
     useGetPendingAssignments,
@@ -17,6 +18,7 @@ import {fullName, formatDate} from '@/utils/lib.js'
 
 export function TeacherStudentsPage() {
     const {setHeader} = useHeader()
+    const navigate = useNavigate()
     const [search, setSearch] = useState('')
     const [page, setPage] = useState(1)
     const limit = 10
@@ -89,7 +91,13 @@ export function TeacherStudentsPage() {
                     {key: 'phone', header: 'Phone', width: 180, render: (a) => a.student?.user?.phoneNumber ? `+${a.student.user.phoneNumber}` : '—'},
                     {key: 'enrolled', header: 'Since', width: 160, render: (a) => formatDate(a.startDate)},
                     {key: 'status', header: 'Status', width: 110, render: (a) => <ResourceBadge status={a.status}/>},
-                    {key: 'actions', header: 'Action', width: 60, render: () => <IconButton icon="message-circle" title="Message"/>},
+                    {key: 'actions', header: 'Action', width: 60, render: (a) => (
+                        <IconButton
+                            icon="message-circle"
+                            title="Open chat"
+                            onClick={() => navigate(`/teacher/chat?userId=${a.student?.user?.id}`)}
+                        />
+                    )},
                 ]}
                 footer={
                     <>

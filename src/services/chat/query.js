@@ -1,7 +1,7 @@
 import {useQuery} from "@tanstack/react-query";
 import {useInfoMutation} from "@/services/query.js";
 import {
-    getChatRooms, getChatRoom, createChatRoom,
+    getChatRooms, getChatRoom,
     getChatMessages, sendChatText, sendChatFile,
 } from "@/services/chat/api.js";
 
@@ -20,12 +20,6 @@ export const useGetChatMessages = (roomId, params = {}) => useQuery({
     queryKey: ['chat', 'messages', roomId, params.page ?? 1, params.limit ?? 30],
     queryFn: () => getChatMessages(roomId, params),
     enabled: !!roomId,
-})
-
-export const useCreateChatRoom = (opts) => useInfoMutation({
-    queryKey: ['chat', 'rooms'],
-    mutationFn: (data) => createChatRoom(data),
-    onSuccess: opts?.onSuccess,
 })
 
 export const useSendChatText = (opts) => useInfoMutation({

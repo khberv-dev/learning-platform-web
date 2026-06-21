@@ -29,9 +29,6 @@ import TeacherSessionsPage from '@/ui/pages/teacher-sessions/index.jsx'
 import TeacherCreateSessionPage from '@/ui/pages/teacher-create-session/index.jsx'
 import TeacherChatPage from '@/ui/pages/teacher-chat/index.jsx'
 import TeacherSettingsPage from '@/ui/pages/teacher-settings/index.jsx'
-import TeacherGroupsPage from '@/ui/pages/teacher-groups/index.jsx'
-import TeacherCreateGroupPage from '@/ui/pages/teacher-create-group/index.jsx'
-import TeacherGroupDetailPage from '@/ui/pages/teacher-group-detail/index.jsx'
 
 function RequireAuth({children}) {
     const location = useLocation()
@@ -83,9 +80,6 @@ function App() {
                                 <Route element={<RequireAuth><AppLayout role="teacher"/></RequireAuth>}>
                                     <Route path="/teacher" element={<TeacherDashboardPage/>}/>
                                     <Route path="/teacher/students" element={<TeacherStudentsPage/>}/>
-                                    <Route path="/teacher/groups" element={<TeacherGroupsPage/>}/>
-                                    <Route path="/teacher/groups/new" element={<TeacherCreateGroupPage/>}/>
-                                    <Route path="/teacher/groups/:id" element={<TeacherGroupDetailPage/>}/>
                                     <Route path="/teacher/sessions" element={<TeacherSessionsPage/>}/>
                                     <Route path="/teacher/sessions/new" element={<TeacherCreateSessionPage/>}/>
                                     <Route path="/teacher/chat" element={<TeacherChatPage/>}/>

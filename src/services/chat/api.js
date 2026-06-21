@@ -12,11 +12,6 @@ export async function getChatRoom(roomId) {
     return res.data
 }
 
-export async function createChatRoom({memberIds, name}) {
-    const res = await api.post('chat/rooms', {memberIds, name})
-    return res.data
-}
-
 export async function getChatMessages(roomId, {page = 1, limit = 30} = {}) {
     const res = await api.get(`chat/rooms/${roomId}/messages`, {params: {page, limit}})
     return res.data

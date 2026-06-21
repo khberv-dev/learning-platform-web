@@ -44,7 +44,8 @@ function ensureSocket() {
         socket.on('disconnect', (reason) => notify('disconnect', reason))
         socket.on('connect_error', (err) => { connecting = false; notify('connect_error', err) })
         socket.on('message', (message) => notify('message', message))
-        socket.on('joined', (data) => notify('joined', data))
+        socket.on('typing', (data) => notify('typing', data))
+        socket.on('stop-typing', (data) => notify('stop-typing', data))
         socket.on('left', (data) => notify('left', data))
         socket.on('error', (data) => notify('error', data))
     }
@@ -83,6 +84,22 @@ export function joinChatRoom(roomId) {
 export function leaveChatRoom(roomId) {
     if (!socket || !socket.connected) return
     socket.emit('leave', {roomId})
+}
+
+export function sendChatMessage(roomId, text) {
+    const s = ensureSocket()
+    if (!s) return
+    const send = () => s.emit('send', {roomId, text})
+    if (s.connected) send()
+    else s.once('connect', send)
+}
+
+export function emitTyping(roomId) {
+    if (socket?.connected) socket.emit('typing', {roomId})
+}
+
+export function emitStopTyping(roomId) {
+    if (socket?.connected) socket.emit('stop-typing', {roomId})
 }
 
 export function isChatConnected() {

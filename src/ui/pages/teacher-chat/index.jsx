@@ -1,17 +1,16 @@
 import {useEffect, useMemo, useRef, useState, useCallback} from 'react'
+import {useSearchParams} from 'react-router'
 import {useQueryClient} from '@tanstack/react-query'
 import {useAuth} from '@/providers/auth.jsx'
 import {
     useGetChatRooms, useGetChatMessages,
-    useSendChatText, useSendChatFile, useCreateChatRoom,
+    useSendChatFile,
 } from '@/services/chat/query.js'
 import {CHAT_FILE_MAX_BYTES} from '@/services/chat/api.js'
-import {subscribeChatSocket, joinChatRoom} from '@/services/chat/socket.js'
-import {useGetTeacherAssignmentHistory} from '@/services/assignment/query.js'
+import {subscribeChatSocket, joinChatRoom, sendChatMessage, emitTyping, emitStopTyping} from '@/services/chat/socket.js'
 import {Avatar} from '@/ui/components/avatar/index.jsx'
 import {Icon} from '@/ui/components/icon/index.jsx'
 import {EmptyState} from '@/ui/components/empty-state/index.jsx'
-import {Button} from '@/ui/components/button/index.jsx'
 import {Input} from '@/ui/components/input/index.jsx'
 import {cdnUrl} from '@/services/config.js'
 import {toaster} from '@/services/toaster.js'
@@ -19,14 +18,27 @@ import {fullName, timeAgo} from '@/utils/lib.js'
 
 export function TeacherChatPage() {
     const {user} = useAuth() ?? {}
-    const queryClient = useQueryClient()
+    const [searchParams, setSearchParams] = useSearchParams()
 
     const {data: roomsPage, isLoading: roomsLoading} = useGetChatRooms({page: 1, limit: 50})
     const rooms = roomsPage?.data ?? []
 
     const [activeRoomId, setActiveRoomId] = useState(null)
     const [search, setSearch] = useState('')
-    const [composing, setComposing] = useState(false)
+
+    // When arriving with ?userId=, find the existing room for that user
+    useEffect(() => {
+        const targetUserId = searchParams.get('userId')
+        if (!targetUserId || roomsLoading) return
+
+        setSearchParams({}, {replace: true})
+        const existing = rooms.find(r => (r.members ?? []).some(m => m.user?.id === targetUserId))
+        if (existing) {
+            queueMicrotask(() => setActiveRoomId(existing.id))
+        } else {
+            toaster.add({name: `chat-no-room-${targetUserId}`, content: 'No active chat room with this student yet.', theme: 'warning', timeout: 4000})
+        }
+    }, [searchParams, rooms, roomsLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (!activeRoomId && rooms.length > 0) setActiveRoomId(rooms[0].id)
@@ -40,16 +52,12 @@ export function TeacherChatPage() {
 
     useEffect(() => {
         const unsubscribe = subscribeChatSocket((event, payload) => {
-            if (event === 'message') {
-                const roomId = payload?.chatRoom?.id ?? payload?.chatRoomId ?? payload?.roomId
-                queryClient.invalidateQueries({queryKey: ['chat', 'messages', roomId], exact: false})
-                queryClient.invalidateQueries({queryKey: ['chat', 'rooms'], exact: false})
-            } else if (event === 'error') {
+            if (event === 'error') {
                 toaster.add({name: `chat-err-${Date.now()}`, content: payload?.message ?? 'Chat error', theme: 'danger', timeout: 4000})
             }
         })
         return unsubscribe
-    }, [queryClient])
+    }, [])
 
     useEffect(() => {
         if (activeRoomId) joinChatRoom(activeRoomId)
@@ -58,15 +66,8 @@ export function TeacherChatPage() {
     return (
         <div style={{display: 'flex', flex: 1, minHeight: 0}}>
             <aside style={{width: 320, background: 'var(--it-surface)', borderRight: '1px solid var(--it-border)', display: 'flex', flexDirection: 'column', minHeight: 0}}>
-                <div style={{height: 64, padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--it-border)'}}>
+                <div style={{height: 64, padding: '0 20px', display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--it-border)'}}>
                     <h2 style={{fontSize: 18, fontWeight: 700}}>Messages</h2>
-                    <button
-                        className="it-btn it-btn--icon"
-                        title="New conversation"
-                        onClick={() => setComposing(true)}
-                    >
-                        <Icon name="square-pen" size={16}/>
-                    </button>
                 </div>
                 <div style={{display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px', height: 48, borderBottom: '1px solid var(--it-border)'}}>
                     <Icon name="search" size={16} color="var(--it-text-tertiary)"/>
@@ -109,7 +110,7 @@ export function TeacherChatPage() {
                                         </span>
                                     </div>
                                     <span style={{fontSize: 12, color: 'var(--it-text-secondary)'}}>
-                                        {r.isGroup ? `${r.members?.length ?? 0} members` : 'Direct message'}
+                                        Direct message
                                     </span>
                                 </div>
                             </button>
@@ -130,24 +131,21 @@ export function TeacherChatPage() {
                 )}
             </section>
 
-            {composing && (
-                <NewConversationDialog
-                    onClose={() => setComposing(false)}
-                    onCreated={(r) => { setActiveRoomId(r.id); setComposing(false) }}
-                />
-            )}
         </div>
     )
 }
 
 function RoomView({roomId, room, me}) {
+    const queryClient = useQueryClient()
     const {data: messagesPage, isLoading} = useGetChatMessages(roomId, {page: 1, limit: 50})
-    const sendText = useSendChatText()
     const sendFile = useSendChatFile()
 
     const [draft, setDraft] = useState('')
+    const [typingUsers, setTypingUsers] = useState({}) // {userId: firstName}
     const fileInputRef = useRef(null)
     const scrollerRef = useRef(null)
+    const typingTimersRef = useRef({})
+    const stopTypingTimerRef = useRef(null)
 
     // API returns newest-first; reverse to render oldest→newest top→bottom
     const messages = useMemo(
@@ -160,12 +158,77 @@ function RoomView({roomId, room, me}) {
         if (el) el.scrollTop = el.scrollHeight
     }, [messages.length])
 
+    // Subscribe to message and typing presence events for this room
+    useEffect(() => {
+        const unsub = subscribeChatSocket((event, payload) => {
+            if (event === 'message') {
+                const msg = payload
+                // Prepend into the messages cache (API returns newest-first)
+                queryClient.setQueriesData(
+                    {queryKey: ['chat', 'messages', roomId], exact: false},
+                    (old) => {
+                        if (!old) return old
+                        if (old.data.some(m => m.id === msg.id)) return old
+                        return {...old, data: [msg, ...old.data], total: (old.total ?? 0) + 1}
+                    },
+                )
+                // Bump updatedAt on this room in every cached rooms page
+                queryClient.setQueriesData(
+                    {queryKey: ['chat', 'rooms'], exact: false},
+                    (old) => {
+                        if (!old?.data) return old
+                        const updated = old.data.map(r =>
+                            r.id === roomId ? {...r, updatedAt: new Date().toISOString()} : r
+                        )
+                        updated.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+                        return {...old, data: updated}
+                    },
+                )
+                return
+            }
+            if (payload?.roomId !== roomId) return
+            if (event === 'typing') {
+                const uid = payload.userId
+                const name = (room?.members ?? []).find(m => m.user?.id === uid)?.user?.firstName ?? 'Someone'
+                clearTimeout(typingTimersRef.current[uid])
+                setTypingUsers(prev => ({...prev, [uid]: name}))
+                // Auto-clear after 3 s in case stop-typing is never received
+                typingTimersRef.current[uid] = setTimeout(() => {
+                    setTypingUsers(prev => { const n = {...prev}; delete n[uid]; return n })
+                }, 3000)
+            } else if (event === 'stop-typing') {
+                const uid = payload.userId
+                clearTimeout(typingTimersRef.current[uid])
+                setTypingUsers(prev => { const n = {...prev}; delete n[uid]; return n })
+            }
+        })
+        return () => {
+            unsub()
+            Object.values(typingTimersRef.current).forEach(clearTimeout)
+            typingTimersRef.current = {}
+        }
+    }, [roomId, room, queryClient])
+
     const onSend = useCallback(() => {
         const text = draft.trim()
-        if (!text || sendText.isPending) return
+        if (!text) return
+        clearTimeout(stopTypingTimerRef.current)
+        emitStopTyping(roomId)
         setDraft('')
-        sendText.mutate({roomId, text})
-    }, [draft, roomId, sendText])
+        sendChatMessage(roomId, text)
+    }, [draft, roomId])
+
+    const onDraftChange = useCallback((e) => {
+        setDraft(e.target.value)
+        if (e.target.value) {
+            emitTyping(roomId)
+            clearTimeout(stopTypingTimerRef.current)
+            stopTypingTimerRef.current = setTimeout(() => emitStopTyping(roomId), 2000)
+        } else {
+            clearTimeout(stopTypingTimerRef.current)
+            emitStopTyping(roomId)
+        }
+    }, [roomId])
 
     const onPickFile = useCallback(async (e) => {
         const file = e.target.files?.[0]
@@ -184,11 +247,8 @@ function RoomView({roomId, room, me}) {
     }, [roomId, sendFile])
 
     const title = roomTitle(room, me)
-    const subtitle = room?.isGroup
-        ? `${room?.members?.length ?? 0} members`
-        : (room?.members ?? []).find(m => m.user?.id !== me?.id)?.user?.phoneNumber
-            ? `+${(room.members.find(m => m.user?.id !== me?.id)).user.phoneNumber}`
-            : 'Direct message'
+    const subtitle = 'Direct message'
+    const typingNames = Object.values(typingUsers)
 
     return (
         <>
@@ -213,12 +273,17 @@ function RoomView({roomId, room, me}) {
                             key={m.id}
                             message={m}
                             mine={mine}
-                            showSender={!mine && showHeader && room?.isGroup}
+                            showSender={false}
                         />
                     )
                 })}
             </div>
 
+            {typingNames.length > 0 && (
+                <div style={{padding: '3px 24px', fontSize: 12, color: 'var(--it-text-tertiary)', fontStyle: 'italic', background: 'var(--it-surface-hover)'}}>
+                    {typingNames.join(', ')} {typingNames.length === 1 ? 'is' : 'are'} typing…
+                </div>
+            )}
             <div style={{padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12, background: 'var(--it-surface)', borderTop: '1px solid var(--it-border)'}}>
                 <input ref={fileInputRef} type="file" hidden onChange={onPickFile}/>
                 <button
@@ -234,7 +299,7 @@ function RoomView({roomId, room, me}) {
                         size="md"
                         placeholder="Type a message..."
                         value={draft}
-                        onChange={(e) => setDraft(e.target.value)}
+                        onChange={onDraftChange}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault()
@@ -245,7 +310,7 @@ function RoomView({roomId, room, me}) {
                 </div>
                 <button
                     onClick={onSend}
-                    disabled={!draft.trim() || sendText.isPending}
+                    disabled={!draft.trim()}
                     style={{
                         width: 40, height: 40, borderRadius: 999,
                         background: !draft.trim() ? 'var(--it-border)' : 'var(--it-green)',
@@ -346,83 +411,10 @@ function FileAttachment({message, mine}) {
     )
 }
 
-function NewConversationDialog({onClose, onCreated}) {
-    const {data: history} = useGetTeacherAssignmentHistory({page: 1, limit: 100})
-    const [search, setSearch] = useState('')
-    const create = useCreateChatRoom({onSuccess: onCreated})
-
-    const candidates = useMemo(() => {
-        const out = []
-        const seen = new Set()
-        for (const a of history?.data ?? []) {
-            const s = a.student
-            const u = s?.user
-            if (!u?.id || seen.has(u.id)) continue
-            seen.add(u.id)
-            out.push({userId: u.id, name: fullName(u), avatar: u.avatar, phone: u.phoneNumber, status: a.status})
-        }
-        return out
-    }, [history])
-
-    const filtered = search
-        ? candidates.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
-        : candidates
-
-    return (
-        <div className="it-dialog__backdrop" onClick={onClose}>
-            <div className="it-dialog" style={{maxWidth: 520, gap: 12}} onClick={(e) => e.stopPropagation()}>
-                <div className="it-dialog__title">Start a conversation</div>
-                <div className="it-dialog__body">Pick one of your students to start a direct chat.</div>
-                <Input
-                    leftIcon="search"
-                    placeholder="Search students..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
-                <div style={{maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4}}>
-                    {filtered.length === 0 ? (
-                        <div style={{padding: 24, textAlign: 'center', color: 'var(--it-text-tertiary)', fontSize: 13}}>
-                            {candidates.length === 0 ? 'No students to chat with yet.' : 'No matches.'}
-                        </div>
-                    ) : filtered.map((c) => (
-                        <button
-                            key={c.userId}
-                            type="button"
-                            onClick={() => create.mutate({memberIds: [c.userId]})}
-                            disabled={create.isPending}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: 12,
-                                padding: '8px 12px', borderRadius: 8,
-                                background: 'transparent', cursor: 'pointer',
-                                border: 0, textAlign: 'left',
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--it-surface-hover)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                        >
-                            <Avatar name={c.name} src={c.avatar} size={36}/>
-                            <div style={{flex: 1, minWidth: 0}}>
-                                <div style={{fontWeight: 600}}>{c.name}</div>
-                                <div style={{fontSize: 12, color: 'var(--it-text-tertiary)'}}>
-                                    {c.phone ? `+${c.phone}` : '—'} · {c.status}
-                                </div>
-                            </div>
-                            <Icon name="message-circle" size={16} color="var(--it-green)"/>
-                        </button>
-                    ))}
-                </div>
-                <div className="it-dialog__actions">
-                    <Button variant="secondary" size="lg" onClick={onClose} disabled={create.isPending}>Close</Button>
-                </div>
-            </div>
-        </div>
-    )
-}
-
 function roomTitle(room, me) {
     if (!room) return 'Conversation'
-    if (room.isGroup) return room.name || 'Group chat'
     const other = (room.members ?? []).find(m => m.user?.id !== me?.id)
-    return fullName(other?.user) || room.name || 'Direct message'
+    return fullName(other?.user) || 'Direct message'
 }
 
 function formatBytes(bytes, prefix = '') {
