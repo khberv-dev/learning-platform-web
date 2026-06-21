@@ -4,6 +4,7 @@ import {
     getTeachers, getTeacher, getMyTeacherSummary,
     createTeacher, updateTeacher, changeTeacherStatus,
     uploadTeacherIntro, createFeedback,
+    getMySchedule, setMySchedule,
 } from "@/services/teacher/api.js";
 
 export const useGetTeachers = (params = {}) => useQuery({
@@ -49,5 +50,16 @@ export const useUploadTeacherIntro = (opts) => useInfoMutation({
 export const useCreateTeacherFeedback = (opts) => useInfoMutation({
     queryKey: ['teacher'],
     mutationFn: ({teacherId, data}) => createFeedback(teacherId, data),
+    onSuccess: opts?.onSuccess,
+})
+
+export const useGetMySchedule = () => useQuery({
+    queryKey: ['teacher', 'me', 'schedule'],
+    queryFn: getMySchedule,
+})
+
+export const useSetMySchedule = (opts) => useInfoMutation({
+    queryKey: ['teacher', 'me', 'schedule'],
+    mutationFn: (schedule) => setMySchedule(schedule),
     onSuccess: opts?.onSuccess,
 })

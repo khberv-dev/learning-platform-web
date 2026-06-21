@@ -29,6 +29,7 @@ import TeacherSessionsPage from '@/ui/pages/teacher-sessions/index.jsx'
 import TeacherCreateSessionPage from '@/ui/pages/teacher-create-session/index.jsx'
 import TeacherChatPage from '@/ui/pages/teacher-chat/index.jsx'
 import TeacherSettingsPage from '@/ui/pages/teacher-settings/index.jsx'
+import TeacherSchedulePage from '@/ui/pages/teacher-schedule/index.jsx'
 
 function RequireAuth({children}) {
     const location = useLocation()
@@ -83,6 +84,7 @@ function App() {
                                     <Route path="/teacher/sessions" element={<TeacherSessionsPage/>}/>
                                     <Route path="/teacher/sessions/new" element={<TeacherCreateSessionPage/>}/>
                                     <Route path="/teacher/chat" element={<TeacherChatPage/>}/>
+                                    <Route path="/teacher/schedule" element={<TeacherSchedulePage/>}/>
                                     <Route path="/teacher/settings" element={<TeacherSettingsPage/>}/>
                                 </Route>
 

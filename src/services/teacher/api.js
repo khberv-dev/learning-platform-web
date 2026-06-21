@@ -57,3 +57,13 @@ export async function createFeedback(teacherId, data) {
     const res = await api.post(`teachers/${teacherId}/feedbacks`, data)
     return res.data
 }
+
+export async function getMySchedule() {
+    const res = await api.get('teachers/me/schedule')
+    return res.data
+}
+
+export async function setMySchedule(schedule) {
+    const res = await api.patch('teachers/me/schedule', {schedule})
+    return res.data
+}

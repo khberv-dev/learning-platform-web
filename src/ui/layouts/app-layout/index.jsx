@@ -16,7 +16,8 @@ const ADMIN_BOTTOM = [
 const TEACHER_NAV = [
     {to: '/teacher', label: 'Home', icon: 'layout-dashboard', end: true},
     {to: '/teacher/students', label: 'Students', icon: 'graduation-cap'},
-{to: '/teacher/sessions', label: 'Live Sessions', icon: 'video'},
+    {to: '/teacher/sessions', label: 'Live Sessions', icon: 'video'},
+    {to: '/teacher/schedule', label: 'Schedule', icon: 'calendar-days'},
     {to: '/teacher/chat', label: 'Messages', icon: 'message-circle'},
 ]
 const TEACHER_BOTTOM = [
