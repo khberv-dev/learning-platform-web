@@ -87,7 +87,7 @@ export function TeacherStudentsPage() {
                         </>
                     )},
                     {key: 'phone', header: 'Phone', width: 180, render: (a) => a.student?.user?.phoneNumber ? `+${a.student.user.phoneNumber}` : '—'},
-                    {key: 'enrolled', header: 'Period', width: 220, render: (a) => `${formatDate(a.startDate)} → ${formatDate(a.endDate)}`},
+                    {key: 'enrolled', header: 'Since', width: 160, render: (a) => formatDate(a.startDate)},
                     {key: 'status', header: 'Status', width: 110, render: (a) => <ResourceBadge status={a.status}/>},
                     {key: 'actions', header: 'Action', width: 60, render: () => <IconButton icon="message-circle" title="Message"/>},
                 ]}

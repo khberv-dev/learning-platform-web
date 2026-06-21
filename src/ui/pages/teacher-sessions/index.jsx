@@ -63,8 +63,8 @@ export function TeacherSessionsPage() {
                                 {durationMin(s.startTime, s.endTime) && (
                                     <Row icon="clock" text={`${durationMin(s.startTime, s.endTime)} min`}/>
                                 )}
-                                {s.group && <Row icon="users" text={s.group.name}/>}
-                                {s.assignment && <Row icon="user" text={`${s.assignment.student?.user?.firstName ?? ''} ${s.assignment.student?.user?.lastName ?? ''}`.trim() || 'Student'}/>}
+                                {s.enrollment?.course && <Row icon="book-open" text={s.enrollment.course.title}/>}
+                                {s.enrollment?.student?.user && <Row icon="user" text={`${s.enrollment.student.user.firstName ?? ''} ${s.enrollment.student.user.lastName ?? ''}`.trim() || 'Student'}/>}
                             </div>
                             <div style={{display: 'flex', gap: 8}}>
                                 <Button size="md" full leftIcon="video" onClick={() => window.open(s.meetLink, '_blank')}>Join</Button>
