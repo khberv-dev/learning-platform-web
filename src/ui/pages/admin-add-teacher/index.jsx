@@ -6,6 +6,7 @@ import {useCreateTeacher} from '@/services/teacher/query.js'
 import {Button} from '@/ui/components/button/index.jsx'
 import {Input} from '@/ui/components/input/index.jsx'
 import {FormField} from '@/ui/components/form-field/index.jsx'
+import {PhoneInput} from '@/ui/components/phone-input/index.jsx'
 import {Card} from '@/ui/components/card/index.jsx'
 import {Icon} from '@/ui/components/icon/index.jsx'
 import {Switch} from '@/ui/components/switch/index.jsx'
@@ -63,15 +64,7 @@ export function AdminAddTeacherPage() {
                         <Input leftIcon="mail" placeholder="teacher@example.com" {...register('email')}/>
                     </FormField>
                     <FormField label="Phone Number" error={errors.phoneNumber?.message}>
-                        <div className="it-input it-input--lg">
-                            <span style={{paddingRight: 12, borderRight: '1px solid var(--it-border-strong)', color: 'var(--it-text-body)'}}>+998</span>
-                            <input
-                                type="tel"
-                                className="it-input__el"
-                                placeholder="90 123 45 67"
-                                {...register('phoneNumber', {required: 'Required'})}
-                            />
-                        </div>
+                        <PhoneInput control={control} rules={{required: 'Required'}}/>
                     </FormField>
                 </Row>
 

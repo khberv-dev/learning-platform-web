@@ -1,28 +1,12 @@
 import {api} from "@/services/api.js";
 
 export async function getTeachers({page = 1, limit = 10} = {}) {
-    const res = await api.get('teachers', {params: {page, limit}})
-    const body = res.data
-
-    // `GET /teachers` may resolve to the student handler (returns a plain array of
-    // active teachers) or the admin handler (returns a {data,total,...} envelope).
-    // Normalize both into a paginated envelope so callers stay shape-agnostic.
-    if (Array.isArray(body)) {
-        const total = body.length
-        const start = (page - 1) * limit
-        return {
-            data: body.slice(start, start + limit),
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit) || 1,
-        }
-    }
-    return body
+    const res = await api.get('admin/teachers', {params: {page, limit}})
+    return res.data
 }
 
 export async function getTeacher(id) {
-    const res = await api.get(`teachers/${id}`)
+    const res = await api.get(`admin/teachers/${id}`)
     return res.data
 }
 
@@ -32,17 +16,17 @@ export async function getMyTeacherSummary() {
 }
 
 export async function createTeacher(data) {
-    const res = await api.post('teachers', data)
+    const res = await api.post('admin/teachers', data)
     return res.data
 }
 
 export async function updateTeacher(id, data) {
-    const res = await api.patch(`teachers/${id}`, data)
+    const res = await api.patch(`admin/teachers/${id}`, data)
     return res.data
 }
 
 export async function changeTeacherStatus(id, status) {
-    const res = await api.patch(`teachers/${id}/status`, {status})
+    const res = await api.patch(`admin/teachers/${id}/status`, {status})
     return res.data
 }
 
@@ -50,6 +34,13 @@ export async function uploadTeacherIntro(file) {
     const form = new FormData()
     form.append('video', file)
     const res = await api.patch('teachers/me', form)
+    return res.data
+}
+
+export async function uploadTeacherIntroById(id, file) {
+    const form = new FormData()
+    form.append('video', file)
+    const res = await api.patch(`admin/teachers/${id}/intro-video`, form)
     return res.data
 }
 

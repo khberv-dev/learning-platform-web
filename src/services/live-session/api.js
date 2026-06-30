@@ -1,10 +1,10 @@
 import {api} from "@/services/api.js";
 
-export async function uploadLiveSession(enrollmentId, {title, file}) {
+export async function uploadLiveSession(assignmentId, {title, file}) {
     const form = new FormData()
     form.append('title', title)
     form.append('file', file)
-    const res = await api.post(`live-sessions/enrollments/${enrollmentId}`, form)
+    const res = await api.post(`live-sessions/assignments/${assignmentId}`, form)
     return res.data
 }
 
@@ -13,8 +13,8 @@ export async function getMyLiveSessions() {
     return res.data
 }
 
-export async function getLiveSessionsByEnrollment(enrollmentId) {
-    const res = await api.get(`live-sessions/enrollments/${enrollmentId}`)
+export async function getLiveSessionsByAssignment(assignmentId) {
+    const res = await api.get(`live-sessions/assignments/${assignmentId}`)
     return res.data
 }
 

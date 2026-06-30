@@ -3,7 +3,7 @@ import {useInfoMutation} from "@/services/query.js";
 import {
     getTeachers, getTeacher, getMyTeacherSummary,
     createTeacher, updateTeacher, changeTeacherStatus,
-    uploadTeacherIntro, createFeedback,
+    uploadTeacherIntro, uploadTeacherIntroById, createFeedback,
     getMySchedule, setMySchedule,
 } from "@/services/teacher/api.js";
 
@@ -44,6 +44,12 @@ export const useChangeTeacherStatus = (opts) => useInfoMutation({
 export const useUploadTeacherIntro = (opts) => useInfoMutation({
     queryKey: ['teacher'],
     mutationFn: (file) => uploadTeacherIntro(file),
+    onSuccess: opts?.onSuccess,
+})
+
+export const useUploadTeacherIntroById = (opts) => useInfoMutation({
+    queryKey: ['teacher'],
+    mutationFn: ({id, file}) => uploadTeacherIntroById(id, file),
     onSuccess: opts?.onSuccess,
 })
 

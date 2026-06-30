@@ -4,14 +4,14 @@ import {useNavigate} from 'react-router'
 import {Button} from '@/ui/components/button/index.jsx'
 import {Input} from '@/ui/components/input/index.jsx'
 import {FormField} from '@/ui/components/form-field/index.jsx'
-import {Icon} from '@/ui/components/icon/index.jsx'
+import {PhoneInput} from '@/ui/components/phone-input/index.jsx'
 import {useSignIn} from '@/services/auth/query.js'
 
 export function LoginPage() {
     const [mode, setMode] = useState('email')
     const navigate = useNavigate()
 
-    const {register, handleSubmit, formState: {errors}, reset} = useForm({
+    const {register, handleSubmit, control, formState: {errors}, reset} = useForm({
         defaultValues: {email: '', phoneNumber: '', password: ''},
     })
 
@@ -64,18 +64,13 @@ export function LoginPage() {
                             </FormField>
                         ) : (
                             <FormField label="Phone Number" error={errors.phoneNumber?.message}>
-                                <div className="it-input it-input--lg">
-                                    <span style={{display: 'inline-flex', alignItems: 'center', gap: 8, paddingRight: 12, borderRight: '1px solid var(--it-border-strong)', color: 'var(--it-text-body)', fontSize: 14}}>
-                                        🇺🇿 +998
-                                    </span>
-                                    <input
-                                        type="tel"
-                                        className="it-input__el"
-                                        placeholder="90 123 45 67"
-                                        autoComplete="tel"
-                                        {...register('phoneNumber', {required: 'Phone is required', minLength: {value: 9, message: '9 digits'}})}
-                                    />
-                                </div>
+                                <PhoneInput
+                                    control={control}
+                                    rules={{
+                                        required: 'Phone is required',
+                                        validate: v => v.replace(/\D/g, '').length === 9 || 'Enter 9 digits',
+                                    }}
+                                />
                             </FormField>
                         )}
                         <FormField label="Password" error={errors.password?.message}>

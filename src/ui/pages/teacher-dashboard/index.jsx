@@ -4,16 +4,9 @@ import {useHeader} from '@/providers/header.jsx'
 import {useAuth} from '@/providers/auth.jsx'
 import {useGetMyTeacherSummary} from '@/services/teacher/query.js'
 import {StatCard} from '@/ui/components/stat-card/index.jsx'
-import {SectionCard} from '@/ui/components/section-card/index.jsx'
-import {LineChart} from '@/ui/components/line-chart/index.jsx'
 import {Icon} from '@/ui/components/icon/index.jsx'
 import {Button} from '@/ui/components/button/index.jsx'
 import {fullName} from '@/utils/lib.js'
-
-const trend = Array.from({length: 12}, (_, i) => ({
-    label: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i],
-    value: 60 + Math.round(Math.sin(i/1.7) * 14 + i * 4),
-}))
 
 const fmt = (v, isRating = false) => {
     if (v == null) return '—'
@@ -61,36 +54,18 @@ export function TeacherDashboardPage() {
                 />
             </div>
 
-            <div style={{display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20}}>
-                <SectionCard title="Student Growth">
-                    <LineChart data={trend}/>
-                </SectionCard>
-
-                <SectionCard title="Today">
-                    <Card2
-                        color="success"
-                        title="Next Session"
-                        details={[
-                            {icon: 'calendar', text: 'Today, 14:00'},
-                            {icon: 'clock', text: '60 min'},
-                            {icon: 'users', text: `${summary?.totalStudents ?? 0} students`},
-                        ]}
-                        action={<Button leftIcon="video" size="md" full onClick={() => navigate('/teacher/sessions')}>Start Session</Button>}
-                    />
-                    {summary?.pendingApprovals > 0 && (
-                        <Card2
-                            color="warning"
-                            title="Pending Requests"
-                            details={[{icon: 'mail-question', text: `${summary.pendingApprovals} student${summary.pendingApprovals === 1 ? '' : 's'} waiting for your reply`}]}
-                            action={
-                                <Button variant="secondary" size="md" full onClick={() => navigate('/teacher/students')}>
-                                    Review now
-                                </Button>
-                            }
-                        />
-                    )}
-                </SectionCard>
-            </div>
+            {summary?.pendingApprovals > 0 && (
+                <Card2
+                    color="warning"
+                    title="Pending Requests"
+                    details={[{icon: 'mail-question', text: `${summary.pendingApprovals} student${summary.pendingApprovals === 1 ? '' : 's'} waiting for your reply`}]}
+                    action={
+                        <Button variant="secondary" size="md" onClick={() => navigate('/teacher/students')}>
+                            Review now
+                        </Button>
+                    }
+                />
+            )}
         </>
     )
 }

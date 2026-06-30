@@ -53,6 +53,8 @@ export function AdminStudentProfilePage() {
                         <Sep/>
                         <Stat value={student.coins ?? 0} label="Coins"/>
                         <Sep/>
+                        <Stat value={student.balance ?? 0} label="Balance"/>
+                        <Sep/>
                         <Stat value={enrollments.length} label="Courses"/>
                     </div>
                 </Card>

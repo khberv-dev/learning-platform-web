@@ -6,6 +6,7 @@ import {useGetStudents} from '@/services/student/query.js'
 import {Button} from '@/ui/components/button/index.jsx'
 import {Input} from '@/ui/components/input/index.jsx'
 import {FormField} from '@/ui/components/form-field/index.jsx'
+import {PhoneInput} from '@/ui/components/phone-input/index.jsx'
 import {Card} from '@/ui/components/card/index.jsx'
 import {Avatar} from '@/ui/components/avatar/index.jsx'
 import {fullName} from '@/utils/lib.js'
@@ -23,7 +24,7 @@ export function AdminStudentEditPage() {
         return () => setHeader({})
     }, [setHeader, navigate])
 
-    const {register, handleSubmit, reset} = useForm({
+    const {register, handleSubmit, control, reset} = useForm({
         defaultValues: {firstName: '', lastName: '', email: '', phoneNumber: '', level: 'A1'},
     })
 
@@ -61,10 +62,7 @@ export function AdminStudentEditPage() {
                 <Row>
                     <FormField label="Email"><Input leftIcon="mail" {...register('email')}/></FormField>
                     <FormField label="Phone Number">
-                        <div className="it-input it-input--lg">
-                            <span style={{paddingRight: 12, borderRight: '1px solid var(--it-border-strong)', color: 'var(--it-text-body)'}}>+998</span>
-                            <input type="tel" className="it-input__el" {...register('phoneNumber')}/>
-                        </div>
+                        <PhoneInput control={control}/>
                     </FormField>
                 </Row>
                 <FormField label="Level">

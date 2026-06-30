@@ -1,7 +1,7 @@
-import {useEffect} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import {useNavigate, useParams} from 'react-router'
 import {useHeader} from '@/providers/header.jsx'
-import {useGetTeacher} from '@/services/teacher/query.js'
+import {useGetTeacher, useUploadTeacherIntroById} from '@/services/teacher/query.js'
 import {Avatar} from '@/ui/components/avatar/index.jsx'
 import {Button} from '@/ui/components/button/index.jsx'
 import {Card} from '@/ui/components/card/index.jsx'
@@ -9,6 +9,7 @@ import {SectionCard} from '@/ui/components/section-card/index.jsx'
 import {ResourceBadge} from '@/ui/components/resource-badge/index.jsx'
 import {Icon} from '@/ui/components/icon/index.jsx'
 import {fullName, formatDate} from '@/utils/lib.js'
+import {cdnUrl} from '@/services/config.js'
 
 export function AdminTeacherProfilePage() {
     const {id} = useParams()
@@ -29,11 +30,18 @@ export function AdminTeacherProfilePage() {
         return () => setHeader({})
     }, [setHeader, navigate, id])
 
+    const introInput = useRef(null)
+    const [localPreview, setLocalPreview] = useState(null)
+    const upload = useUploadTeacherIntroById({
+        onSuccess: () => setLocalPreview(null),
+    })
+
     if (isLoading || !teacher) return <div style={{color: 'var(--it-text-secondary)'}}>Loading…</div>
 
     const name = fullName(teacher.user)
     const status = teacher.user?.isActive === false ? 'inactive' : (teacher.status ?? 'active')
     const feedbacks = teacher.feedbacks ?? []
+    const introVideoUrl = localPreview ?? cdnUrl(teacher.introVideo)
 
     return (
         <div style={{display: 'grid', gridTemplateColumns: '320px 1fr', gap: 16, flex: 1}}>
@@ -79,6 +87,48 @@ export function AdminTeacherProfilePage() {
                             </div>
                         </div>
                     ))}
+                </SectionCard>
+
+                <SectionCard
+                    title="Intro Video"
+                    action={
+                        introVideoUrl ? (
+                            <Button variant="secondary" size="sm" leftIcon="refresh-cw" disabled={upload.isPending}
+                                onClick={() => introInput.current?.click()}>
+                                {upload.isPending ? 'Uploading…' : 'Replace'}
+                            </Button>
+                        ) : null
+                    }
+                >
+                    <input
+                        ref={introInput}
+                        type="file"
+                        accept="video/*"
+                        hidden
+                        onChange={(e) => {
+                            const f = e.target.files?.[0]
+                            e.target.value = ''
+                            if (!f) return
+                            setLocalPreview(URL.createObjectURL(f))
+                            upload.mutate({id, file: f})
+                        }}
+                    />
+                    {introVideoUrl ? (
+                        <video
+                            key={introVideoUrl}
+                            src={introVideoUrl}
+                            controls
+                            style={{width: '100%', aspectRatio: '16 / 9', borderRadius: 10, background: '#000', border: '1px solid var(--it-border)'}}
+                        />
+                    ) : (
+                        <div className="it-upload" onClick={() => !upload.isPending && introInput.current?.click()}>
+                            <Icon name={upload.isPending ? 'loader' : 'video'} size={24}/>
+                            <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>
+                                {upload.isPending ? 'Uploading…' : 'Upload intro video'}
+                            </span>
+                            <span className="it-upload__hint">MP4 or WebM</span>
+                        </div>
+                    )}
                 </SectionCard>
 
                 <SectionCard title={`Reviews (${feedbacks.length})`}>
