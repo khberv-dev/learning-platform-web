@@ -1,5 +1,5 @@
 import {useInfoMutation} from "@/services/query.js";
-import {createLesson, updateLesson, deleteLesson} from "@/services/lesson/api.js";
+import {createLesson, updateLesson, uploadLessonMedia, deleteLesson} from "@/services/lesson/api.js";
 
 export const useCreateLesson = (opts) => useInfoMutation({
     queryKey: ['course'],
@@ -10,6 +10,12 @@ export const useCreateLesson = (opts) => useInfoMutation({
 export const useUpdateLesson = (opts) => useInfoMutation({
     queryKey: ['course'],
     mutationFn: ({courseId, unitId, lessonId, data}) => updateLesson(courseId, unitId, lessonId, data),
+    onSuccess: opts?.onSuccess,
+})
+
+export const useUploadLessonMedia = (opts) => useInfoMutation({
+    queryKey: ['course'],
+    mutationFn: ({courseId, unitId, lessonId, file}) => uploadLessonMedia(courseId, unitId, lessonId, file),
     onSuccess: opts?.onSuccess,
 })
 

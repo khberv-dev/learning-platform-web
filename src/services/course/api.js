@@ -1,7 +1,7 @@
 import {api} from "@/services/api.js";
 
 export async function getCourses() {
-    const res = await api.get('courses')
+    const res = await api.get('admin/courses')
     return res.data
 }
 
@@ -16,7 +16,7 @@ export async function getMyCourses() {
 }
 
 export async function getCourse(id) {
-    const res = await api.get(`courses/${id}`)
+    const res = await api.get(`admin/courses/${id}`)
     return res.data
 }
 
@@ -34,16 +34,16 @@ function asForm(payload, fileField = 'image') {
 }
 
 export async function createCourse(data) {
-    const res = await api.post('courses', asForm(data, 'image'))
+    const res = await api.post('admin/courses', asForm(data, 'image'))
     return res.data
 }
 
 export async function updateCourse(id, data) {
-    const res = await api.patch(`courses/${id}`, asForm(data, 'image'))
+    const res = await api.patch(`admin/courses/${id}`, asForm(data, 'image'))
     return res.data
 }
 
 export async function deleteCourse(id) {
-    const res = await api.delete(`courses/${id}`)
+    const res = await api.delete(`admin/courses/${id}`)
     return res.data
 }

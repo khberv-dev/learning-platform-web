@@ -1,12 +1,11 @@
-import {NavLink, useNavigate} from 'react-router'
+import {NavLink} from 'react-router'
 import {Icon} from '@/ui/components/icon/index.jsx'
 import {Avatar} from '@/ui/components/avatar/index.jsx'
 import {useAuth} from '@/providers/auth.jsx'
 import {fullName} from '@/utils/lib.js'
 
 export function Sidebar({items = [], bottomItems = []}) {
-    const {user, logout, role} = useAuth() ?? {}
-    const navigate = useNavigate()
+    const {user, role} = useAuth() ?? {}
 
     const name = fullName(user) || (role === 'admin' ? 'Admin User' : 'User')
     const roleLabel = role === 'admin' ? 'Administrator' : role === 'teacher' ? 'Teacher' : role === 'student' ? 'Student' : ''
@@ -28,19 +27,13 @@ export function Sidebar({items = [], bottomItems = []}) {
                 ))}
             </nav>
             <div className="it-sidebar__divider"/>
-            <button
-                className="it-sidebar__user"
-                onClick={() => logout?.()}
-                title="Sign out"
-                style={{cursor: 'pointer', background: 'transparent', border: 0, color: 'inherit', textAlign: 'left'}}
-            >
+            <div className="it-sidebar__user">
                 <Avatar name={name} size={36}/>
                 <div className="it-sidebar__user-info">
                     <span className="it-sidebar__user-name">{name}</span>
                     <span className="it-sidebar__user-role">{roleLabel}</span>
                 </div>
-                <Icon name="log-out" size={16} color="var(--it-sidebar-muted)"/>
-            </button>
+            </div>
         </aside>
     )
 }

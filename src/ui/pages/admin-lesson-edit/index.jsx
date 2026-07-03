@@ -1,9 +1,9 @@
-import {useEffect, useMemo, useState} from 'react'
+import {useEffect, useMemo, useRef, useState} from 'react'
 import {useForm} from 'react-hook-form'
 import {useNavigate, useParams} from 'react-router'
 import {useHeader} from '@/providers/header.jsx'
 import {useGetCourse} from '@/services/course/query.js'
-import {useUpdateLesson} from '@/services/lesson/query.js'
+import {useUpdateLesson, useUploadLessonMedia} from '@/services/lesson/query.js'
 import {useListTasks, useCreateTask, useUpdateTask, useDeleteTask} from '@/services/task/query.js'
 import {Button, IconButton} from '@/ui/components/button/index.jsx'
 import {Input, Textarea} from '@/ui/components/input/index.jsx'
@@ -185,8 +185,12 @@ export function AdminLessonEditPage() {
     const navigate = useNavigate()
     const {setHeader} = useHeader()
 
+    const [localMediaPreview, setLocalMediaPreview] = useState(null)
+    const mediaInputRef = useRef(null)
+
     const {data: course} = useGetCourse(courseId)
     const update = useUpdateLesson({onSuccess: () => navigate(`/admin/courses/${courseId}`)})
+    const uploadMedia = useUploadLessonMedia({onSuccess: () => setLocalMediaPreview(null)})
 
     const {data: tasks = [], isLoading: tasksLoading} = useListTasks(courseId, unitId, lessonId)
     const createTask = useCreateTask()
@@ -247,22 +251,47 @@ export function AdminLessonEditPage() {
                     <FormField label="Description">
                         <Textarea rows={4} placeholder="Lesson description…" {...register('description')}/>
                     </FormField>
-                    {lesson.media ? (
-                        <FormField label="Lesson Video" hint="To replace the video, delete this lesson and recreate it.">
-                            <video
-                                src={cdnUrl(lesson.media)}
-                                controls
-                                style={{width: '100%', maxWidth: 480, aspectRatio: '16 / 9', borderRadius: 10, background: '#000', border: '1px solid var(--it-border)'}}
-                            />
-                        </FormField>
-                    ) : (
-                        <FormField label="Lesson Video" hint="Video can only be added when creating a lesson.">
-                            <div style={{display: 'flex', alignItems: 'center', gap: 8, height: 40, color: 'var(--it-text-tertiary)', fontSize: 13}}>
-                                <Icon name="video-off" size={16}/>
-                                No video — delete and recreate the lesson to add one.
+                    <FormField label="Lesson Video">
+                        <input
+                            ref={mediaInputRef}
+                            type="file"
+                            accept="video/*"
+                            hidden
+                            onChange={(e) => {
+                                const f = e.target.files?.[0]
+                                e.target.value = ''
+                                if (!f) return
+                                setLocalMediaPreview(URL.createObjectURL(f))
+                                uploadMedia.mutate({courseId, unitId, lessonId, file: f})
+                            }}
+                        />
+                        {(localMediaPreview ?? cdnUrl(lesson.media)) ? (
+                            <>
+                                <video
+                                    key={localMediaPreview ?? lesson.media}
+                                    src={localMediaPreview ?? cdnUrl(lesson.media)}
+                                    controls
+                                    style={{width: '100%', maxWidth: 480, aspectRatio: '16 / 9', borderRadius: 10, background: '#000', border: '1px solid var(--it-border)'}}
+                                />
+                                <Button
+                                    variant="secondary" size="sm" leftIcon="refresh-cw"
+                                    disabled={uploadMedia.isPending}
+                                    onClick={() => mediaInputRef.current?.click()}
+                                    style={{marginTop: 8}}
+                                >
+                                    {uploadMedia.isPending ? 'Uploading…' : 'Replace video'}
+                                </Button>
+                            </>
+                        ) : (
+                            <div className="it-upload" onClick={() => !uploadMedia.isPending && mediaInputRef.current?.click()}>
+                                <Icon name={uploadMedia.isPending ? 'loader' : 'video'} size={24}/>
+                                <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>
+                                    {uploadMedia.isPending ? 'Uploading…' : 'Upload lesson video'}
+                                </span>
+                                <span className="it-upload__hint">MP4 or WebM</span>
                             </div>
-                        </FormField>
-                    )}
+                        )}
+                    </FormField>
                     <div style={{display: 'flex', justifyContent: 'flex-end', gap: 12}}>
                         <Button variant="secondary" size="lg" type="button" onClick={() => navigate(-1)}>Cancel</Button>
                         <Button type="submit" size="lg" disabled={update.isPending}>
