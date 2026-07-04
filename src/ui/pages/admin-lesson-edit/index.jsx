@@ -4,7 +4,7 @@ import {useNavigate, useParams} from 'react-router'
 import {useHeader} from '@/providers/header.jsx'
 import {useGetCourse} from '@/services/course/query.js'
 import {useUpdateLesson, useUploadLessonMedia} from '@/services/lesson/query.js'
-import {useListTasks, useCreateTask, useUpdateTask, useDeleteTask} from '@/services/task/query.js'
+import {useListTasks, useCreateTask, useUpdateTask, useUploadTaskFile, useDeleteTask} from '@/services/task/query.js'
 import {Button, IconButton} from '@/ui/components/button/index.jsx'
 import {Input, Textarea} from '@/ui/components/input/index.jsx'
 import {FormField} from '@/ui/components/form-field/index.jsx'
@@ -13,117 +13,181 @@ import {Icon} from '@/ui/components/icon/index.jsx'
 import {ConfirmDialog} from '@/ui/components/confirm-dialog/index.jsx'
 import {cdnUrl} from '@/services/config.js'
 
+const selectStyle = {
+    width: '100%', height: 44, padding: '0 14px',
+    background: 'var(--it-surface-input)',
+    border: '1px solid var(--it-border-strong)',
+    borderRadius: 8, fontSize: 14,
+}
+
+const newQ = () => ({
+    id: `q-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    question: '', options: [], answer: '',
+})
+
 // ── Task dialog (create / edit) ───────────────────────────────────────────────
 
 function TaskDialog({open, initial = null, onClose, onSubmit, loading}) {
-    const [taskText, setTaskText] = useState('')
-    const [options, setOptions] = useState([])   // [{id, value}]
-    const [answer, setAnswer] = useState('')
+    const [questions, setQuestions] = useState([newQ()])
 
     useEffect(() => {
         if (!open) return
-        setTaskText(initial?.task ?? '')
-        setOptions((initial?.options ?? []).map((v, i) => ({id: String(i), value: v})))
-        setAnswer(initial?.answer ?? '')
+        if (initial?.questions?.length) {
+            setQuestions(initial.questions.map((q, i) => ({
+                id: String(i),
+                question: q.question,
+                options: (q.options ?? []).map((v, j) => ({id: String(j), value: v})),
+                answer: q.answer,
+            })))
+        } else {
+            setQuestions([newQ()])
+        }
     }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
     if (!open) return null
 
-    const addOption = () =>
-        setOptions(prev => [...prev, {id: `${Date.now()}`, value: ''}])
+    const updateQ = (qId, patch) =>
+        setQuestions(prev => prev.map(q => q.id === qId ? {...q, ...patch} : q))
 
-    const updateOption = (id, value) =>
-        setOptions(prev => prev.map(o => o.id === id ? {...o, value} : o))
+    const removeQ = (qId) =>
+        setQuestions(prev => prev.filter(q => q.id !== qId))
 
-    const removeOption = (id) => {
-        const removed = options.find(o => o.id === id)?.value.trim()
-        setOptions(prev => prev.filter(o => o.id !== id))
-        if (removed && removed === answer) setAnswer('')
-    }
+    const addOption = (qId) =>
+        setQuestions(prev => prev.map(q =>
+            q.id === qId ? {...q, options: [...q.options, {id: `o-${Date.now()}`, value: ''}]} : q
+        ))
 
-    const optionValues = options.map(o => o.value.trim()).filter(Boolean)
+    const updateOption = (qId, optId, value) =>
+        setQuestions(prev => prev.map(q =>
+            q.id === qId
+                ? {...q, options: q.options.map(o => o.id === optId ? {...o, value} : o)}
+                : q
+        ))
+
+    const removeOption = (qId, optId) =>
+        setQuestions(prev => prev.map(q => {
+            if (q.id !== qId) return q
+            const removed = q.options.find(o => o.id === optId)?.value.trim()
+            return {
+                ...q,
+                options: q.options.filter(o => o.id !== optId),
+                answer: removed && removed === q.answer ? '' : q.answer,
+            }
+        }))
 
     const handleSubmit = (e) => {
         e.preventDefault()
-        if (!taskText.trim() || !answer.trim()) return
+        if (!questions.every(q => q.question.trim() && q.answer.trim())) return
         onSubmit({
-            task: taskText.trim(),
-            options: optionValues.length > 0 ? optionValues : null,
-            answer: answer.trim(),
+            questions: questions.map(q => {
+                const optionValues = q.options.map(o => o.value.trim()).filter(Boolean)
+                return {
+                    question: q.question.trim(),
+                    options: optionValues.length > 0 ? optionValues : null,
+                    answer: q.answer.trim(),
+                }
+            }),
         })
     }
+
+    const canSubmit = questions.length > 0 && questions.every(q => q.question.trim() && q.answer.trim())
 
     return (
         <div className="it-dialog__backdrop" onClick={onClose}>
             <form
                 className="it-dialog"
-                style={{maxWidth: 520}}
+                style={{maxWidth: 560, maxHeight: '90vh', display: 'flex', flexDirection: 'column'}}
                 onClick={(e) => e.stopPropagation()}
                 onSubmit={handleSubmit}
             >
                 <div className="it-dialog__title">{initial ? 'Edit Task' : 'Add Task'}</div>
 
-                <FormField label="Question">
-                    <Textarea
-                        rows={2}
-                        placeholder="Enter the question…"
-                        value={taskText}
-                        onChange={(e) => setTaskText(e.target.value)}
-                    />
-                </FormField>
+                <div style={{flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 4}}>
+                    {questions.map((q, idx) => {
+                        const optionValues = q.options.map(o => o.value.trim()).filter(Boolean)
+                        return (
+                            <div key={q.id} style={{
+                                border: '1px solid var(--it-border)',
+                                borderRadius: 10,
+                                padding: 16,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 12,
+                            }}>
+                                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                                    <span style={{fontWeight: 600, fontSize: 13, color: 'var(--it-text-secondary)'}}>
+                                        Question {idx + 1}
+                                    </span>
+                                    {questions.length > 1 && (
+                                        <IconButton icon="x" title="Remove question" onClick={() => removeQ(q.id)}/>
+                                    )}
+                                </div>
 
-                <FormField label="Options" hint="Optional — leave empty for a free-text answer.">
-                    <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
-                        {options.map((opt) => (
-                            <div key={opt.id} style={{display: 'flex', gap: 8, alignItems: 'center'}}>
-                                <Input
-                                    placeholder="Option text"
-                                    value={opt.value}
-                                    onChange={(e) => updateOption(opt.id, e.target.value)}
-                                />
-                                <IconButton icon="x" title="Remove option" onClick={() => removeOption(opt.id)}/>
+                                <FormField label="Question">
+                                    <Textarea
+                                        rows={2}
+                                        placeholder="Enter the question…"
+                                        value={q.question}
+                                        onChange={(e) => updateQ(q.id, {question: e.target.value})}
+                                    />
+                                </FormField>
+
+                                <FormField label="Options" hint="Optional — leave empty for a free-text answer.">
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
+                                        {q.options.map((opt) => (
+                                            <div key={opt.id} style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+                                                <Input
+                                                    placeholder="Option text"
+                                                    value={opt.value}
+                                                    onChange={(e) => updateOption(q.id, opt.id, e.target.value)}
+                                                />
+                                                <IconButton icon="x" title="Remove option" onClick={() => removeOption(q.id, opt.id)}/>
+                                            </div>
+                                        ))}
+                                        <Button type="button" variant="secondary" size="sm" leftIcon="plus" onClick={() => addOption(q.id)}>
+                                            Add Option
+                                        </Button>
+                                    </div>
+                                </FormField>
+
+                                <FormField label="Correct Answer">
+                                    {optionValues.length > 0 ? (
+                                        <select
+                                            value={q.answer}
+                                            onChange={(e) => updateQ(q.id, {answer: e.target.value})}
+                                            style={{...selectStyle, color: q.answer ? 'var(--it-text-primary)' : 'var(--it-text-tertiary)'}}
+                                        >
+                                            <option value="">Select correct answer</option>
+                                            {optionValues.map((v) => <option key={v} value={v}>{v}</option>)}
+                                        </select>
+                                    ) : (
+                                        <Input
+                                            placeholder="Type the correct answer…"
+                                            value={q.answer}
+                                            onChange={(e) => updateQ(q.id, {answer: e.target.value})}
+                                        />
+                                    )}
+                                </FormField>
                             </div>
-                        ))}
-                        <Button type="button" variant="secondary" size="sm" leftIcon="plus" onClick={addOption}>
-                            Add Option
-                        </Button>
-                    </div>
-                </FormField>
+                        )
+                    })}
 
-                <FormField label="Correct Answer">
-                    {optionValues.length > 0 ? (
-                        <select
-                            value={answer}
-                            onChange={(e) => setAnswer(e.target.value)}
-                            style={{
-                                width: '100%', height: 44, padding: '0 14px',
-                                background: 'var(--it-surface-input)',
-                                border: '1px solid var(--it-border-strong)',
-                                borderRadius: 8, fontSize: 14,
-                                color: answer ? 'var(--it-text-primary)' : 'var(--it-text-tertiary)',
-                            }}
-                        >
-                            <option value="">Select correct answer</option>
-                            {optionValues.map((v) => <option key={v} value={v}>{v}</option>)}
-                        </select>
-                    ) : (
-                        <Input
-                            placeholder="Type the correct answer…"
-                            value={answer}
-                            onChange={(e) => setAnswer(e.target.value)}
-                        />
-                    )}
-                </FormField>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        leftIcon="plus"
+                        onClick={() => setQuestions(prev => [...prev, newQ()])}
+                    >
+                        Add Question
+                    </Button>
+                </div>
 
                 <div className="it-dialog__actions">
                     <Button variant="secondary" size="lg" type="button" onClick={onClose} disabled={loading}>
                         Cancel
                     </Button>
-                    <Button
-                        type="submit"
-                        size="lg"
-                        disabled={!taskText.trim() || !answer.trim() || loading}
-                    >
+                    <Button type="submit" size="lg" disabled={!canSubmit || loading}>
                         {loading ? 'Saving…' : initial ? 'Save Changes' : 'Add Task'}
                     </Button>
                 </div>
@@ -134,41 +198,95 @@ function TaskDialog({open, initial = null, onClose, onSubmit, loading}) {
 
 // ── Task row ──────────────────────────────────────────────────────────────────
 
-function TaskRow({task, onEdit, onDelete}) {
+function TaskRow({task, courseId, unitId, lessonId, onEdit, onDelete}) {
+    const fileInputRef = useRef(null)
+    const [localAudioUrl, setLocalAudioUrl] = useState(null)
+    const uploadFile = useUploadTaskFile({onSuccess: () => setLocalAudioUrl(null)})
+
+    const questions = task.questions ?? []
+    const audioSrc = localAudioUrl ?? (task.file ? cdnUrl(task.file) : null)
+
     return (
         <div style={{
             display: 'flex', alignItems: 'flex-start', gap: 12,
             padding: '14px 16px',
             background: 'var(--it-surface-input)', borderRadius: 10,
         }}>
-            <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: 6}}>
-                <span style={{fontWeight: 600, fontSize: 14, color: 'var(--it-text-primary)'}}>{task.task}</span>
-                {task.options?.length > 0 && (
-                    <div style={{display: 'flex', flexWrap: 'wrap', gap: 6}}>
-                        {task.options.map((opt) => (
-                            <span
-                                key={opt}
-                                style={{
-                                    padding: '2px 10px', borderRadius: 999,
-                                    fontSize: 12, fontWeight: 500,
-                                    background: opt === task.answer
-                                        ? 'var(--it-success-bg)' : 'var(--it-surface-alt)',
-                                    color: opt === task.answer
-                                        ? 'var(--it-success-text)' : 'var(--it-text-secondary)',
-                                    border: opt === task.answer
-                                        ? '1px solid var(--it-success-border)' : '1px solid var(--it-border)',
-                                }}
-                            >
-                                {opt === task.answer && '✓ '}{opt}
+            <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: 12}}>
+                {questions.map((q, idx) => (
+                    <div key={idx} style={{display: 'flex', flexDirection: 'column', gap: 6}}>
+                        {questions.length > 1 && (
+                            <span style={{fontSize: 11, fontWeight: 600, color: 'var(--it-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em'}}>
+                                Q{idx + 1}
                             </span>
-                        ))}
+                        )}
+                        <span style={{fontWeight: 600, fontSize: 14, color: 'var(--it-text-primary)'}}>{q.question}</span>
+                        {q.options?.length > 0 && (
+                            <div style={{display: 'flex', flexWrap: 'wrap', gap: 6}}>
+                                {q.options.map((opt) => (
+                                    <span
+                                        key={opt}
+                                        style={{
+                                            padding: '2px 10px', borderRadius: 999,
+                                            fontSize: 12, fontWeight: 500,
+                                            background: opt === q.answer
+                                                ? 'var(--it-success-bg)' : 'var(--it-surface-alt)',
+                                            color: opt === q.answer
+                                                ? 'var(--it-success-text)' : 'var(--it-text-secondary)',
+                                            border: opt === q.answer
+                                                ? '1px solid var(--it-success-border)' : '1px solid var(--it-border)',
+                                        }}
+                                    >
+                                        {opt === q.answer && '✓ '}{opt}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                        {!q.options?.length && (
+                            <span style={{fontSize: 12, color: 'var(--it-success-text)', fontWeight: 500}}>
+                                Answer: {q.answer}
+                            </span>
+                        )}
                     </div>
-                )}
-                {!task.options?.length && (
-                    <span style={{fontSize: 12, color: 'var(--it-success-text)', fontWeight: 500}}>
-                        Answer: {task.answer}
-                    </span>
-                )}
+                ))}
+
+                <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="audio/*"
+                        hidden
+                        onChange={(e) => {
+                            const f = e.target.files?.[0]
+                            e.target.value = ''
+                            if (!f) return
+                            setLocalAudioUrl(URL.createObjectURL(f))
+                            uploadFile.mutate({courseId, unitId, lessonId, taskId: task.id, file: f})
+                        }}
+                    />
+                    {audioSrc ? (
+                        <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
+                            <audio key={audioSrc} src={audioSrc} controls style={{width: '100%', maxWidth: 360, height: 36}}/>
+                            <Button
+                                type="button" variant="secondary" size="sm" leftIcon="refresh-cw"
+                                disabled={uploadFile.isPending}
+                                onClick={() => fileInputRef.current?.click()}
+                                style={{alignSelf: 'flex-start'}}
+                            >
+                                {uploadFile.isPending ? 'Uploading…' : 'Replace audio'}
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button
+                            type="button" variant="secondary" size="sm" leftIcon="music"
+                            disabled={uploadFile.isPending}
+                            onClick={() => fileInputRef.current?.click()}
+                            style={{alignSelf: 'flex-start'}}
+                        >
+                            {uploadFile.isPending ? 'Uploading…' : 'Upload audio'}
+                        </Button>
+                    )}
+                </div>
             </div>
             <div style={{display: 'flex', gap: 6, flexShrink: 0}}>
                 <IconButton icon="pencil" title="Edit task" onClick={onEdit}/>
@@ -329,6 +447,9 @@ export function AdminLessonEditPage() {
                     <TaskRow
                         key={task.id}
                         task={task}
+                        courseId={courseId}
+                        unitId={unitId}
+                        lessonId={lessonId}
                         onEdit={() => setTaskDialog({initial: task})}
                         onDelete={() => setDeleteConfirm(task)}
                     />
