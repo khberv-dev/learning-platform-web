@@ -1,10 +1,14 @@
 import {api} from "@/services/api.js";
 
-export async function uploadLiveSession(assignmentId, {title, file}) {
+export async function uploadLiveSession(assignmentId, {title, file, onProgress}) {
     const form = new FormData()
     form.append('title', title)
     form.append('file', file)
-    const res = await api.post(`live-sessions/assignments/${assignmentId}`, form)
+    const res = await api.post(
+        `live-sessions/assignments/${assignmentId}`,
+        form,
+        {onUploadProgress: e => onProgress?.(Math.round((e.loaded / e.total) * 100))},
+    )
     return res.data
 }
 

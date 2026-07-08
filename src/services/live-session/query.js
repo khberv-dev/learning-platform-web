@@ -4,7 +4,7 @@ import {uploadLiveSession, getMyLiveSessions, getLiveSessionsByAssignment, getLi
 
 export const useUploadLiveSession = (opts) => useInfoMutation({
     queryKey: ['live-session'],
-    mutationFn: ({assignmentId, title, file}) => uploadLiveSession(assignmentId, {title, file}),
+    mutationFn: ({assignmentId, title, file, onProgress}) => uploadLiveSession(assignmentId, {title, file, onProgress}),
     onSuccess: opts?.onSuccess,
 })
 

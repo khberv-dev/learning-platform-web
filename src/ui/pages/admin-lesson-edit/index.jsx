@@ -11,6 +11,7 @@ import {FormField} from '@/ui/components/form-field/index.jsx'
 import {Card} from '@/ui/components/card/index.jsx'
 import {Icon} from '@/ui/components/icon/index.jsx'
 import {ConfirmDialog} from '@/ui/components/confirm-dialog/index.jsx'
+import {UploadProgress} from '@/ui/components/upload-progress/index.jsx'
 import {cdnUrl} from '@/services/config.js'
 
 const selectStyle = {
@@ -201,7 +202,8 @@ function TaskDialog({open, initial = null, onClose, onSubmit, loading}) {
 function TaskRow({task, courseId, unitId, lessonId, onEdit, onDelete}) {
     const fileInputRef = useRef(null)
     const [localAudioUrl, setLocalAudioUrl] = useState(null)
-    const uploadFile = useUploadTaskFile({onSuccess: () => setLocalAudioUrl(null)})
+    const [audioProgress, setAudioProgress] = useState(null)
+    const uploadFile = useUploadTaskFile({onSuccess: () => { setLocalAudioUrl(null); setAudioProgress(null) }})
 
     const questions = task.questions ?? []
     const audioSrc = localAudioUrl ?? (task.file ? cdnUrl(task.file) : null)
@@ -261,12 +263,13 @@ function TaskRow({task, courseId, unitId, lessonId, onEdit, onDelete}) {
                             e.target.value = ''
                             if (!f) return
                             setLocalAudioUrl(URL.createObjectURL(f))
-                            uploadFile.mutate({courseId, unitId, lessonId, taskId: task.id, file: f})
+                            uploadFile.mutate({courseId, unitId, lessonId, taskId: task.id, file: f, onProgress: setAudioProgress})
                         }}
                     />
                     {audioSrc ? (
                         <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
                             <audio key={audioSrc} src={audioSrc} controls style={{width: '100%', maxWidth: 360, height: 36}}/>
+                            <UploadProgress progress={audioProgress}/>
                             <Button
                                 type="button" variant="secondary" size="sm" leftIcon="refresh-cw"
                                 disabled={uploadFile.isPending}
@@ -277,14 +280,17 @@ function TaskRow({task, courseId, unitId, lessonId, onEdit, onDelete}) {
                             </Button>
                         </div>
                     ) : (
-                        <Button
-                            type="button" variant="secondary" size="sm" leftIcon="music"
-                            disabled={uploadFile.isPending}
-                            onClick={() => fileInputRef.current?.click()}
-                            style={{alignSelf: 'flex-start'}}
-                        >
-                            {uploadFile.isPending ? 'Uploading…' : 'Upload audio'}
-                        </Button>
+                        <>
+                            <UploadProgress progress={audioProgress}/>
+                            <Button
+                                type="button" variant="secondary" size="sm" leftIcon="music"
+                                disabled={uploadFile.isPending}
+                                onClick={() => fileInputRef.current?.click()}
+                                style={{alignSelf: 'flex-start'}}
+                            >
+                                {uploadFile.isPending ? 'Uploading…' : 'Upload audio'}
+                            </Button>
+                        </>
                     )}
                 </div>
             </div>
@@ -304,11 +310,12 @@ export function AdminLessonEditPage() {
     const {setHeader} = useHeader()
 
     const [localMediaPreview, setLocalMediaPreview] = useState(null)
+    const [mediaProgress, setMediaProgress] = useState(null)
     const mediaInputRef = useRef(null)
 
     const {data: course} = useGetCourse(courseId)
     const update = useUpdateLesson({onSuccess: () => navigate(`/admin/courses/${courseId}`)})
-    const uploadMedia = useUploadLessonMedia({onSuccess: () => setLocalMediaPreview(null)})
+    const uploadMedia = useUploadLessonMedia({onSuccess: () => { setLocalMediaPreview(null); setMediaProgress(null) }})
 
     const {data: tasks = [], isLoading: tasksLoading} = useListTasks(courseId, unitId, lessonId)
     const createTask = useCreateTask()
@@ -380,7 +387,7 @@ export function AdminLessonEditPage() {
                                 e.target.value = ''
                                 if (!f) return
                                 setLocalMediaPreview(URL.createObjectURL(f))
-                                uploadMedia.mutate({courseId, unitId, lessonId, file: f})
+                                uploadMedia.mutate({courseId, unitId, lessonId, file: f, onProgress: setMediaProgress})
                             }}
                         />
                         {(localMediaPreview ?? cdnUrl(lesson.media)) ? (
@@ -391,23 +398,27 @@ export function AdminLessonEditPage() {
                                     controls
                                     style={{width: '100%', maxWidth: 480, aspectRatio: '16 / 9', borderRadius: 10, background: '#000', border: '1px solid var(--it-border)'}}
                                 />
+                                <UploadProgress progress={mediaProgress}/>
                                 <Button
                                     variant="secondary" size="sm" leftIcon="refresh-cw"
                                     disabled={uploadMedia.isPending}
                                     onClick={() => mediaInputRef.current?.click()}
-                                    style={{marginTop: 8}}
+                                    style={{marginTop: 4}}
                                 >
                                     {uploadMedia.isPending ? 'Uploading…' : 'Replace video'}
                                 </Button>
                             </>
                         ) : (
-                            <div className="it-upload" onClick={() => !uploadMedia.isPending && mediaInputRef.current?.click()}>
-                                <Icon name={uploadMedia.isPending ? 'loader' : 'video'} size={24}/>
-                                <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>
-                                    {uploadMedia.isPending ? 'Uploading…' : 'Upload lesson video'}
-                                </span>
-                                <span className="it-upload__hint">MP4 or WebM</span>
-                            </div>
+                            <>
+                                <div className="it-upload" onClick={() => !uploadMedia.isPending && mediaInputRef.current?.click()}>
+                                    <Icon name={uploadMedia.isPending ? 'loader' : 'video'} size={24}/>
+                                    <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>
+                                        {uploadMedia.isPending ? 'Uploading…' : 'Upload lesson video'}
+                                    </span>
+                                    <span className="it-upload__hint">MP4 or WebM</span>
+                                </div>
+                                <UploadProgress progress={mediaProgress}/>
+                            </>
                         )}
                     </FormField>
                     <div style={{display: 'flex', justifyContent: 'flex-end', gap: 12}}>

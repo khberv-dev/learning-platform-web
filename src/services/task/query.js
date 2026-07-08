@@ -22,7 +22,7 @@ export const useUpdateTask = (opts) => useInfoMutation({
 
 export const useUploadTaskFile = (opts) => useInfoMutation({
     queryKey: ['task'],
-    mutationFn: ({courseId, unitId, lessonId, taskId, file}) => uploadTaskFile(courseId, unitId, lessonId, taskId, file),
+    mutationFn: ({courseId, unitId, lessonId, taskId, file, onProgress}) => uploadTaskFile(courseId, unitId, lessonId, taskId, file, onProgress),
     onSuccess: opts?.onSuccess,
 })
 

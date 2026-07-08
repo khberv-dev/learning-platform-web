@@ -43,13 +43,13 @@ export const useChangeTeacherStatus = (opts) => useInfoMutation({
 
 export const useUploadTeacherIntro = (opts) => useInfoMutation({
     queryKey: ['teacher'],
-    mutationFn: (file) => uploadTeacherIntro(file),
+    mutationFn: ({file, onProgress}) => uploadTeacherIntro(file, onProgress),
     onSuccess: opts?.onSuccess,
 })
 
 export const useUploadTeacherIntroById = (opts) => useInfoMutation({
     queryKey: ['teacher'],
-    mutationFn: ({id, file}) => uploadTeacherIntroById(id, file),
+    mutationFn: ({id, file, onProgress}) => uploadTeacherIntroById(id, file, onProgress),
     onSuccess: opts?.onSuccess,
 })
 

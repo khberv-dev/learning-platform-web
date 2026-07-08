@@ -15,12 +15,13 @@ export async function updateTask(courseId, unitId, lessonId, taskId, data) {
     return res.data
 }
 
-export async function uploadTaskFile(courseId, unitId, lessonId, taskId, file) {
+export async function uploadTaskFile(courseId, unitId, lessonId, taskId, file, onProgress) {
     const form = new FormData()
     form.append('file', file)
     const res = await api.patch(
         `admin/courses/${courseId}/units/${unitId}/lessons/${lessonId}/tasks/${taskId}/file`,
         form,
+        {onUploadProgress: e => onProgress?.(Math.round((e.loaded / e.total) * 100))},
     )
     return res.data
 }

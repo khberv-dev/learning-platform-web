@@ -10,6 +10,7 @@ import {FormField} from '@/ui/components/form-field/index.jsx'
 import {Card} from '@/ui/components/card/index.jsx'
 import {Icon} from '@/ui/components/icon/index.jsx'
 import {AvatarUpload} from '@/ui/components/avatar-upload/index.jsx'
+import {UploadProgress} from '@/ui/components/upload-progress/index.jsx'
 import {cdnUrl} from '@/services/config.js'
 import {fullName} from '@/utils/lib.js'
 import {toaster} from '@/services/toaster.js'
@@ -20,9 +21,11 @@ export function TeacherSettingsPage() {
     const queryClient = useQueryClient()
     const introInput = useRef(null)
     const [localPreview, setLocalPreview] = useState(null)
+    const [uploadProgress, setUploadProgress] = useState(null)
 
     const upload = useUploadTeacherIntro({
         onSuccess: () => {
+            setUploadProgress(null)
             queryClient.invalidateQueries({queryKey: ['user'], exact: false})
             toaster.add({name: 'video-up', content: 'Intro video updated.', theme: 'success', timeout: 3000})
         },
@@ -46,7 +49,7 @@ export function TeacherSettingsPage() {
             return
         }
         setLocalPreview(URL.createObjectURL(f))
-        upload.mutate(f)
+        upload.mutate({file: f, onProgress: setUploadProgress})
     }
 
     return (
@@ -89,20 +92,26 @@ export function TeacherSettingsPage() {
                 <input ref={introInput} type="file" accept="video/*" hidden onChange={onIntroChange}/>
 
                 {introVideoUrl ? (
-                    <video
-                        key={introVideoUrl}
-                        src={introVideoUrl}
-                        controls
-                        style={{width: '100%', maxWidth: 520, aspectRatio: '16 / 9', borderRadius: 12, background: '#000', border: '1px solid var(--it-border)'}}
-                    />
+                    <>
+                        <video
+                            key={introVideoUrl}
+                            src={introVideoUrl}
+                            controls
+                            style={{width: '100%', maxWidth: 520, aspectRatio: '16 / 9', borderRadius: 12, background: '#000', border: '1px solid var(--it-border)'}}
+                        />
+                        <UploadProgress progress={uploadProgress}/>
+                    </>
                 ) : (
-                    <div className="it-upload" onClick={() => !upload.isPending && introInput.current?.click()}>
-                        <Icon name={upload.isPending ? 'loader' : 'video'} size={28}/>
-                        <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>
-                            {upload.isPending ? 'Uploading…' : 'Upload intro video'}
-                        </span>
-                        <span className="it-upload__hint">MP4 or WebM. Students see this on your profile.</span>
-                    </div>
+                    <>
+                        <div className="it-upload" onClick={() => !upload.isPending && introInput.current?.click()}>
+                            <Icon name={upload.isPending ? 'loader' : 'video'} size={28}/>
+                            <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>
+                                {upload.isPending ? 'Uploading…' : 'Upload intro video'}
+                            </span>
+                            <span className="it-upload__hint">MP4 or WebM. Students see this on your profile.</span>
+                        </div>
+                        <UploadProgress progress={uploadProgress}/>
+                    </>
                 )}
 
                 <div>

@@ -23,10 +23,14 @@ export async function updateLesson(courseId, unitId, lessonId, data) {
     return res.data
 }
 
-export async function uploadLessonMedia(courseId, unitId, lessonId, file) {
+export async function uploadLessonMedia(courseId, unitId, lessonId, file, onProgress) {
     const form = new FormData()
     form.append('media', file)
-    const res = await api.patch(`admin/courses/${courseId}/units/${unitId}/lessons/${lessonId}/media`, form)
+    const res = await api.patch(
+        `admin/courses/${courseId}/units/${unitId}/lessons/${lessonId}/media`,
+        form,
+        {onUploadProgress: e => onProgress?.(Math.round((e.loaded / e.total) * 100))},
+    )
     return res.data
 }
 

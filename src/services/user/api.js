@@ -5,9 +5,13 @@ export async function getMe() {
     return res.data
 }
 
-export async function uploadAvatar(file) {
+export async function uploadAvatar(file, onProgress) {
     const form = new FormData()
     form.append('avatar', file)
-    const res = await api.patch('user/me/avatar', form)
+    const res = await api.patch(
+        'user/me/avatar',
+        form,
+        {onUploadProgress: e => onProgress?.(Math.round((e.loaded / e.total) * 100))},
+    )
     return res.data
 }

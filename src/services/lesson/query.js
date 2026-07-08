@@ -15,7 +15,7 @@ export const useUpdateLesson = (opts) => useInfoMutation({
 
 export const useUploadLessonMedia = (opts) => useInfoMutation({
     queryKey: ['course'],
-    mutationFn: ({courseId, unitId, lessonId, file}) => uploadLessonMedia(courseId, unitId, lessonId, file),
+    mutationFn: ({courseId, unitId, lessonId, file, onProgress}) => uploadLessonMedia(courseId, unitId, lessonId, file, onProgress),
     onSuccess: opts?.onSuccess,
 })
 

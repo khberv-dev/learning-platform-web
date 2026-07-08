@@ -8,6 +8,7 @@ import {Card} from '@/ui/components/card/index.jsx'
 import {SectionCard} from '@/ui/components/section-card/index.jsx'
 import {ResourceBadge} from '@/ui/components/resource-badge/index.jsx'
 import {Icon} from '@/ui/components/icon/index.jsx'
+import {UploadProgress} from '@/ui/components/upload-progress/index.jsx'
 import {fullName, formatDate} from '@/utils/lib.js'
 import {cdnUrl} from '@/services/config.js'
 
@@ -32,8 +33,9 @@ export function AdminTeacherProfilePage() {
 
     const introInput = useRef(null)
     const [localPreview, setLocalPreview] = useState(null)
+    const [uploadProgress, setUploadProgress] = useState(null)
     const upload = useUploadTeacherIntroById({
-        onSuccess: () => setLocalPreview(null),
+        onSuccess: () => { setLocalPreview(null); setUploadProgress(null) },
     })
 
     if (isLoading || !teacher) return <div style={{color: 'var(--it-text-secondary)'}}>Loading…</div>
@@ -110,24 +112,30 @@ export function AdminTeacherProfilePage() {
                             e.target.value = ''
                             if (!f) return
                             setLocalPreview(URL.createObjectURL(f))
-                            upload.mutate({id, file: f})
+                            upload.mutate({id, file: f, onProgress: setUploadProgress})
                         }}
                     />
                     {introVideoUrl ? (
-                        <video
-                            key={introVideoUrl}
-                            src={introVideoUrl}
-                            controls
-                            style={{width: '100%', aspectRatio: '16 / 9', borderRadius: 10, background: '#000', border: '1px solid var(--it-border)'}}
-                        />
+                        <>
+                            <video
+                                key={introVideoUrl}
+                                src={introVideoUrl}
+                                controls
+                                style={{width: '100%', aspectRatio: '16 / 9', borderRadius: 10, background: '#000', border: '1px solid var(--it-border)'}}
+                            />
+                            <UploadProgress progress={uploadProgress}/>
+                        </>
                     ) : (
-                        <div className="it-upload" onClick={() => !upload.isPending && introInput.current?.click()}>
-                            <Icon name={upload.isPending ? 'loader' : 'video'} size={24}/>
-                            <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>
-                                {upload.isPending ? 'Uploading…' : 'Upload intro video'}
-                            </span>
-                            <span className="it-upload__hint">MP4 or WebM</span>
-                        </div>
+                        <>
+                            <div className="it-upload" onClick={() => !upload.isPending && introInput.current?.click()}>
+                                <Icon name={upload.isPending ? 'loader' : 'video'} size={24}/>
+                                <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>
+                                    {upload.isPending ? 'Uploading…' : 'Upload intro video'}
+                                </span>
+                                <span className="it-upload__hint">MP4 or WebM</span>
+                            </div>
+                            <UploadProgress progress={uploadProgress}/>
+                        </>
                     )}
                 </SectionCard>
 

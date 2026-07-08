@@ -30,17 +30,25 @@ export async function changeTeacherStatus(id, status) {
     return res.data
 }
 
-export async function uploadTeacherIntro(file) {
+export async function uploadTeacherIntro(file, onProgress) {
     const form = new FormData()
     form.append('video', file)
-    const res = await api.patch('teachers/me', form)
+    const res = await api.patch(
+        'teachers/me',
+        form,
+        {onUploadProgress: e => onProgress?.(Math.round((e.loaded / e.total) * 100))},
+    )
     return res.data
 }
 
-export async function uploadTeacherIntroById(id, file) {
+export async function uploadTeacherIntroById(id, file, onProgress) {
     const form = new FormData()
     form.append('video', file)
-    const res = await api.patch(`admin/teachers/${id}/intro-video`, form)
+    const res = await api.patch(
+        `admin/teachers/${id}/intro-video`,
+        form,
+        {onUploadProgress: e => onProgress?.(Math.round((e.loaded / e.total) * 100))},
+    )
     return res.data
 }
 

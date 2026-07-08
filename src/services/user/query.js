@@ -10,6 +10,6 @@ export const useGetMe = () => useQuery({
 
 export const useUploadAvatar = (opts) => useInfoMutation({
     queryKey: ['user'],
-    mutationFn: (file) => uploadAvatar(file),
+    mutationFn: ({file, onProgress}) => uploadAvatar(file, onProgress),
     onSuccess: opts?.onSuccess,
 })

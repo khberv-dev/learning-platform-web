@@ -9,10 +9,12 @@ import {toaster} from '@/services/toaster.js'
 export function AvatarUpload({user, size = 64}) {
     const inputRef = useRef(null)
     const [preview, setPreview] = useState(null)
+    const [progress, setProgress] = useState(null)
     const queryClient = useQueryClient()
 
     const upload = useUploadAvatar({
         onSuccess: () => {
+            setProgress(null)
             queryClient.invalidateQueries({queryKey: ['user'], exact: false})
             toaster.add({name: `avatar-up-${Date.now()}`, content: 'Photo updated.', theme: 'success', timeout: 3000})
         },
@@ -27,7 +29,7 @@ export function AvatarUpload({user, size = 64}) {
             return
         }
         setPreview(URL.createObjectURL(f))
-        upload.mutate(f)
+        upload.mutate({file: f, onProgress: setProgress})
     }
 
     const badge = Math.max(22, Math.round(size * 0.34))
@@ -39,6 +41,16 @@ export function AvatarUpload({user, size = 64}) {
             title="Change photo"
         >
             <Avatar name={fullName(user)} src={preview ?? user?.avatar} size={size} fontSize={Math.round(size * 0.34)}/>
+            {upload.isPending && progress != null && (
+                <div style={{
+                    position: 'absolute', inset: 0, borderRadius: 999,
+                    background: 'rgba(0,0,0,0.55)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontSize: Math.max(10, Math.round(size * 0.18)), fontWeight: 700,
+                }}>
+                    {progress}%
+                </div>
+            )}
             <span
                 style={{
                     position: 'absolute', right: -2, bottom: -2,
