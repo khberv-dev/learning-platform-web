@@ -5,6 +5,7 @@ import {useHeader} from '@/providers/header.jsx'
 import {useGetCourse} from '@/services/course/query.js'
 import {useUpdateLesson, useUploadLessonMedia} from '@/services/lesson/query.js'
 import {useListTasks, useCreateTask, useUpdateTask, useUploadTaskFile, useDeleteTask} from '@/services/task/query.js'
+import {useListMaterials, useCreateMaterial, useDeleteMaterial} from '@/services/material/query.js'
 import {Button, IconButton} from '@/ui/components/button/index.jsx'
 import {Input, Textarea} from '@/ui/components/input/index.jsx'
 import {FormField} from '@/ui/components/form-field/index.jsx'
@@ -302,6 +303,100 @@ function TaskRow({task, courseId, unitId, lessonId, onEdit, onDelete}) {
     )
 }
 
+// ── Material dialog (add) ──────────────────────────────────────────────────────
+
+function MaterialDialog({open, onClose, onSubmit, loading, progress}) {
+    const [name, setName] = useState('')
+    const [file, setFile] = useState(null)
+    const fileInputRef = useRef(null)
+
+    useEffect(() => {
+        if (!open) return
+        setName('')
+        setFile(null)
+    }, [open])
+
+    if (!open) return null
+
+    const handleSubmit = (e) => {
+        e.preventDefault()
+        if (!name.trim() || !file) return
+        onSubmit({name: name.trim(), file})
+    }
+
+    const canSubmit = !!name.trim() && !!file
+
+    return (
+        <div className="it-dialog__backdrop" onClick={onClose}>
+            <form className="it-dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+                <div className="it-dialog__title">Add Material</div>
+
+                <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                    <FormField label="Name">
+                        <Input
+                            placeholder="Material name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                        />
+                    </FormField>
+
+                    <FormField label="File" hint="PDF or image">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="application/pdf,image/*"
+                            hidden
+                            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                        />
+                        <div className="it-upload" onClick={() => !loading && fileInputRef.current?.click()}>
+                            <Icon name={file ? 'file-check-2' : 'upload'} size={24}/>
+                            <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>
+                                {file ? file.name : 'Choose a file'}
+                            </span>
+                            <span className="it-upload__hint">PDF or image</span>
+                        </div>
+                        <UploadProgress progress={progress}/>
+                    </FormField>
+                </div>
+
+                <div className="it-dialog__actions">
+                    <Button variant="secondary" size="lg" type="button" onClick={onClose} disabled={loading}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" size="lg" disabled={!canSubmit || loading}>
+                        {loading ? 'Uploading…' : 'Add Material'}
+                    </Button>
+                </div>
+            </form>
+        </div>
+    )
+}
+
+// ── Material row ─────────────────────────────────────────────────────────────
+
+function MaterialRow({material, onDelete}) {
+    const isPdf = material.type === 'pdf'
+    return (
+        <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '12px 16px',
+            background: 'var(--it-surface-input)', borderRadius: 10,
+        }}>
+            <Icon name={isPdf ? 'file-text' : 'image'} size={20} style={{flexShrink: 0, color: 'var(--it-text-secondary)'}}/>
+            <a
+                href={cdnUrl(material.url)}
+                target="_blank"
+                rel="noreferrer"
+                style={{flex: 1, fontWeight: 600, fontSize: 14, color: 'var(--it-text-primary)', textDecoration: 'none'}}
+            >
+                {material.name}
+            </a>
+            <span className="it-badge it-badge--neutral it-badge--sm">{material.type}</span>
+            <IconButton icon="trash-2" title="Delete material" onClick={onDelete}/>
+        </div>
+    )
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function AdminLessonEditPage() {
@@ -324,6 +419,15 @@ export function AdminLessonEditPage() {
 
     const [taskDialog, setTaskDialog] = useState(null)   // null | { initial?: task }
     const [deleteConfirm, setDeleteConfirm] = useState(null)  // null | task
+
+    const {data: materials = [], isLoading: materialsLoading} = useListMaterials(lessonId)
+    const [materialDialogOpen, setMaterialDialogOpen] = useState(false)
+    const [materialProgress, setMaterialProgress] = useState(null)
+    const [materialDeleteConfirm, setMaterialDeleteConfirm] = useState(null)  // null | material
+    const createMaterial = useCreateMaterial({
+        onSuccess: () => { setMaterialDialogOpen(false); setMaterialProgress(null) },
+    })
+    const deleteMaterial = useDeleteMaterial({onSuccess: () => setMaterialDeleteConfirm(null)})
 
     const lesson = useMemo(() => {
         const u = course?.units?.find(u => u.id === unitId)
@@ -360,6 +464,14 @@ export function AdminLessonEditPage() {
             {courseId, unitId, lessonId, taskId: deleteConfirm.id},
             {onSuccess: () => setDeleteConfirm(null)},
         )
+    }
+
+    const onMaterialSubmit = ({name, file}) => {
+        createMaterial.mutate({lessonId, name, file, onProgress: setMaterialProgress})
+    }
+
+    const onMaterialDelete = () => {
+        deleteMaterial.mutate({lessonId, materialId: materialDeleteConfirm.id})
     }
 
     if (!lesson) return <div style={{color: 'var(--it-text-secondary)'}}>Loading…</div>
@@ -484,6 +596,57 @@ export function AdminLessonEditPage() {
                 loading={deleteTask.isPending}
                 onCancel={() => setDeleteConfirm(null)}
                 onConfirm={onTaskDelete}
+            />
+
+            {/* Materials */}
+            <Card padding={24} gap={16}>
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
+                        <h3 style={{fontSize: 16, fontWeight: 700}}>Materials</h3>
+                        <span className="it-badge it-badge--neutral it-badge--sm">{materials.length}</span>
+                    </div>
+                    <Button leftIcon="plus" size="sm" onClick={() => setMaterialDialogOpen(true)}>Add Material</Button>
+                </div>
+
+                {materialsLoading && (
+                    <div style={{color: 'var(--it-text-secondary)', fontSize: 14}}>Loading…</div>
+                )}
+
+                {!materialsLoading && materials.length === 0 && (
+                    <div style={{
+                        padding: '32px 0', textAlign: 'center',
+                        color: 'var(--it-text-tertiary)', fontSize: 14,
+                    }}>
+                        <Icon name="paperclip" size={32} style={{marginBottom: 8, opacity: 0.4}}/>
+                        <div>No materials yet. Attach a PDF or image for students.</div>
+                    </div>
+                )}
+
+                {materials.map((material) => (
+                    <MaterialRow
+                        key={material.id}
+                        material={material}
+                        onDelete={() => setMaterialDeleteConfirm(material)}
+                    />
+                ))}
+            </Card>
+
+            <MaterialDialog
+                open={materialDialogOpen}
+                loading={createMaterial.isPending}
+                progress={materialProgress}
+                onClose={() => { setMaterialDialogOpen(false); setMaterialProgress(null) }}
+                onSubmit={onMaterialSubmit}
+            />
+
+            <ConfirmDialog
+                open={!!materialDeleteConfirm}
+                title="Delete material?"
+                description="This file will be permanently removed."
+                confirmLabel="Delete"
+                loading={deleteMaterial.isPending}
+                onCancel={() => setMaterialDeleteConfirm(null)}
+                onConfirm={onMaterialDelete}
             />
         </div>
     )
