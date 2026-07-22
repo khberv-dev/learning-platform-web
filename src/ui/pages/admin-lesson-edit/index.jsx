@@ -30,10 +30,12 @@ const newQ = () => ({
 // ── Task dialog (create / edit) ───────────────────────────────────────────────
 
 function TaskDialog({open, initial = null, onClose, onSubmit, loading}) {
+    const [name, setName] = useState('')
     const [questions, setQuestions] = useState([newQ()])
 
     useEffect(() => {
         if (!open) return
+        setName(initial?.name ?? '')
         if (initial?.questions?.length) {
             setQuestions(initial.questions.map((q, i) => ({
                 id: String(i),
@@ -81,6 +83,7 @@ function TaskDialog({open, initial = null, onClose, onSubmit, loading}) {
         e.preventDefault()
         if (!questions.every(q => q.question.trim() && q.answer.trim())) return
         onSubmit({
+            name: name.trim() || null,
             questions: questions.map(q => {
                 const optionValues = q.options.map(o => o.value.trim()).filter(Boolean)
                 return {
@@ -105,6 +108,14 @@ function TaskDialog({open, initial = null, onClose, onSubmit, loading}) {
                 <div className="it-dialog__title">{initial ? 'Edit Task' : 'Add Task'}</div>
 
                 <div style={{flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 4}}>
+                    <FormField label="Task Name" hint="Optional — shown as a title for this task.">
+                        <Input
+                            placeholder="e.g. Greeting quiz"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                        />
+                    </FormField>
+
                     {questions.map((q, idx) => {
                         const optionValues = q.options.map(o => o.value.trim()).filter(Boolean)
                         return (
@@ -202,12 +213,14 @@ function TaskDialog({open, initial = null, onClose, onSubmit, loading}) {
 
 function TaskRow({task, courseId, unitId, lessonId, onEdit, onDelete}) {
     const fileInputRef = useRef(null)
-    const [localAudioUrl, setLocalAudioUrl] = useState(null)
-    const [audioProgress, setAudioProgress] = useState(null)
-    const uploadFile = useUploadTaskFile({onSuccess: () => { setLocalAudioUrl(null); setAudioProgress(null) }})
+    const [localFile, setLocalFile] = useState(null)  // null | { url, contentType }
+    const [fileProgress, setFileProgress] = useState(null)
+    const uploadFile = useUploadTaskFile({onSuccess: () => { setLocalFile(null); setFileProgress(null) }})
 
     const questions = task.questions ?? []
-    const audioSrc = localAudioUrl ?? (task.file ? cdnUrl(task.file) : null)
+    const contentType = localFile?.contentType ?? task.contentType
+    const fileSrc = localFile?.url ?? (task.file ? cdnUrl(task.file) : null)
+    const isPicture = contentType === 'picture'
 
     return (
         <div style={{
@@ -216,6 +229,9 @@ function TaskRow({task, courseId, unitId, lessonId, onEdit, onDelete}) {
             background: 'var(--it-surface-input)', borderRadius: 10,
         }}>
             <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: 12}}>
+                {task.name && (
+                    <span style={{fontWeight: 700, fontSize: 15, color: 'var(--it-text-primary)'}}>{task.name}</span>
+                )}
                 {questions.map((q, idx) => (
                     <div key={idx} style={{display: 'flex', flexDirection: 'column', gap: 6}}>
                         {questions.length > 1 && (
@@ -257,39 +273,49 @@ function TaskRow({task, courseId, unitId, lessonId, onEdit, onDelete}) {
                     <input
                         ref={fileInputRef}
                         type="file"
-                        accept="audio/*"
+                        accept="audio/*,image/*"
                         hidden
                         onChange={(e) => {
                             const f = e.target.files?.[0]
                             e.target.value = ''
                             if (!f) return
-                            setLocalAudioUrl(URL.createObjectURL(f))
-                            uploadFile.mutate({courseId, unitId, lessonId, taskId: task.id, file: f, onProgress: setAudioProgress})
+                            setLocalFile({
+                                url: URL.createObjectURL(f),
+                                contentType: f.type.startsWith('image/') ? 'picture' : 'audio',
+                            })
+                            uploadFile.mutate({courseId, unitId, lessonId, taskId: task.id, file: f, onProgress: setFileProgress})
                         }}
                     />
-                    {audioSrc ? (
+                    {fileSrc ? (
                         <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
-                            <audio key={audioSrc} src={audioSrc} controls style={{width: '100%', maxWidth: 360, height: 36}}/>
-                            <UploadProgress progress={audioProgress}/>
+                            {isPicture ? (
+                                <img
+                                    key={fileSrc} src={fileSrc} alt=""
+                                    style={{width: '100%', maxWidth: 240, borderRadius: 8, border: '1px solid var(--it-border)'}}
+                                />
+                            ) : (
+                                <audio key={fileSrc} src={fileSrc} controls style={{width: '100%', maxWidth: 360, height: 36}}/>
+                            )}
+                            <UploadProgress progress={fileProgress}/>
                             <Button
                                 type="button" variant="secondary" size="sm" leftIcon="refresh-cw"
                                 disabled={uploadFile.isPending}
                                 onClick={() => fileInputRef.current?.click()}
                                 style={{alignSelf: 'flex-start'}}
                             >
-                                {uploadFile.isPending ? 'Uploading…' : 'Replace audio'}
+                                {uploadFile.isPending ? 'Uploading…' : isPicture ? 'Replace image' : 'Replace audio'}
                             </Button>
                         </div>
                     ) : (
                         <>
-                            <UploadProgress progress={audioProgress}/>
+                            <UploadProgress progress={fileProgress}/>
                             <Button
-                                type="button" variant="secondary" size="sm" leftIcon="music"
+                                type="button" variant="secondary" size="sm" leftIcon="paperclip"
                                 disabled={uploadFile.isPending}
                                 onClick={() => fileInputRef.current?.click()}
                                 style={{alignSelf: 'flex-start'}}
                             >
-                                {uploadFile.isPending ? 'Uploading…' : 'Upload audio'}
+                                {uploadFile.isPending ? 'Uploading…' : 'Upload audio or image'}
                             </Button>
                         </>
                     )}
