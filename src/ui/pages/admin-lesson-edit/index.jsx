@@ -4,7 +4,7 @@ import {useNavigate, useParams} from 'react-router'
 import {useHeader} from '@/providers/header.jsx'
 import {useGetCourse} from '@/services/course/query.js'
 import {useUpdateLesson, useUploadLessonMedia} from '@/services/lesson/query.js'
-import {useListTasks, useCreateTask, useUpdateTask, useUploadTaskFile, useDeleteTask} from '@/services/task/query.js'
+import {useListTasks, useUploadTaskFile, useDeleteTask} from '@/services/task/query.js'
 import {useListMaterials, useCreateMaterial, useDeleteMaterial} from '@/services/material/query.js'
 import {Button, IconButton} from '@/ui/components/button/index.jsx'
 import {Input, Textarea} from '@/ui/components/input/index.jsx'
@@ -14,200 +14,6 @@ import {Icon} from '@/ui/components/icon/index.jsx'
 import {ConfirmDialog} from '@/ui/components/confirm-dialog/index.jsx'
 import {UploadProgress} from '@/ui/components/upload-progress/index.jsx'
 import {cdnUrl} from '@/services/config.js'
-
-const selectStyle = {
-    width: '100%', height: 44, padding: '0 14px',
-    background: 'var(--it-surface-input)',
-    border: '1px solid var(--it-border-strong)',
-    borderRadius: 8, fontSize: 14,
-}
-
-const newQ = () => ({
-    id: `q-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    question: '', options: [], answer: '',
-})
-
-// ── Task dialog (create / edit) ───────────────────────────────────────────────
-
-function TaskDialog({open, initial = null, onClose, onSubmit, loading}) {
-    const [name, setName] = useState('')
-    const [questions, setQuestions] = useState([newQ()])
-
-    useEffect(() => {
-        if (!open) return
-        setName(initial?.name ?? '')
-        if (initial?.questions?.length) {
-            setQuestions(initial.questions.map((q, i) => ({
-                id: String(i),
-                question: q.question,
-                options: (q.options ?? []).map((v, j) => ({id: String(j), value: v})),
-                answer: q.answer,
-            })))
-        } else {
-            setQuestions([newQ()])
-        }
-    }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
-
-    if (!open) return null
-
-    const updateQ = (qId, patch) =>
-        setQuestions(prev => prev.map(q => q.id === qId ? {...q, ...patch} : q))
-
-    const removeQ = (qId) =>
-        setQuestions(prev => prev.filter(q => q.id !== qId))
-
-    const addOption = (qId) =>
-        setQuestions(prev => prev.map(q =>
-            q.id === qId ? {...q, options: [...q.options, {id: `o-${Date.now()}`, value: ''}]} : q
-        ))
-
-    const updateOption = (qId, optId, value) =>
-        setQuestions(prev => prev.map(q =>
-            q.id === qId
-                ? {...q, options: q.options.map(o => o.id === optId ? {...o, value} : o)}
-                : q
-        ))
-
-    const removeOption = (qId, optId) =>
-        setQuestions(prev => prev.map(q => {
-            if (q.id !== qId) return q
-            const removed = q.options.find(o => o.id === optId)?.value.trim()
-            return {
-                ...q,
-                options: q.options.filter(o => o.id !== optId),
-                answer: removed && removed === q.answer ? '' : q.answer,
-            }
-        }))
-
-    const handleSubmit = (e) => {
-        e.preventDefault()
-        if (!questions.every(q => q.question.trim() && q.answer.trim())) return
-        onSubmit({
-            name: name.trim() || null,
-            questions: questions.map(q => {
-                const optionValues = q.options.map(o => o.value.trim()).filter(Boolean)
-                return {
-                    question: q.question.trim(),
-                    options: optionValues.length > 0 ? optionValues : null,
-                    answer: q.answer.trim(),
-                }
-            }),
-        })
-    }
-
-    const canSubmit = questions.length > 0 && questions.every(q => q.question.trim() && q.answer.trim())
-
-    return (
-        <div className="it-dialog__backdrop" onClick={onClose}>
-            <form
-                className="it-dialog"
-                style={{maxWidth: 560, maxHeight: '90vh', display: 'flex', flexDirection: 'column'}}
-                onClick={(e) => e.stopPropagation()}
-                onSubmit={handleSubmit}
-            >
-                <div className="it-dialog__title">{initial ? 'Edit Task' : 'Add Task'}</div>
-
-                <div style={{flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 4}}>
-                    <FormField label="Task Name" hint="Optional — shown as a title for this task.">
-                        <Input
-                            placeholder="e.g. Greeting quiz"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                        />
-                    </FormField>
-
-                    {questions.map((q, idx) => {
-                        const optionValues = q.options.map(o => o.value.trim()).filter(Boolean)
-                        return (
-                            <div key={q.id} style={{
-                                border: '1px solid var(--it-border)',
-                                borderRadius: 10,
-                                padding: 16,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 12,
-                            }}>
-                                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
-                                    <span style={{fontWeight: 600, fontSize: 13, color: 'var(--it-text-secondary)'}}>
-                                        Question {idx + 1}
-                                    </span>
-                                    {questions.length > 1 && (
-                                        <IconButton icon="x" title="Remove question" onClick={() => removeQ(q.id)}/>
-                                    )}
-                                </div>
-
-                                <FormField label="Question">
-                                    <Textarea
-                                        rows={2}
-                                        placeholder="Enter the question…"
-                                        value={q.question}
-                                        onChange={(e) => updateQ(q.id, {question: e.target.value})}
-                                    />
-                                </FormField>
-
-                                <FormField label="Options" hint="Optional — leave empty for a free-text answer.">
-                                    <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
-                                        {q.options.map((opt) => (
-                                            <div key={opt.id} style={{display: 'flex', gap: 8, alignItems: 'center'}}>
-                                                <Input
-                                                    placeholder="Option text"
-                                                    value={opt.value}
-                                                    onChange={(e) => updateOption(q.id, opt.id, e.target.value)}
-                                                />
-                                                <IconButton icon="x" title="Remove option" onClick={() => removeOption(q.id, opt.id)}/>
-                                            </div>
-                                        ))}
-                                        <Button type="button" variant="secondary" size="sm" leftIcon="plus" onClick={() => addOption(q.id)}>
-                                            Add Option
-                                        </Button>
-                                    </div>
-                                </FormField>
-
-                                <FormField label="Correct Answer">
-                                    {optionValues.length > 0 ? (
-                                        <select
-                                            value={q.answer}
-                                            onChange={(e) => updateQ(q.id, {answer: e.target.value})}
-                                            style={{...selectStyle, color: q.answer ? 'var(--it-text-primary)' : 'var(--it-text-tertiary)'}}
-                                        >
-                                            <option value="">Select correct answer</option>
-                                            {optionValues.map((v) => <option key={v} value={v}>{v}</option>)}
-                                        </select>
-                                    ) : (
-                                        <Input
-                                            placeholder="Type the correct answer…"
-                                            value={q.answer}
-                                            onChange={(e) => updateQ(q.id, {answer: e.target.value})}
-                                        />
-                                    )}
-                                </FormField>
-                            </div>
-                        )
-                    })}
-
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        leftIcon="plus"
-                        onClick={() => setQuestions(prev => [...prev, newQ()])}
-                    >
-                        Add Question
-                    </Button>
-                </div>
-
-                <div className="it-dialog__actions">
-                    <Button variant="secondary" size="lg" type="button" onClick={onClose} disabled={loading}>
-                        Cancel
-                    </Button>
-                    <Button type="submit" size="lg" disabled={!canSubmit || loading}>
-                        {loading ? 'Saving…' : initial ? 'Save Changes' : 'Add Task'}
-                    </Button>
-                </div>
-            </form>
-        </div>
-    )
-}
 
 // ── Task row ──────────────────────────────────────────────────────────────────
 
@@ -219,8 +25,9 @@ function TaskRow({task, courseId, unitId, lessonId, onEdit, onDelete}) {
 
     const questions = task.questions ?? []
     const contentType = localFile?.contentType ?? task.contentType
-    const fileSrc = localFile?.url ?? (task.file ? cdnUrl(task.file) : null)
     const isPicture = contentType === 'picture'
+    const isText = !localFile && contentType === 'text'
+    const fileSrc = localFile?.url ?? (!isText && task.file ? cdnUrl(task.file) : null)
 
     return (
         <div style={{
@@ -270,6 +77,15 @@ function TaskRow({task, courseId, unitId, lessonId, onEdit, onDelete}) {
                 ))}
 
                 <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
+                    {isText && (
+                        <div style={{
+                            padding: '10px 12px', borderRadius: 8,
+                            background: 'var(--it-surface-alt)', border: '1px solid var(--it-border)',
+                            fontSize: 13, color: 'var(--it-text-body)', whiteSpace: 'pre-wrap',
+                        }}>
+                            {task.file}
+                        </div>
+                    )}
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -439,11 +255,8 @@ export function AdminLessonEditPage() {
     const uploadMedia = useUploadLessonMedia({onSuccess: () => { setLocalMediaPreview(null); setMediaProgress(null) }})
 
     const {data: tasks = [], isLoading: tasksLoading} = useListTasks(courseId, unitId, lessonId)
-    const createTask = useCreateTask()
-    const updateTask = useUpdateTask()
     const deleteTask = useDeleteTask()
 
-    const [taskDialog, setTaskDialog] = useState(null)   // null | { initial?: task }
     const [deleteConfirm, setDeleteConfirm] = useState(null)  // null | task
 
     const {data: materials = [], isLoading: materialsLoading} = useListMaterials(lessonId)
@@ -474,15 +287,6 @@ export function AdminLessonEditPage() {
 
     const onSaveLesson = (v) => {
         update.mutate({courseId, unitId, lessonId, data: {title: v.title, description: v.description || undefined}})
-    }
-
-    const onTaskSubmit = (data) => {
-        const taskArg = {courseId, unitId, lessonId}
-        if (taskDialog?.initial) {
-            updateTask.mutate({...taskArg, taskId: taskDialog.initial.id, data}, {onSuccess: () => setTaskDialog(null)})
-        } else {
-            createTask.mutate({...taskArg, data}, {onSuccess: () => setTaskDialog(null)})
-        }
     }
 
     const onTaskDelete = () => {
@@ -575,7 +379,13 @@ export function AdminLessonEditPage() {
                         <h3 style={{fontSize: 16, fontWeight: 700}}>Tasks</h3>
                         <span className="it-badge it-badge--neutral it-badge--sm">{tasks.length}</span>
                     </div>
-                    <Button leftIcon="plus" size="sm" onClick={() => setTaskDialog({})}>Add Task</Button>
+                    <Button
+                        leftIcon="plus"
+                        size="sm"
+                        onClick={() => navigate(`/admin/courses/${courseId}/units/${unitId}/lessons/${lessonId}/tasks/new`)}
+                    >
+                        Add Task
+                    </Button>
                 </div>
 
                 {tasksLoading && (
@@ -599,20 +409,11 @@ export function AdminLessonEditPage() {
                         courseId={courseId}
                         unitId={unitId}
                         lessonId={lessonId}
-                        onEdit={() => setTaskDialog({initial: task})}
+                        onEdit={() => navigate(`/admin/courses/${courseId}/units/${unitId}/lessons/${lessonId}/tasks/${task.id}`)}
                         onDelete={() => setDeleteConfirm(task)}
                     />
                 ))}
             </Card>
-
-            <TaskDialog
-                key={taskDialog?.initial?.id ?? 'new'}
-                open={!!taskDialog}
-                initial={taskDialog?.initial ?? null}
-                loading={createTask.isPending || updateTask.isPending}
-                onClose={() => setTaskDialog(null)}
-                onSubmit={onTaskSubmit}
-            />
 
             <ConfirmDialog
                 open={!!deleteConfirm}
