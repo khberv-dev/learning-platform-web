@@ -8,6 +8,7 @@ const ADMIN_NAV = [
     {to: '/admin/teachers', label: 'Teachers', icon: 'users'},
     {to: '/admin/students', label: 'Students', icon: 'graduation-cap'},
     {to: '/admin/courses', label: 'Courses', icon: 'book-open'},
+    {to: '/admin/payments', label: 'Payments', icon: 'credit-card'},
 ]
 const ADMIN_BOTTOM = [
     {to: '/admin/settings', label: 'Settings', icon: 'settings'},

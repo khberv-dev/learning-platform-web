@@ -22,6 +22,8 @@ import AdminEditCoursePage from '@/ui/pages/admin-edit-course/index.jsx'
 import AdminCourseManagerPage from '@/ui/pages/admin-course-manager/index.jsx'
 import AdminLessonEditPage from '@/ui/pages/admin-lesson-edit/index.jsx'
 import AdminTaskEditPage from '@/ui/pages/admin-task-edit/index.jsx'
+import AdminPaymentsPage from '@/ui/pages/admin-payments/index.jsx'
+import AdminPaymentTypesPage from '@/ui/pages/admin-payment-types/index.jsx'
 import AdminSettingsPage from '@/ui/pages/admin-settings/index.jsx'
 
 import TeacherDashboardPage from '@/ui/pages/teacher-dashboard/index.jsx'
@@ -78,6 +80,8 @@ function App() {
                                     <Route path="/admin/courses/:id/units/:unitId/lessons/:lessonId" element={<AdminLessonEditPage/>}/>
                                     <Route path="/admin/courses/:id/units/:unitId/lessons/:lessonId/tasks/new" element={<AdminTaskEditPage/>}/>
                                     <Route path="/admin/courses/:id/units/:unitId/lessons/:lessonId/tasks/:taskId" element={<AdminTaskEditPage/>}/>
+                                    <Route path="/admin/payments" element={<AdminPaymentsPage/>}/>
+                                    <Route path="/admin/payments/types" element={<AdminPaymentTypesPage/>}/>
                                     <Route path="/admin/settings" element={<AdminSettingsPage/>}/>
                                 </Route>
 
