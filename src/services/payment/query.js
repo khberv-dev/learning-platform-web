@@ -1,9 +1,10 @@
 import {useQuery} from "@tanstack/react-query";
 import {useInfoMutation} from "@/services/query.js";
 import {
-    getPaymentTypes, getActivePaymentTypes, getPaymentType,
+    getPaymentTypes, getPaymentType,
     createPaymentType, updatePaymentType, deletePaymentType,
-    getPayments, getPayment, getMyPayments, createPayment, deletePayment,
+    getPayments, getPayment, updatePaymentStatus, deletePayment,
+    requestPayment, selectPaymentType, getMyPayments, getMyPayment,
 } from "@/services/payment/api.js";
 
 /* ---------- Payment types ---------- */
@@ -11,11 +12,6 @@ import {
 export const useGetPaymentTypes = () => useQuery({
     queryKey: ['payment-type', 'list'],
     queryFn: getPaymentTypes,
-})
-
-export const useGetActivePaymentTypes = () => useQuery({
-    queryKey: ['payment-type', 'active'],
-    queryFn: getActivePaymentTypes,
 })
 
 export const useGetPaymentType = (id) => useQuery({
@@ -42,10 +38,16 @@ export const useDeletePaymentType = (opts) => useInfoMutation({
     onSuccess: opts?.onSuccess,
 })
 
-/* ---------- Payments ---------- */
+/* ---------- Payments (admin) ---------- */
 
 export const useGetPayments = (params = {}) => useQuery({
-    queryKey: ['payment', 'list', params.page ?? 1, params.limit ?? 10, params.paymentTypeId ?? null],
+    queryKey: [
+        'payment', 'list',
+        params.page ?? 1, params.limit ?? 10,
+        params.userId ?? null, params.paymentTypeId ?? null,
+        params.enrollmentId ?? null, params.planId ?? null,
+        params.status ?? null,
+    ],
     queryFn: () => getPayments(params),
 })
 
@@ -55,14 +57,10 @@ export const useGetPayment = (id) => useQuery({
     enabled: !!id,
 })
 
-export const useGetMyPayments = () => useQuery({
-    queryKey: ['payment', 'me'],
-    queryFn: getMyPayments,
-})
-
-export const useCreatePayment = (opts) => useInfoMutation({
+/** status: 'paid' confirms the payment and activates its enrollment; 'cancelled' voids both. */
+export const useUpdatePaymentStatus = (opts) => useInfoMutation({
     queryKey: ['payment'],
-    mutationFn: (data) => createPayment(data),
+    mutationFn: ({id, ...data}) => updatePaymentStatus(id, data),
     onSuccess: opts?.onSuccess,
 })
 
@@ -70,4 +68,29 @@ export const useDeletePayment = (opts) => useInfoMutation({
     queryKey: ['payment'],
     mutationFn: (id) => deletePayment(id),
     onSuccess: opts?.onSuccess,
+})
+
+/* ---------- Payments (student) ---------- */
+
+export const useRequestPayment = (opts) => useInfoMutation({
+    queryKey: ['payment'],
+    mutationFn: (planId) => requestPayment(planId),
+    onSuccess: opts?.onSuccess,
+})
+
+export const useSelectPaymentType = (opts) => useInfoMutation({
+    queryKey: ['payment'],
+    mutationFn: ({paymentId, paymentTypeId}) => selectPaymentType(paymentId, paymentTypeId),
+    onSuccess: opts?.onSuccess,
+})
+
+export const useGetMyPayments = (params = {}) => useQuery({
+    queryKey: ['payment', 'me', params.page ?? 1, params.limit ?? 10],
+    queryFn: () => getMyPayments(params),
+})
+
+export const useGetMyPayment = (id) => useQuery({
+    queryKey: ['payment', 'me', 'detail', id],
+    queryFn: () => getMyPayment(id),
+    enabled: !!id,
 })

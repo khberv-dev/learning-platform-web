@@ -25,9 +25,12 @@ function PaymentTypeDialog({initial, loading, onClose, onSubmit}) {
     const [icon, setIcon] = useState(initial?.icon ?? null)
     const [isActive, setIsActive] = useState(initial ? !!initial.isActive : true)
 
+    // The API rejects an empty title or url on both create and update.
+    const valid = title.trim() && url.trim()
+
     const handleSubmit = (e) => {
         e.preventDefault()
-        if (!title.trim()) return
+        if (!valid) return
         const data = {title: title.trim(), url: url.trim(), isActive}
         // Only send the icon field when a new file was picked.
         if (icon instanceof File) data.icon = icon
@@ -49,7 +52,7 @@ function PaymentTypeDialog({initial, loading, onClose, onSubmit}) {
                     <Input placeholder="e.g. Payme" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus/>
                 </FormField>
 
-                <FormField label="URL" hint="Checkout link the student is redirected to.">
+                <FormField label="URL" hint="Checkout link the student is redirected to. Required.">
                     <Input placeholder="https://checkout.paycom.uz/..." value={url} onChange={(e) => setUrl(e.target.value)}/>
                 </FormField>
 
@@ -61,7 +64,7 @@ function PaymentTypeDialog({initial, loading, onClose, onSubmit}) {
 
                 <div className="it-dialog__actions">
                     <Button variant="secondary" size="lg" type="button" onClick={onClose} disabled={loading}>Cancel</Button>
-                    <Button type="submit" size="lg" disabled={!title.trim() || loading}>
+                    <Button type="submit" size="lg" disabled={!valid || loading}>
                         {loading ? 'Saving…' : initial ? 'Save Changes' : 'Add Payment Type'}
                     </Button>
                 </div>
@@ -87,7 +90,7 @@ export function AdminPaymentTypesPage() {
     const update = useUpdatePaymentType({onSuccess: () => setDialog(null)})
     const remove = useDeletePaymentType({onSuccess: () => setConfirm(null)})
 
-    const items = data?.data ?? (Array.isArray(data) ? data : [])
+    const items = Array.isArray(data) ? data : (data?.data ?? [])
     const filtered = search
         ? items.filter(t => (t.title ?? '').toLowerCase().includes(search.toLowerCase()))
         : items

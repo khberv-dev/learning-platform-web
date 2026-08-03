@@ -13,15 +13,10 @@ function asForm(payload, fileField = 'icon') {
     return form
 }
 
-/* ---------- Payment types ---------- */
+/* ---------- Payment types (admin) ---------- */
 
 export async function getPaymentTypes() {
     const res = await api.get('admin/payment-types')
-    return res.data
-}
-
-export async function getActivePaymentTypes() {
-    const res = await api.get('payment-types')
     return res.data
 }
 
@@ -45,10 +40,20 @@ export async function deletePaymentType(id) {
     return res.data
 }
 
-/* ---------- Payments ---------- */
+/* ---------- Payments (admin) ---------- */
 
-export async function getPayments({page = 1, limit = 10, paymentTypeId} = {}) {
-    const res = await api.get('admin/payments', {params: {page, limit, paymentTypeId: paymentTypeId || undefined}})
+export async function getPayments({page = 1, limit = 10, userId, paymentTypeId, enrollmentId, planId, status} = {}) {
+    const res = await api.get('admin/payments', {
+        params: {
+            page,
+            limit,
+            userId: userId || undefined,
+            paymentTypeId: paymentTypeId || undefined,
+            enrollmentId: enrollmentId || undefined,
+            planId: planId || undefined,
+            status: status || undefined,
+        },
+    })
     return res.data
 }
 
@@ -57,17 +62,40 @@ export async function getPayment(id) {
     return res.data
 }
 
-export async function getMyPayments() {
-    const res = await api.get('payments/me')
-    return res.data
-}
-
-export async function createPayment(data) {
-    const res = await api.post('payments', data)
+/** status: 'paid' | 'cancelled'. For 'paid', start/end default to now + the plan's months. */
+export async function updatePaymentStatus(id, {status, start, end}) {
+    const res = await api.patch(`admin/payments/${id}/status`, {
+        status,
+        start: start || undefined,
+        end: end || undefined,
+    })
     return res.data
 }
 
 export async function deletePayment(id) {
     const res = await api.delete(`admin/payments/${id}`)
+    return res.data
+}
+
+/* ---------- Payments (student) ---------- */
+
+/** Opens a pending enrollment + payment for a plan and returns {payment, paymentTypes}. */
+export async function requestPayment(planId) {
+    const res = await api.post('payments/request', {planId})
+    return res.data
+}
+
+export async function selectPaymentType(paymentId, paymentTypeId) {
+    const res = await api.patch(`payments/${paymentId}/payment-type`, {paymentTypeId})
+    return res.data
+}
+
+export async function getMyPayments({page = 1, limit = 10} = {}) {
+    const res = await api.get('payments/me', {params: {page, limit}})
+    return res.data
+}
+
+export async function getMyPayment(id) {
+    const res = await api.get(`payments/${id}`)
     return res.data
 }
