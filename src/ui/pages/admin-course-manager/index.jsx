@@ -317,7 +317,7 @@ export function AdminCourseManagerPage() {
                         </div>
                         <p style={{fontSize: 13, color: 'var(--it-text-secondary)'}}>{course.description ?? 'No description.'}</p>
                         <span style={{fontSize: 13, color: 'var(--it-text-tertiary)'}}>
-                            {course.units?.length ?? 0} units · {course.lessonsCount ?? 0} lessons · {course.price ? `${course.price.toLocaleString()} UZS` : 'Free'}
+                            {course.units?.length ?? 0} units · {course.lessonsCount ?? 0} lessons
                         </span>
                     </div>
                 </div>

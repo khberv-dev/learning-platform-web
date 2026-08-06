@@ -21,14 +21,14 @@ export function AdminAddCoursePage() {
     }, [setHeader, navigate])
 
     const {register, handleSubmit, control, formState: {errors}} = useForm({
-        defaultValues: {title: '', description: '', price: 0, isActive: true, image: null},
+        defaultValues: {title: '', description: '', isActive: true, image: null},
     })
 
+    // Pricing lives on the course's plans, not the course itself.
     const onSubmit = (v) => {
         create.mutate({
             title: v.title,
             description: v.description || undefined,
-            price: Number(v.price) || 0,
             isActive: v.isActive,
             image: v.image || undefined,
         })
@@ -54,9 +54,6 @@ export function AdminAddCoursePage() {
                 </FormField>
 
                 <Row>
-                    <FormField label="Price (UZS)">
-                        <Input type="number" min={0} step={1000} placeholder="0" {...register('price')}/>
-                    </FormField>
                     <FormField label="Status">
                         <Controller
                             control={control}

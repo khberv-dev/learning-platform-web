@@ -11,4 +11,5 @@ export const useCreateEnrollment = (opts) => useInfoMutation({
     queryKey: ['enrollment'],
     mutationFn: (data) => createEnrollment(data),
     onSuccess: opts?.onSuccess,
+    onError: opts?.onError,
 })

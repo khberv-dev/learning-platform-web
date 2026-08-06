@@ -23,7 +23,7 @@ export function AdminEditCoursePage() {
     }, [setHeader, navigate, id])
 
     const {register, handleSubmit, control, reset, formState: {errors}} = useForm({
-        defaultValues: {title: '', description: '', price: 0, isActive: true, image: null},
+        defaultValues: {title: '', description: '', isActive: true, image: null},
     })
 
     useEffect(() => {
@@ -31,17 +31,16 @@ export function AdminEditCoursePage() {
         reset({
             title: course.title ?? '',
             description: course.description ?? '',
-            price: course.price ?? 0,
             isActive: !!course.isActive,
             image: course.image ?? null, // existing path string → preview only; replaced only if a File is picked
         })
     }, [course, reset])
 
+    // Pricing lives on the course's plans, not the course itself.
     const onSubmit = (v) => {
         const data = {
             title: v.title,
             description: v.description || undefined,
-            price: Number(v.price) || 0,
             isActive: v.isActive,
         }
         // Only send the image field when the admin picked a new file.
@@ -71,9 +70,6 @@ export function AdminEditCoursePage() {
                 </FormField>
 
                 <Row>
-                    <FormField label="Price (UZS)">
-                        <Input type="number" min={0} step={1000} placeholder="0" {...register('price')}/>
-                    </FormField>
                     <FormField label="Status">
                         <Controller
                             control={control}

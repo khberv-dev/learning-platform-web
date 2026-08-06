@@ -160,9 +160,10 @@ export function AdminPaymentsPage() {
                             </span>
                         </div>
                     )},
-                    {key: 'amount', header: 'Amount', width: 130, render: (p) => p.plan?.price
-                        ? `${formatNumber(p.plan.price)} UZS`
-                        : <span style={{color: 'var(--it-text-tertiary)'}}>—</span>},
+                    // The charged amount is frozen on the payment, so later plan price changes don't rewrite history.
+                    {key: 'amount', header: 'Amount', width: 130, render: (p) => p.amount
+                        ? `${formatNumber(p.amount)} UZS`
+                        : <span style={{color: 'var(--it-text-tertiary)'}}>Free</span>},
                     {key: 'type', header: 'Payment Type', width: 170, gap: 10, render: (p) => p.paymentType
                         ? (
                             <>

@@ -1,20 +1,144 @@
-import {useEffect, useMemo} from 'react'
+import {useEffect, useMemo, useState} from 'react'
 import {useNavigate, useParams} from 'react-router'
 import {useHeader} from '@/providers/header.jsx'
 import {useGetStudents} from '@/services/student/query.js'
+import {useGetCourses} from '@/services/course/query.js'
+import {useGetPlans} from '@/services/plan/query.js'
+import {useCreateEnrollment} from '@/services/enrollment/query.js'
 import {Avatar} from '@/ui/components/avatar/index.jsx'
 import {Button} from '@/ui/components/button/index.jsx'
 import {Card} from '@/ui/components/card/index.jsx'
+import {Input} from '@/ui/components/input/index.jsx'
+import {FormField} from '@/ui/components/form-field/index.jsx'
 import {SectionCard} from '@/ui/components/section-card/index.jsx'
 import {ResourceBadge} from '@/ui/components/resource-badge/index.jsx'
 import {Icon} from '@/ui/components/icon/index.jsx'
-import {fullName, formatDate} from '@/utils/lib.js'
+import {fullName, formatDate, formatNumber} from '@/utils/lib.js'
+
+const selectStyle = {
+    width: '100%', height: 44, padding: '0 14px',
+    background: 'var(--it-surface-input)',
+    border: '1px solid var(--it-border-strong)',
+    borderRadius: 8, fontSize: 14,
+}
+
+const NO_PLAN = 'none'
+
+// Mounted only while open, so the initial values below double as a reset.
+function EnrollDialog({studentId, studentName, loading, onClose, onSubmit}) {
+    const [courseId, setCourseId] = useState('')
+    const [planId, setPlanId] = useState(NO_PLAN)
+    const [start, setStart] = useState('')
+    const [end, setEnd] = useState('')
+    const [amount, setAmount] = useState('')
+
+    const {data: courses} = useGetCourses()
+    const {data: plans} = useGetPlans(courseId)
+
+    const planList = plans ?? []
+    const plan = planList.find(p => p.id === planId)
+    // Without a plan there is no duration to derive the end date from, so the API requires it.
+    const needsEnd = !plan
+    const valid = courseId && (!needsEnd || end)
+
+    const pickCourse = (id) => {
+        setCourseId(id)
+        setPlanId(NO_PLAN)   // plans are per course
+    }
+
+    const handleSubmit = (e) => {
+        e.preventDefault()
+        if (!valid) return
+        const data = {studentId}
+        if (plan) data.planId = plan.id
+        else data.courseId = courseId
+        if (start) data.start = new Date(start).toISOString()
+        if (end) data.end = new Date(end).toISOString()
+        if (amount !== '') data.purchaseAmount = Number(amount) || 0
+        onSubmit(data)
+    }
+
+    return (
+        <div className="it-dialog__backdrop" onClick={onClose}>
+            <form className="it-dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+                <div className="it-dialog__title">Enroll in a course</div>
+                <div className="it-dialog__body">
+                    {studentName} is enrolled straight away, with no payment recorded.
+                </div>
+
+                <FormField label="Course">
+                    <select
+                        value={courseId}
+                        onChange={(e) => pickCourse(e.target.value)}
+                        style={{...selectStyle, color: courseId ? 'var(--it-text-primary)' : 'var(--it-text-tertiary)'}}
+                    >
+                        <option value="">Select a course</option>
+                        {(courses ?? []).map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                    </select>
+                </FormField>
+
+                <FormField
+                    label="Plan"
+                    hint={plan
+                        ? `Ends ${plan.month} month${plan.month === 1 ? '' : 's'} after the start date.`
+                        : 'Without a plan you set the end date yourself.'}
+                >
+                    <select
+                        value={planId}
+                        onChange={(e) => setPlanId(e.target.value)}
+                        disabled={!courseId}
+                        style={{...selectStyle, color: plan ? 'var(--it-text-primary)' : 'var(--it-text-tertiary)'}}
+                    >
+                        <option value={NO_PLAN}>No plan — custom dates</option>
+                        {planList.map(p => (
+                            <option key={p.id} value={p.id}>
+                                {p.title} · {p.month} mo · {p.price ? `${formatNumber(p.price)} UZS` : 'Free'}
+                            </option>
+                        ))}
+                    </select>
+                </FormField>
+
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16}}>
+                    <FormField label="Starts" hint="Defaults to now.">
+                        <Input type="date" value={start} onChange={(e) => setStart(e.target.value)}/>
+                    </FormField>
+                    <FormField label={needsEnd ? 'Ends (required)' : 'Ends'} hint={needsEnd ? undefined : 'Defaults to the plan duration.'}>
+                        <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} invalid={needsEnd && !end}/>
+                    </FormField>
+                </div>
+
+                <FormField
+                    label="Purchase amount (UZS)"
+                    hint={plan ? 'Defaults to the plan price. Recorded in the purchase history.' : 'Defaults to 0. Recorded in the purchase history.'}
+                >
+                    <Input
+                        type="number"
+                        min={0}
+                        step={1000}
+                        placeholder={plan?.price ? String(plan.price) : '0'}
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                    />
+                </FormField>
+
+                <div className="it-dialog__actions">
+                    <Button variant="secondary" size="lg" type="button" onClick={onClose} disabled={loading}>Cancel</Button>
+                    <Button type="submit" size="lg" disabled={!valid || loading}>
+                        {loading ? 'Enrolling…' : 'Enroll'}
+                    </Button>
+                </div>
+            </form>
+        </div>
+    )
+}
 
 export function AdminStudentProfilePage() {
     const {id} = useParams()
     const navigate = useNavigate()
     const {setHeader} = useHeader()
     const {data} = useGetStudents({page: 1, limit: 100})
+    const [enrollOpen, setEnrollOpen] = useState(false)
+    const enroll = useCreateEnrollment({onSuccess: () => setEnrollOpen(false)})
 
     const student = useMemo(() => (data?.data ?? []).find(s => s.id === id), [data, id])
 
@@ -66,7 +190,14 @@ export function AdminStudentProfilePage() {
                 </SectionCard>
             </div>
 
-            <SectionCard title={`Enrolled Courses (${enrollments.length})`}>
+            <SectionCard
+                title={`Enrolled Courses (${enrollments.length})`}
+                action={
+                    <Button size="sm" leftIcon="plus" onClick={() => setEnrollOpen(true)}>
+                        Enroll in Course
+                    </Button>
+                }
+            >
                 {enrollments.length === 0 ? (
                     <div style={{color: 'var(--it-text-tertiary)', padding: 12}}>No active enrollments.</div>
                 ) : enrollments.map((e) => (
@@ -84,6 +215,16 @@ export function AdminStudentProfilePage() {
                     </div>
                 ))}
             </SectionCard>
+
+            {enrollOpen && (
+                <EnrollDialog
+                    studentId={student.id}
+                    studentName={name}
+                    loading={enroll.isPending}
+                    onClose={() => setEnrollOpen(false)}
+                    onSubmit={(data) => enroll.mutate(data)}
+                />
+            )}
         </div>
     )
 }
