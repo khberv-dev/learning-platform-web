@@ -17,7 +17,10 @@ import {cdnUrl} from '@/services/config.js'
 
 // ── Task row ──────────────────────────────────────────────────────────────────
 
+const CONTENT_TYPE_ICON = {picture: 'image', audio: 'audio-lines', text: 'file-text'}
+
 function TaskRow({task, courseId, unitId, lessonId, onEdit, onDelete}) {
+    const [open, setOpen] = useState(false)
     const fileInputRef = useRef(null)
     const [localFile, setLocalFile] = useState(null)  // null | { url, contentType }
     const [fileProgress, setFileProgress] = useState(null)
@@ -29,118 +32,154 @@ function TaskRow({task, courseId, unitId, lessonId, onEdit, onDelete}) {
     const isText = !localFile && contentType === 'text'
     const fileSrc = localFile?.url ?? (!isText && task.file ? cdnUrl(task.file) : null)
 
-    return (
-        <div style={{
-            display: 'flex', alignItems: 'flex-start', gap: 12,
-            padding: '14px 16px',
-            background: 'var(--it-surface-input)', borderRadius: 10,
-        }}>
-            <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: 12}}>
-                {task.name && (
-                    <span style={{fontWeight: 700, fontSize: 15, color: 'var(--it-text-primary)'}}>{task.name}</span>
-                )}
-                {questions.map((q, idx) => (
-                    <div key={idx} style={{display: 'flex', flexDirection: 'column', gap: 6}}>
-                        {questions.length > 1 && (
-                            <span style={{fontSize: 11, fontWeight: 600, color: 'var(--it-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em'}}>
-                                Q{idx + 1}
-                            </span>
-                        )}
-                        <span style={{fontWeight: 600, fontSize: 14, color: 'var(--it-text-primary)'}}>{q.question}</span>
-                        {q.options?.length > 0 && (
-                            <div style={{display: 'flex', flexWrap: 'wrap', gap: 6}}>
-                                {q.options.map((opt) => (
-                                    <span
-                                        key={opt}
-                                        style={{
-                                            padding: '2px 10px', borderRadius: 999,
-                                            fontSize: 12, fontWeight: 500,
-                                            background: opt === q.answer
-                                                ? 'var(--it-success-bg)' : 'var(--it-surface-alt)',
-                                            color: opt === q.answer
-                                                ? 'var(--it-success-text)' : 'var(--it-text-secondary)',
-                                            border: opt === q.answer
-                                                ? '1px solid var(--it-success-border)' : '1px solid var(--it-border)',
-                                        }}
-                                    >
-                                        {opt === q.answer && '✓ '}{opt}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                        {!q.options?.length && (
-                            <span style={{fontSize: 12, color: 'var(--it-success-text)', fontWeight: 500}}>
-                                Answer: {q.answer}
-                            </span>
-                        )}
-                    </div>
-                ))}
+    const title = task.name || questions[0]?.question || 'Untitled task'
+    const typeIcon = task.file ? CONTENT_TYPE_ICON[contentType] : null
 
-                <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
-                    {isText && (
-                        <div style={{
-                            padding: '10px 12px', borderRadius: 8,
-                            background: 'var(--it-surface-alt)', border: '1px solid var(--it-border)',
-                            fontSize: 13, color: 'var(--it-text-body)', whiteSpace: 'pre-wrap',
-                        }}>
-                            {task.file}
-                        </div>
-                    )}
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="audio/*,image/*"
-                        hidden
-                        onChange={(e) => {
-                            const f = e.target.files?.[0]
-                            e.target.value = ''
-                            if (!f) return
-                            setLocalFile({
-                                url: URL.createObjectURL(f),
-                                contentType: f.type.startsWith('image/') ? 'picture' : 'audio',
-                            })
-                            uploadFile.mutate({courseId, unitId, lessonId, taskId: task.id, file: f, onProgress: setFileProgress})
-                        }}
+    return (
+        <div style={{background: 'var(--it-surface-input)', borderRadius: 10}}>
+            <div style={{display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px'}}>
+                {/* Only the title area toggles, so the edit/delete buttons stay
+                    outside it rather than nesting inside a clickable region. */}
+                <button
+                    type="button"
+                    aria-expanded={open}
+                    onClick={() => setOpen(v => !v)}
+                    style={{
+                        flex: 1, minWidth: 0,
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        background: 'none', border: 'none', padding: 0,
+                        font: 'inherit', textAlign: 'left', cursor: 'pointer',
+                    }}
+                >
+                    <Icon
+                        name={open ? 'chevron-down' : 'chevron-right'}
+                        size={18}
+                        style={{flexShrink: 0, color: 'var(--it-text-secondary)'}}
                     />
-                    {fileSrc ? (
-                        <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
-                            {isPicture ? (
-                                <img
-                                    key={fileSrc} src={fileSrc} alt=""
-                                    style={{width: '100%', maxWidth: 240, borderRadius: 8, border: '1px solid var(--it-border)'}}
-                                />
-                            ) : (
-                                <audio key={fileSrc} src={fileSrc} controls style={{width: '100%', maxWidth: 360, height: 36}}/>
-                            )}
-                            <UploadProgress progress={fileProgress}/>
-                            <Button
-                                type="button" variant="secondary" size="sm" leftIcon="refresh-cw"
-                                disabled={uploadFile.isPending}
-                                onClick={() => fileInputRef.current?.click()}
-                                style={{alignSelf: 'flex-start'}}
-                            >
-                                {uploadFile.isPending ? 'Uploading…' : isPicture ? 'Replace image' : 'Replace audio'}
-                            </Button>
-                        </div>
-                    ) : (
-                        <>
-                            <UploadProgress progress={fileProgress}/>
-                            <Button
-                                type="button" variant="secondary" size="sm" leftIcon="paperclip"
-                                disabled={uploadFile.isPending}
-                                onClick={() => fileInputRef.current?.click()}
-                                style={{alignSelf: 'flex-start'}}
-                            >
-                                {uploadFile.isPending ? 'Uploading…' : 'Upload audio or image'}
-                            </Button>
-                        </>
+                    <span style={{
+                        flex: 1, minWidth: 0,
+                        fontWeight: 700, fontSize: 15, color: 'var(--it-text-primary)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                        {title}
+                    </span>
+                    {typeIcon && (
+                        <Icon name={typeIcon} size={16} style={{flexShrink: 0, color: 'var(--it-text-tertiary)'}}/>
                     )}
+                    {questions.length > 0 && (
+                        <span className="it-badge it-badge--neutral it-badge--sm">
+                            {questions.length} {questions.length === 1 ? 'question' : 'questions'}
+                        </span>
+                    )}
+                </button>
+                <div style={{display: 'flex', gap: 6, flexShrink: 0}}>
+                    <IconButton icon="pencil" title="Edit task" onClick={onEdit}/>
+                    <IconButton icon="trash-2" title="Delete task" onClick={onDelete}/>
                 </div>
             </div>
-            <div style={{display: 'flex', gap: 6, flexShrink: 0}}>
-                <IconButton icon="pencil" title="Edit task" onClick={onEdit}/>
-                <IconButton icon="trash-2" title="Delete task" onClick={onDelete}/>
-            </div>
+
+            {open && (
+                <div style={{display: 'flex', flexDirection: 'column', gap: 12, padding: '0 16px 14px 46px'}}>
+                    {/* Media first — the audio clip or picture is what the questions are about. */}
+                    <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
+                        {isText && (
+                            <div style={{
+                                padding: '10px 12px', borderRadius: 8,
+                                background: 'var(--it-surface-alt)', border: '1px solid var(--it-border)',
+                                fontSize: 13, color: 'var(--it-text-body)', whiteSpace: 'pre-wrap',
+                            }}>
+                                {task.file}
+                            </div>
+                        )}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="audio/*,image/*"
+                            hidden
+                            onChange={(e) => {
+                                const f = e.target.files?.[0]
+                                e.target.value = ''
+                                if (!f) return
+                                setLocalFile({
+                                    url: URL.createObjectURL(f),
+                                    contentType: f.type.startsWith('image/') ? 'picture' : 'audio',
+                                })
+                                uploadFile.mutate({courseId, unitId, lessonId, taskId: task.id, file: f, onProgress: setFileProgress})
+                            }}
+                        />
+                        {fileSrc ? (
+                            <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
+                                {isPicture ? (
+                                    <img
+                                        key={fileSrc} src={fileSrc} alt=""
+                                        style={{width: '100%', maxWidth: 240, borderRadius: 8, border: '1px solid var(--it-border)'}}
+                                    />
+                                ) : (
+                                    <audio key={fileSrc} src={fileSrc} controls style={{width: '100%', maxWidth: 360, height: 36}}/>
+                                )}
+                                <UploadProgress progress={fileProgress}/>
+                                <Button
+                                    type="button" variant="secondary" size="sm" leftIcon="refresh-cw"
+                                    disabled={uploadFile.isPending}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    style={{alignSelf: 'flex-start'}}
+                                >
+                                    {uploadFile.isPending ? 'Uploading…' : isPicture ? 'Replace image' : 'Replace audio'}
+                                </Button>
+                            </div>
+                        ) : (
+                            <>
+                                <UploadProgress progress={fileProgress}/>
+                                <Button
+                                    type="button" variant="secondary" size="sm" leftIcon="paperclip"
+                                    disabled={uploadFile.isPending}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    style={{alignSelf: 'flex-start'}}
+                                >
+                                    {uploadFile.isPending ? 'Uploading…' : 'Upload audio or image'}
+                                </Button>
+                            </>
+                        )}
+                    </div>
+
+                    {questions.map((q, idx) => (
+                        <div key={idx} style={{display: 'flex', flexDirection: 'column', gap: 6}}>
+                            {questions.length > 1 && (
+                                <span style={{fontSize: 11, fontWeight: 600, color: 'var(--it-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em'}}>
+                                    Q{idx + 1}
+                                </span>
+                            )}
+                            <span style={{fontWeight: 600, fontSize: 14, color: 'var(--it-text-primary)'}}>{q.question}</span>
+                            {q.options?.length > 0 && (
+                                <div style={{display: 'flex', flexWrap: 'wrap', gap: 6}}>
+                                    {q.options.map((opt) => (
+                                        <span
+                                            key={opt}
+                                            style={{
+                                                padding: '2px 10px', borderRadius: 999,
+                                                fontSize: 12, fontWeight: 500,
+                                                background: opt === q.answer
+                                                    ? 'var(--it-success-bg)' : 'var(--it-surface-alt)',
+                                                color: opt === q.answer
+                                                    ? 'var(--it-success-text)' : 'var(--it-text-secondary)',
+                                                border: opt === q.answer
+                                                    ? '1px solid var(--it-success-border)' : '1px solid var(--it-border)',
+                                            }}
+                                        >
+                                            {opt === q.answer && '✓ '}{opt}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                            {!q.options?.length && (
+                                <span style={{fontSize: 12, color: 'var(--it-success-text)', fontWeight: 500}}>
+                                    Answer: {q.answer}
+                                </span>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
@@ -454,7 +493,7 @@ export function AdminLessonEditPage() {
                         color: 'var(--it-text-tertiary)', fontSize: 14,
                     }}>
                         <Icon name="paperclip" size={32} style={{marginBottom: 8, opacity: 0.4}}/>
-                        <div>No materials yet. Attach a PDF or image for students.</div>
+                        <div>No materials yet. Attach a PDF or Word document for students.</div>
                     </div>
                 )}
 
