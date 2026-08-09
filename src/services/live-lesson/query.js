@@ -1,10 +1,15 @@
 import {useQuery} from "@tanstack/react-query";
 import {useInfoMutation} from "@/services/query.js";
-import {getLiveLessons, getLiveLesson, createLiveLesson, updateLiveLesson, deleteLiveLesson} from "@/services/live-lesson/api.js";
+import {getLiveLessons, getMyLiveLessons, getLiveLesson, createLiveLesson, updateLiveLesson, deleteLiveLesson} from "@/services/live-lesson/api.js";
 
 export const useGetLiveLessons = (params = {}) => useQuery({
     queryKey: ['live-lesson', 'list', params.page ?? 1, params.limit ?? 10],
     queryFn: () => getLiveLessons(params),
+})
+
+export const useGetMyLiveLessons = () => useQuery({
+    queryKey: ['live-lesson', 'my'],
+    queryFn: () => getMyLiveLessons(),
 })
 
 export const useGetLiveLesson = (id) => useQuery({

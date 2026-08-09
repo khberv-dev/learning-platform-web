@@ -5,6 +5,12 @@ export async function getLiveLessons({page = 1, limit = 10} = {}) {
     return res.data
 }
 
+/** Live lessons the current student is assigned to. */
+export async function getMyLiveLessons() {
+    const res = await api.get('live-lessons/my')
+    return res.data
+}
+
 export async function getLiveLesson(id) {
     const res = await api.get(`live-lessons/${id}`)
     return res.data

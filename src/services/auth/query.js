@@ -1,5 +1,5 @@
 import {useInfoMutation} from "@/services/query.js";
-import {signIn, signUp} from "@/services/auth/api.js";
+import {signIn, signUp, sendOtp, recoverPassword} from "@/services/auth/api.js";
 
 const persistTokens = (data) => {
     if (data?.accessToken) localStorage.setItem('access_token', data.accessToken)
@@ -22,4 +22,15 @@ export const useSignUp = (opts) => useInfoMutation({
         persistTokens(data)
         opts?.onSuccess?.(data)
     },
+})
+
+export const useSendOtp = (opts) => useInfoMutation({
+    mutationFn: (phoneNumber) => sendOtp(phoneNumber),
+    onSuccess: opts?.onSuccess,
+    onError: opts?.onError,
+})
+
+export const useRecoverPassword = (opts) => useInfoMutation({
+    mutationFn: (data) => recoverPassword(data),
+    onSuccess: opts?.onSuccess,
 })

@@ -147,6 +147,15 @@ function TaskRow({task, courseId, unitId, lessonId, onEdit, onDelete}) {
 
 // ── Material dialog (add) ──────────────────────────────────────────────────────
 
+// The API only stores `pdf` and `doc` materials; some browsers report Word files
+// as application/octet-stream, so extensions are listed alongside the mime types.
+const MATERIAL_ACCEPT = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.pdf', '.doc', '.docx',
+].join(',')
+
 function MaterialDialog({open, onClose, onSubmit, loading, progress}) {
     const [name, setName] = useState('')
     const [file, setFile] = useState(null)
@@ -182,11 +191,11 @@ function MaterialDialog({open, onClose, onSubmit, loading, progress}) {
                         />
                     </FormField>
 
-                    <FormField label="File" hint="PDF or image">
+                    <FormField label="File" hint="PDF or Word document">
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept="application/pdf,image/*"
+                            accept={MATERIAL_ACCEPT}
                             hidden
                             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                         />
@@ -195,7 +204,7 @@ function MaterialDialog({open, onClose, onSubmit, loading, progress}) {
                             <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>
                                 {file ? file.name : 'Choose a file'}
                             </span>
-                            <span className="it-upload__hint">PDF or image</span>
+                            <span className="it-upload__hint">PDF, DOC or DOCX</span>
                         </div>
                         <UploadProgress progress={progress}/>
                     </FormField>
@@ -224,7 +233,7 @@ function MaterialRow({material, onDelete}) {
             padding: '12px 16px',
             background: 'var(--it-surface-input)', borderRadius: 10,
         }}>
-            <Icon name={isPdf ? 'file-text' : 'image'} size={20} style={{flexShrink: 0, color: 'var(--it-text-secondary)'}}/>
+            <Icon name={isPdf ? 'file-text' : 'file-type-2'} size={20} style={{flexShrink: 0, color: 'var(--it-text-secondary)'}}/>
             <a
                 href={cdnUrl(material.url)}
                 target="_blank"
