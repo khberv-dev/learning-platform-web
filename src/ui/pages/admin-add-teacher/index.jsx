@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import {useForm, Controller} from 'react-hook-form'
 import {useNavigate} from 'react-router'
 import {useHeader} from '@/providers/header.jsx'
@@ -113,6 +113,7 @@ function Row({children}) {
 
 function AvatarUploadStub() {
     const [name, setName] = useState(null)
+    const inputRef = useRef(null)
     return (
         <div style={{display: 'flex', alignItems: 'center', gap: 20}}>
             <div style={{
@@ -127,12 +128,21 @@ function AvatarUploadStub() {
             <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
                 <div style={{fontSize: 15, fontWeight: 600, color: 'var(--it-text-primary)'}}>Profile Photo</div>
                 <div style={{fontSize: 13, color: 'var(--it-text-secondary)'}}>Upload a clear photo. Max 5MB.</div>
-                <label>
-                    <input type="file" accept="image/*" hidden onChange={(e) => setName(e.target.files?.[0]?.name)}/>
-                    <span className="it-btn it-btn--secondary it-btn--sm" style={{display: 'inline-flex'}}>
-                        <Icon name="upload" size={14}/> {name ?? 'Choose photo'}
-                    </span>
-                </label>
+                <input
+                    ref={inputRef}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={(e) => setName(e.target.files?.[0]?.name)}
+                />
+                <button
+                    type="button"
+                    className="it-btn it-btn--secondary it-btn--sm"
+                    style={{display: 'inline-flex', alignSelf: 'flex-start'}}
+                    onClick={() => inputRef.current?.click()}
+                >
+                    <Icon name="upload" size={14}/> {name ?? 'Choose photo'}
+                </button>
             </div>
         </div>
     )

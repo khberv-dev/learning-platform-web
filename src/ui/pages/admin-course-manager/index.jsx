@@ -83,7 +83,7 @@ function LessonDialog({open, onClose, onSubmit, loading}) {
                         autoFocus
                     />
                 </FormField>
-                <FormField label="Video (optional)">
+                <FormField label="Video (optional)" as="div">
                     <FileUpload onChange={setFile} icon="video" accept="video/*" label="Choose video file"/>
                 </FormField>
                 <div className="it-dialog__actions">

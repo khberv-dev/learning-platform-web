@@ -230,7 +230,7 @@ function MaterialDialog({open, onClose, onSubmit, loading, progress}) {
                         />
                     </FormField>
 
-                    <FormField label="File" hint="PDF or Word document">
+                    <FormField label="File" hint="PDF or Word document" as="div">
                         <input
                             ref={fileInputRef}
                             type="file"
@@ -238,13 +238,18 @@ function MaterialDialog({open, onClose, onSubmit, loading, progress}) {
                             hidden
                             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                         />
-                        <div className="it-upload" onClick={() => !loading && fileInputRef.current?.click()}>
+                        <button
+                            type="button"
+                            className="it-upload"
+                            disabled={loading}
+                            onClick={() => fileInputRef.current?.click()}
+                        >
                             <Icon name={file ? 'file-check-2' : 'upload'} size={24}/>
                             <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>
                                 {file ? file.name : 'Choose a file'}
                             </span>
                             <span className="it-upload__hint">PDF, DOC or DOCX</span>
-                        </div>
+                        </button>
                         <UploadProgress progress={progress}/>
                     </FormField>
                 </div>
@@ -366,7 +371,7 @@ export function AdminLessonEditPage() {
                     <FormField label="Description">
                         <Textarea rows={4} placeholder="Lesson description…" {...register('description')}/>
                     </FormField>
-                    <FormField label="Lesson Video">
+                    <FormField label="Lesson Video" as="div">
                         <input
                             ref={mediaInputRef}
                             type="file"
@@ -400,13 +405,18 @@ export function AdminLessonEditPage() {
                             </>
                         ) : (
                             <>
-                                <div className="it-upload" onClick={() => !uploadMedia.isPending && mediaInputRef.current?.click()}>
+                                <button
+                                    type="button"
+                                    className="it-upload"
+                                    disabled={uploadMedia.isPending}
+                                    onClick={() => mediaInputRef.current?.click()}
+                                >
                                     <Icon name={uploadMedia.isPending ? 'loader' : 'video'} size={24}/>
                                     <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>
                                         {uploadMedia.isPending ? 'Uploading…' : 'Upload lesson video'}
                                     </span>
                                     <span className="it-upload__hint">MP4 or WebM</span>
-                                </div>
+                                </button>
                                 <UploadProgress progress={mediaProgress}/>
                             </>
                         )}

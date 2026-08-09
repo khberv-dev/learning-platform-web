@@ -127,13 +127,18 @@ export function AdminTeacherProfilePage() {
                         </>
                     ) : (
                         <>
-                            <div className="it-upload" onClick={() => !upload.isPending && introInput.current?.click()}>
+                            <button
+                                type="button"
+                                className="it-upload"
+                                disabled={upload.isPending}
+                                onClick={() => introInput.current?.click()}
+                            >
                                 <Icon name={upload.isPending ? 'loader' : 'video'} size={24}/>
                                 <span style={{fontWeight: 600, color: 'var(--it-text-body)'}}>
                                     {upload.isPending ? 'Uploading…' : 'Upload intro video'}
                                 </span>
                                 <span className="it-upload__hint">MP4 or WebM</span>
-                            </div>
+                            </button>
                             <UploadProgress progress={uploadProgress}/>
                         </>
                     )}
