@@ -3,7 +3,7 @@ import {useInfoMutation} from "@/services/query.js";
 import {
     getPaymentTypes, getPaymentType,
     createPaymentType, updatePaymentType, deletePaymentType,
-    getPayments, getPayment, updatePaymentStatus, deletePayment,
+    getPayments, getPayment,
     requestPayment, selectPaymentType, getMyPayments, getMyPayment,
 } from "@/services/payment/api.js";
 
@@ -38,7 +38,10 @@ export const useDeletePaymentType = (opts) => useInfoMutation({
     onSuccess: opts?.onSuccess,
 })
 
-/* ---------- Payments (admin) ---------- */
+/* ---------- Payments (admin, read-only) ----------
+ * No status or delete mutations: Click's webhooks own the payment lifecycle.
+ * Cash and transfer cases go through useCreateEnrollment() instead.
+ */
 
 export const useGetPayments = (params = {}) => useQuery({
     queryKey: [
@@ -55,19 +58,6 @@ export const useGetPayment = (id) => useQuery({
     queryKey: ['payment', 'detail', id],
     queryFn: () => getPayment(id),
     enabled: !!id,
-})
-
-/** status: 'paid' confirms the payment and activates its enrollment; 'cancelled' voids both. */
-export const useUpdatePaymentStatus = (opts) => useInfoMutation({
-    queryKey: ['payment'],
-    mutationFn: ({id, ...data}) => updatePaymentStatus(id, data),
-    onSuccess: opts?.onSuccess,
-})
-
-export const useDeletePayment = (opts) => useInfoMutation({
-    queryKey: ['payment'],
-    mutationFn: (id) => deletePayment(id),
-    onSuccess: opts?.onSuccess,
 })
 
 /* ---------- Payments (student) ---------- */

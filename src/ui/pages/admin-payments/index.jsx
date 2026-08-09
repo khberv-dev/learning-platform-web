@@ -1,21 +1,13 @@
 import {useEffect, useState} from 'react'
 import {useNavigate} from 'react-router'
 import {useHeader} from '@/providers/header.jsx'
-import {
-    useGetPayments,
-    useGetPaymentTypes,
-    useUpdatePaymentStatus,
-    useDeletePayment,
-} from '@/services/payment/query.js'
-import {Button, IconButton} from '@/ui/components/button/index.jsx'
+import {useGetPayments, useGetPaymentTypes} from '@/services/payment/query.js'
+import {Button} from '@/ui/components/button/index.jsx'
 import {DataTable} from '@/ui/components/data-table/index.jsx'
 import {Toolbar} from '@/ui/components/toolbar/index.jsx'
 import {Avatar} from '@/ui/components/avatar/index.jsx'
-import {Input} from '@/ui/components/input/index.jsx'
-import {FormField} from '@/ui/components/form-field/index.jsx'
 import {Pagination} from '@/ui/components/pagination/index.jsx'
 import {ResourceBadge} from '@/ui/components/resource-badge/index.jsx'
-import {ConfirmDialog} from '@/ui/components/confirm-dialog/index.jsx'
 import {PaymentTypeIcon} from '@/ui/components/payment-type-icon/index.jsx'
 import {fullName, formatDate, formatNumber} from '@/utils/lib.js'
 
@@ -33,53 +25,11 @@ const STATUS_BADGE = {
     cancelled: {status: 'rejected', label: 'Cancelled'},
 }
 
-// Mounted only while open, so the initial values below double as a reset.
-function ConfirmPaymentDialog({payment, loading, onClose, onSubmit}) {
-    const [start, setStart] = useState('')
-    const [end, setEnd] = useState('')
-
-    const months = payment.plan?.month
-    const handleSubmit = (e) => {
-        e.preventDefault()
-        onSubmit({
-            status: 'paid',
-            start: start ? new Date(start).toISOString() : undefined,
-            end: end ? new Date(end).toISOString() : undefined,
-        })
-    }
-
-    return (
-        <div className="it-dialog__backdrop" onClick={onClose}>
-            <form className="it-dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
-                <div className="it-dialog__title">Confirm payment?</div>
-                <div className="it-dialog__body">
-                    The enrollment for {payment.enrollment?.course?.title ?? 'this course'} becomes active
-                    and a purchase record is written.
-                </div>
-
-                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16}}>
-                    <FormField label="Starts" hint="Defaults to now.">
-                        <Input type="date" value={start} onChange={(e) => setStart(e.target.value)}/>
-                    </FormField>
-                    <FormField
-                        label="Ends"
-                        hint={months ? `Defaults to +${months} month${months === 1 ? '' : 's'}.` : 'Defaults to the plan duration.'}
-                    >
-                        <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)}/>
-                    </FormField>
-                </div>
-
-                <div className="it-dialog__actions">
-                    <Button variant="secondary" size="lg" type="button" onClick={onClose} disabled={loading}>Cancel</Button>
-                    <Button type="submit" size="lg" disabled={loading}>
-                        {loading ? 'Saving…' : 'Confirm Payment'}
-                    </Button>
-                </div>
-            </form>
-        </div>
-    )
-}
-
+/**
+ * Read-only: the API has no approve, reject or delete endpoint for payments —
+ * Click's webhooks own the lifecycle. Cash and transfer are handled by enrolling
+ * the student directly from their profile ("Enroll in Course").
+ */
 export function AdminPaymentsPage() {
     const {setHeader} = useHeader()
     const navigate = useNavigate()
@@ -87,19 +37,12 @@ export function AdminPaymentsPage() {
     const [search, setSearch] = useState('')
     const [paymentTypeId, setPaymentTypeId] = useState('')
     const [status, setStatus] = useState('')
-    const [confirmPaid, setConfirmPaid] = useState(null)
-    const [confirmCancel, setConfirmCancel] = useState(null)
-    const [confirmDelete, setConfirmDelete] = useState(null)
     const limit = 10
 
     useEffect(() => { setHeader({title: 'Payments'}); return () => setHeader({}) }, [setHeader])
 
     const {data, isLoading} = useGetPayments({page, limit, paymentTypeId, status})
     const {data: typesData} = useGetPaymentTypes()
-    const updateStatus = useUpdatePaymentStatus({
-        onSuccess: () => { setConfirmPaid(null); setConfirmCancel(null) },
-    })
-    const remove = useDeletePayment({onSuccess: () => setConfirmDelete(null)})
 
     const types = Array.isArray(typesData) ? typesData : (typesData?.data ?? [])
     const items = data?.data ?? []
@@ -177,29 +120,6 @@ export function AdminPaymentsPage() {
                         return <ResourceBadge status={badge.status} label={badge.label}/>
                     }},
                     {key: 'date', header: 'Date', width: 160, render: (p) => formatDate(p.createdAt, true) || '—'},
-                    {key: 'actions', header: 'Actions', width: 120, render: (p) => (
-                        <div style={{display: 'flex', gap: 8}}>
-                            {p.status === 'created' && (
-                                <>
-                                    <IconButton
-                                        icon="check"
-                                        title="Confirm payment"
-                                        onClick={(e) => {e.stopPropagation(); setConfirmPaid(p)}}
-                                    />
-                                    <IconButton
-                                        icon="x"
-                                        title="Cancel payment"
-                                        onClick={(e) => {e.stopPropagation(); setConfirmCancel(p)}}
-                                    />
-                                </>
-                            )}
-                            <IconButton
-                                icon="trash-2"
-                                title="Delete"
-                                onClick={(e) => {e.stopPropagation(); setConfirmDelete(p)}}
-                            />
-                        </div>
-                    )},
                 ]}
                 footer={
                     <>
@@ -207,36 +127,6 @@ export function AdminPaymentsPage() {
                         <Pagination page={page} totalPages={totalPages} onChange={setPage}/>
                     </>
                 }
-            />
-
-            {confirmPaid && (
-                <ConfirmPaymentDialog
-                    payment={confirmPaid}
-                    loading={updateStatus.isPending}
-                    onClose={() => setConfirmPaid(null)}
-                    onSubmit={(values) => updateStatus.mutate({id: confirmPaid.id, ...values})}
-                />
-            )}
-
-            <ConfirmDialog
-                open={!!confirmCancel}
-                title="Cancel payment?"
-                description="The payment and its enrollment are both marked cancelled."
-                confirmLabel="Cancel Payment"
-                cancelLabel="Keep"
-                loading={updateStatus.isPending}
-                onCancel={() => setConfirmCancel(null)}
-                onConfirm={() => updateStatus.mutate({id: confirmCancel.id, status: 'cancelled'})}
-            />
-
-            <ConfirmDialog
-                open={!!confirmDelete}
-                title="Delete payment?"
-                description="This payment record will be permanently removed."
-                confirmLabel="Delete"
-                loading={remove.isPending}
-                onCancel={() => setConfirmDelete(null)}
-                onConfirm={() => remove.mutate(confirmDelete.id)}
             />
         </>
     )

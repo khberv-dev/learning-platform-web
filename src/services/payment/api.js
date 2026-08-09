@@ -40,7 +40,11 @@ export async function deletePaymentType(id) {
     return res.data
 }
 
-/* ---------- Payments (admin) ---------- */
+/* ---------- Payments (admin, read-only) ----------
+ * Payment status changes only through the Click webhooks — there is no approve,
+ * reject or delete endpoint. For cash or transfer, enroll the student directly
+ * with createEnrollment() instead.
+ */
 
 export async function getPayments({page = 1, limit = 10, userId, paymentTypeId, enrollmentId, planId, status} = {}) {
     const res = await api.get('admin/payments', {
@@ -59,21 +63,6 @@ export async function getPayments({page = 1, limit = 10, userId, paymentTypeId, 
 
 export async function getPayment(id) {
     const res = await api.get(`admin/payments/${id}`)
-    return res.data
-}
-
-/** status: 'paid' | 'cancelled'. For 'paid', start/end default to now + the plan's months. */
-export async function updatePaymentStatus(id, {status, start, end}) {
-    const res = await api.patch(`admin/payments/${id}/status`, {
-        status,
-        start: start || undefined,
-        end: end || undefined,
-    })
-    return res.data
-}
-
-export async function deletePayment(id) {
-    const res = await api.delete(`admin/payments/${id}`)
     return res.data
 }
 
