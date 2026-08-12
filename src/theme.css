@@ -1,0 +1,69 @@
+/* Brand palette derived from public/brand.png.
+ *
+ * The logo is a green→blue gradient; sampling its pixels gives an average
+ * green of #31cf70 — hsl(144, 62%, 50%). The ramp below holds that hue and
+ * saturation and varies only lightness, so every shade reads as the same
+ * brand colour.
+ *
+ * Levels are named after the lightness they were generated at, and were
+ * picked by measured WCAG contrast rather than by eye:
+ *
+ *   L50 #30cf70  the logo green   1 : 2.04 on white, 1 : 10.28 on black
+ *   L45 #2cba65                   1 : 2.52 on white
+ *   L35 #22914e                   1 : 4.02 on white
+ *   L30 #1d7c43                   1 : 5.23 on white  ← AA for body text
+ *   L25 #186738                   1 : 6.92 on white
+ *
+ * Gravity's own brand is yellow, i.e. also a light colour, so it pairs the
+ * brand base with *dark* contrast text. The same holds here: the logo green
+ * is far too light to carry white text (2.04), but gives 10.28 against dark.
+ * That keeps buttons on the real logo colour instead of a darkened stand-in.
+ */
+
+.g-root {
+    --it-brand-70: #83e2a9;
+    --it-brand-60: #5ad88c;
+    --it-brand-55: #45d37e;
+    --it-brand-50: #30cf70; /* the logo green */
+    --it-brand-45: #2cba65;
+    --it-brand-40: #27a559;
+    --it-brand-30: #1d7c43;
+    --it-brand-25: #186738;
+
+    /* Tints for selected rows and hover fills. */
+    --it-brand-tint: rgba(48, 207, 112, 0.16);
+    --it-brand-tint-strong: rgba(48, 207, 112, 0.26);
+}
+
+.g-root_theme_light {
+    --g-color-base-brand: var(--it-brand-50);
+    --g-color-base-brand-hover: var(--it-brand-45);
+    --g-color-base-selection: var(--it-brand-tint);
+    --g-color-base-selection-hover: var(--it-brand-tint-strong);
+
+    --g-color-line-brand: var(--it-brand-45);
+
+    /* Dark text on the light green base - 10.28 : 1. */
+    --g-color-text-brand-contrast: var(--g-color-text-dark-primary);
+    --g-color-text-brand: var(--it-brand-30);
+    --g-color-text-brand-heavy: var(--it-brand-25);
+    --g-color-text-link: var(--it-brand-30);
+    --g-color-text-link-hover: var(--it-brand-25);
+}
+
+.g-root_theme_dark {
+    --g-color-base-brand: var(--it-brand-50);
+    --g-color-base-brand-hover: var(--it-brand-55);
+    --g-color-base-selection: var(--it-brand-tint);
+    --g-color-base-selection-hover: var(--it-brand-tint-strong);
+
+    --g-color-line-brand: var(--it-brand-50);
+
+    --g-color-text-brand-contrast: var(--g-color-text-dark-primary);
+    /* Text has to lift off a dark background, so it runs lighter than in the
+       light theme rather than darker. */
+    --g-color-text-brand: var(--it-brand-60);
+    --g-color-text-brand-heavy: var(--it-brand-70);
+    --g-color-text-link: var(--it-brand-60);
+    --g-color-text-link-hover: var(--it-brand-70);
+}

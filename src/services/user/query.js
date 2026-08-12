@@ -1,15 +1,20 @@
-import {useQuery} from "@tanstack/react-query";
-import {useInfoMutation} from "@/services/query.js";
-import {getMe, uploadAvatar} from "@/services/user/api.js";
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {getMe, updateMyAvatar} from '@/services/user/api.js';
 
-export const useGetMe = () => useQuery({
-    queryKey: ['user', 'me'],
-    queryFn: getMe,
-    enabled: !!localStorage.getItem('access_token'),
-})
+export const useMe = () => {
+    return useQuery({
+        queryKey: ['me'],
+        queryFn: getMe,
+    });
+};
 
-export const useUploadAvatar = (opts) => useInfoMutation({
-    queryKey: ['user'],
-    mutationFn: ({file, onProgress}) => uploadAvatar(file, onProgress),
-    onSuccess: opts?.onSuccess,
-})
+export const useUpdateMyAvatar = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: updateMyAvatar,
+        // The endpoint returns the updated user, so seed the cache from the
+        // response rather than paying for a second user/me round-trip.
+        onSuccess: (data) => queryClient.setQueryData(['me'], data),
+    });
+};

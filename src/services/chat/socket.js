@@ -1,107 +1,78 @@
-import {io} from "socket.io-client";
-import {baseApiUrl} from "@/services/config.js";
+import {io} from 'socket.io-client';
+import config from '@/shared/config.js';
 
-// The chat gateway is mounted at the same origin as the REST API, on namespace /chat.
-// baseApiUrl looks like "http://host:port/api" — strip the /api suffix to get the socket origin.
-function deriveOrigin() {
-    try {
-        const u = new URL(baseApiUrl)
-        return `${u.protocol}//${u.host}`
-    } catch {
-        return undefined
-    }
+// One module-level connection shared by every consumer, rather than a socket
+// per component: the gateway authenticates once per connection and joins rooms
+// by event, so opening several would multiply both the handshake and the
+// delivered copies of each message.
+//
+// The gateway lives on the `/chat` namespace of the API origin - which is the
+// API base URL minus its `/api` prefix.
+function socketOrigin() {
+    return config.apiBaseUrl.replace(/\/api\/?$/, '');
 }
 
-let socket = null
-let connecting = false
-const listeners = new Set()
-
-function notify(event, payload) {
-    for (const fn of listeners) {
-        try { fn(event, payload) } catch { /* listener errors must not crash others */ }
-    }
-}
+let socket = null;
+let listeners = new Set();
 
 function ensureSocket() {
-    const token = localStorage.getItem('access_token')
-    if (!token) return null
-    if (socket && socket.connected) return socket
-    if (socket && connecting) return socket
+    if (socket) return socket;
 
-    if (!socket) {
-        const origin = deriveOrigin()
-        socket = io(`${origin}/chat`, {
-            auth: {token},
-            transports: ['websocket'],
-            autoConnect: false,
-            reconnection: true,
-            reconnectionAttempts: Infinity,
-            reconnectionDelay: 1000,
-            reconnectionDelayMax: 5000,
-        })
+    socket = io(`${socketOrigin()}/chat`, {
+        transports: ['websocket'],
+        auth: {token: localStorage.getItem('accessToken')},
+    });
 
-        socket.on('connect', () => { connecting = false; notify('connect') })
-        socket.on('disconnect', (reason) => notify('disconnect', reason))
-        socket.on('connect_error', (err) => { connecting = false; notify('connect_error', err) })
-        socket.on('message', (message) => notify('message', message))
-        socket.on('typing', (data) => notify('typing', data))
-        socket.on('stop-typing', (data) => notify('stop-typing', data))
-        socket.on('left', (data) => notify('left', data))
-        socket.on('error', (data) => notify('error', data))
-    }
+    // Every server event is fanned out to subscribers as a single
+    // {event, payload} shape, so a consumer can switch on one handler.
+    ['message', 'typing', 'stop-typing', 'joined', 'left', 'error'].forEach((event) => {
+        socket.on(event, (payload) => {
+            listeners.forEach((listener) => listener({event, payload}));
+        });
+    });
 
-    if (!socket.connected) {
-        // refresh auth in case token changed since last connect
-        socket.auth = {token}
-        connecting = true
-        socket.connect()
-    }
-
-    return socket
+    return socket;
 }
 
+// Connects lazily on the first subscriber and tears the connection down when
+// the last one leaves, so navigating away from the chat page doesn't leave a
+// socket open for the rest of the session.
 export function subscribeChatSocket(listener) {
-    listeners.add(listener)
-    ensureSocket()
+    listeners.add(listener);
+    ensureSocket();
+
     return () => {
-        listeners.delete(listener)
+        listeners.delete(listener);
         if (listeners.size === 0 && socket) {
-            socket.disconnect()
-            socket = null
-            connecting = false
+            socket.disconnect();
+            socket = null;
         }
+    };
+}
+
+// Emits queue until the socket is up: `join` fired straight after the first
+// subscribe would otherwise be dropped, since connecting is asynchronous.
+function emitWhenReady(event, payload) {
+    const active = ensureSocket();
+    if (active.connected) {
+        active.emit(event, payload);
+    } else {
+        active.once('connect', () => active.emit(event, payload));
     }
 }
 
 export function joinChatRoom(roomId) {
-    const s = ensureSocket()
-    if (!s) return
-    const send = () => s.emit('join', {roomId})
-    if (s.connected) send()
-    else s.once('connect', send)
+    emitWhenReady('join', {roomId});
 }
 
 export function leaveChatRoom(roomId) {
-    if (!socket || !socket.connected) return
-    socket.emit('leave', {roomId})
-}
-
-export function sendChatMessage(roomId, text) {
-    const s = ensureSocket()
-    if (!s) return
-    const send = () => s.emit('send', {roomId, text})
-    if (s.connected) send()
-    else s.once('connect', send)
+    emitWhenReady('leave', {roomId});
 }
 
 export function emitTyping(roomId) {
-    if (socket?.connected) socket.emit('typing', {roomId})
+    emitWhenReady('typing', {roomId});
 }
 
 export function emitStopTyping(roomId) {
-    if (socket?.connected) socket.emit('stop-typing', {roomId})
-}
-
-export function isChatConnected() {
-    return !!(socket && socket.connected)
+    emitWhenReady('stop-typing', {roomId});
 }

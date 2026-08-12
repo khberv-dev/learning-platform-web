@@ -1,36 +1,35 @@
-import {api} from "@/services/api.js";
+import {apiClient} from '@/services/api.js';
 
-export async function createAssignment(data) {
-    const res = await api.post('assignments', data)
-    return res.data
-}
+// Admins see every assignment; a mentor sees only their own queue and history.
+// Both live under `assignments`, split by role on the server.
 
-export async function getPendingAssignments() {
-    const res = await api.get('assignments/pending')
-    return res.data
-}
-
-export async function acceptAssignment(id) {
-    const res = await api.patch(`assignments/${id}/accept`)
-    return res.data
-}
-
-export async function rejectAssignment(id) {
-    const res = await api.patch(`assignments/${id}/reject`)
-    return res.data
-}
-
-export async function getTeacherAssignmentHistory({page = 1, limit = 10} = {}) {
-    const res = await api.get('assignments/history', {params: {page, limit}})
-    return res.data
-}
-
-export async function getAssignments({status} = {}) {
-    const res = await api.get('assignments', {params: status ? {status} : undefined})
-    return res.data
+export async function getAssignments({page = 1, limit = 15} = {}) {
+    const res = await apiClient.get('assignments', {params: {page, limit}});
+    return res.data;
 }
 
 export async function getAssignment(id) {
-    const res = await api.get(`assignments/${id}`)
-    return res.data
+    const res = await apiClient.get(`assignments/${id}`);
+    return res.data;
+}
+
+// Returns a plain array, not a paginated envelope.
+export async function getPendingAssignments() {
+    const res = await apiClient.get('assignments/pending');
+    return res.data;
+}
+
+export async function getAssignmentHistory({page = 1, limit = 15} = {}) {
+    const res = await apiClient.get('assignments/history', {params: {page, limit}});
+    return res.data;
+}
+
+export async function acceptAssignment(id) {
+    const res = await apiClient.patch(`assignments/${id}/accept`);
+    return res.data;
+}
+
+export async function rejectAssignment(id) {
+    const res = await apiClient.patch(`assignments/${id}/reject`);
+    return res.data;
 }

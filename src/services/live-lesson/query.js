@@ -1,37 +1,41 @@
-import {useQuery} from "@tanstack/react-query";
-import {useInfoMutation} from "@/services/query.js";
-import {getLiveLessons, getMyLiveLessons, getLiveLesson, createLiveLesson, updateLiveLesson, deleteLiveLesson} from "@/services/live-lesson/api.js";
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {
+    createLiveLesson,
+    deleteLiveLesson,
+    getLiveLesson,
+    getLiveLessons,
+    updateLiveLesson,
+    uploadRecording,
+} from '@/services/live-lesson/api.js';
 
-export const useGetLiveLessons = (params = {}) => useQuery({
-    queryKey: ['live-lesson', 'list', params.page ?? 1, params.limit ?? 10],
-    queryFn: () => getLiveLessons(params),
-})
+export const useLiveLessons = (params) => {
+    return useQuery({
+        queryKey: ['live-lesson', 'list', params],
+        queryFn: () => getLiveLessons(params),
+    });
+};
 
-export const useGetMyLiveLessons = () => useQuery({
-    queryKey: ['live-lesson', 'my'],
-    queryFn: () => getMyLiveLessons(),
-})
+export const useLiveLesson = (id) => {
+    return useQuery({
+        queryKey: ['live-lesson', 'detail', id],
+        queryFn: () => getLiveLesson(id),
+        enabled: Boolean(id),
+    });
+};
 
-export const useGetLiveLesson = (id) => useQuery({
-    queryKey: ['live-lesson', 'detail', id],
-    queryFn: () => getLiveLesson(id),
-    enabled: !!id,
-})
+function useLiveLessonMutation(mutationFn) {
+    const queryClient = useQueryClient();
 
-export const useCreateLiveLesson = (opts) => useInfoMutation({
-    queryKey: ['live-lesson'],
-    mutationFn: (data) => createLiveLesson(data),
-    onSuccess: opts?.onSuccess,
-})
+    return useMutation({
+        mutationFn,
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ['live-lesson']});
+            queryClient.invalidateQueries({queryKey: ['mentor', 'me']});
+        },
+    });
+}
 
-export const useUpdateLiveLesson = (opts) => useInfoMutation({
-    queryKey: ['live-lesson'],
-    mutationFn: ({id, data}) => updateLiveLesson(id, data),
-    onSuccess: opts?.onSuccess,
-})
-
-export const useDeleteLiveLesson = (opts) => useInfoMutation({
-    queryKey: ['live-lesson'],
-    mutationFn: (id) => deleteLiveLesson(id),
-    onSuccess: opts?.onSuccess,
-})
+export const useCreateLiveLesson = () => useLiveLessonMutation(createLiveLesson);
+export const useUpdateLiveLesson = () => useLiveLessonMutation(updateLiveLesson);
+export const useDeleteLiveLesson = () => useLiveLessonMutation(deleteLiveLesson);
+export const useUploadRecording = () => useLiveLessonMutation(uploadRecording);

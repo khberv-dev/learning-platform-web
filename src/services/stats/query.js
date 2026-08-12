@@ -1,12 +1,18 @@
-import {useQuery} from '@tanstack/react-query'
-import {getStatsSummary, getStatsTimeseries} from '@/services/stats/api.js'
+import {useQuery} from '@tanstack/react-query';
+import {getStatsSummary, getStatsTimeseries} from '@/services/stats/api.js';
 
-export const useGetStatsSummary = () => useQuery({
-    queryKey: ['stats', 'summary'],
-    queryFn: getStatsSummary,
-})
+export const STATS_PERIODS = [7, 14, 30];
 
-export const useGetStatsTimeseries = (params) => useQuery({
-    queryKey: ['stats', 'timeseries', params],
-    queryFn: () => getStatsTimeseries(params),
-})
+export const useStatsSummary = () => {
+    return useQuery({
+        queryKey: ['stats', 'summary'],
+        queryFn: getStatsSummary,
+    });
+};
+
+export const useStatsTimeseries = (period = 30) => {
+    return useQuery({
+        queryKey: ['stats', 'timeseries', period],
+        queryFn: () => getStatsTimeseries(period),
+    });
+};

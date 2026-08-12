@@ -1,12 +1,17 @@
-import {useQuery} from "@tanstack/react-query";
-import {getMyStudent, getStudents} from "@/services/student/api.js";
+import {useQuery} from '@tanstack/react-query';
+import {getStudent, getStudents} from '@/services/student/api.js';
 
-export const useGetMyStudent = () => useQuery({
-    queryKey: ['student', 'me'],
-    queryFn: getMyStudent,
-})
+export const useStudents = (params) => {
+    return useQuery({
+        queryKey: ['student', 'list', params],
+        queryFn: () => getStudents(params),
+    });
+};
 
-export const useGetStudents = (params = {}) => useQuery({
-    queryKey: ['student', 'list', params.page ?? 1, params.limit ?? 10],
-    queryFn: () => getStudents(params),
-})
+export const useStudent = (id) => {
+    return useQuery({
+        queryKey: ['student', 'detail', id],
+        queryFn: () => getStudent(id),
+        enabled: Boolean(id),
+    });
+};

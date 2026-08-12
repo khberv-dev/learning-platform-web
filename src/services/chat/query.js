@@ -1,35 +1,48 @@
-import {useQuery} from "@tanstack/react-query";
-import {useInfoMutation} from "@/services/query.js";
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {
-    getChatRooms, getChatRoom,
-    getChatMessages, sendChatText, sendChatFile,
-} from "@/services/chat/api.js";
+    getChatMessages,
+    getChatRoom,
+    getChatRooms,
+    sendChatFile,
+    sendChatMessage,
+} from '@/services/chat/api.js';
 
-export const useGetChatRooms = (params = {}) => useQuery({
-    queryKey: ['chat', 'rooms', params.page ?? 1, params.limit ?? 20],
-    queryFn: () => getChatRooms(params),
-})
+export const useChatRooms = (params) => {
+    return useQuery({
+        queryKey: ['chat', 'rooms', params],
+        queryFn: () => getChatRooms(params),
+    });
+};
 
-export const useGetChatRoom = (roomId) => useQuery({
-    queryKey: ['chat', 'room', roomId],
-    queryFn: () => getChatRoom(roomId),
-    enabled: !!roomId,
-})
+export const useChatRoom = (id) => {
+    return useQuery({
+        queryKey: ['chat', 'room', id],
+        queryFn: () => getChatRoom(id),
+        enabled: Boolean(id),
+    });
+};
 
-export const useGetChatMessages = (roomId, params = {}) => useQuery({
-    queryKey: ['chat', 'messages', roomId, params.page ?? 1, params.limit ?? 30],
-    queryFn: () => getChatMessages(roomId, params),
-    enabled: !!roomId,
-})
+export const useChatMessages = ({roomId, page = 1, limit = 30}) => {
+    return useQuery({
+        queryKey: ['chat', 'messages', roomId, page, limit],
+        queryFn: () => getChatMessages({roomId, page, limit}),
+        enabled: Boolean(roomId),
+    });
+};
 
-export const useSendChatText = (opts) => useInfoMutation({
-    queryKey: ['chat', 'rooms'],
-    mutationFn: ({roomId, text}) => sendChatText(roomId, text),
-    onSuccess: opts?.onSuccess,
-})
+// Sending doesn't invalidate the message list: the server broadcasts the saved
+// message over the socket, and the page appends it from there. Invalidating
+// would refetch the whole page of history for every keystroke-sized message.
+function useSendMutation(mutationFn) {
+    const queryClient = useQueryClient();
 
-export const useSendChatFile = (opts) => useInfoMutation({
-    queryKey: ['chat', 'rooms'],
-    mutationFn: ({roomId, file}) => sendChatFile(roomId, file),
-    onSuccess: opts?.onSuccess,
-})
+    return useMutation({
+        mutationFn,
+        // The room list shows a last-message preview and ordering, so that
+        // alone is worth refreshing.
+        onSuccess: () => queryClient.invalidateQueries({queryKey: ['chat', 'rooms']}),
+    });
+}
+
+export const useSendChatMessage = () => useSendMutation(sendChatMessage);
+export const useSendChatFile = () => useSendMutation(sendChatFile);

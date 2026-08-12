@@ -1,15 +1,23 @@
-import {useQuery} from "@tanstack/react-query";
-import {useInfoMutation} from "@/services/query.js";
-import {getEnrollmentHistory, createEnrollment} from "@/services/enrollment/api.js";
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {createEnrollment} from '@/services/enrollment/api.js';
 
-export const useGetEnrollmentHistory = () => useQuery({
-    queryKey: ['enrollment', 'history'],
-    queryFn: getEnrollmentHistory,
-})
+export const ENROLLMENT_STATUS = {
+    CREATED: 'created',
+    ACTIVE: 'active',
+    CANCELLED: 'cancelled',
+};
 
-export const useCreateEnrollment = (opts) => useInfoMutation({
-    queryKey: ['enrollment'],
-    mutationFn: (data) => createEnrollment(data),
-    onSuccess: opts?.onSuccess,
-    onError: opts?.onError,
-})
+export const useCreateEnrollment = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: createEnrollment,
+        // A new enrollment shows up on the student's detail page and shifts the
+        // dashboard counters, so both domains are invalidated alongside it.
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ['enrollment']});
+            queryClient.invalidateQueries({queryKey: ['student']});
+            queryClient.invalidateQueries({queryKey: ['stats']});
+        },
+    });
+};

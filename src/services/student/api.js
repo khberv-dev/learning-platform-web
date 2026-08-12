@@ -1,11 +1,14 @@
-import {api} from "@/services/api.js";
+import {apiClient} from '@/services/api.js';
 
-export async function getMyStudent() {
-    const res = await api.get('students/me')
-    return res.data
+// Students are read-only for admins: they self-register through the mobile
+// sign-up flow, so there is no create/update/delete endpoint here.
+export async function getStudents({page = 1, limit = 15} = {}) {
+    const res = await apiClient.get('students', {params: {page, limit}});
+    return res.data;
 }
 
-export async function getStudents({page = 1, limit = 10} = {}) {
-    const res = await api.get('students', {params: {page, limit}})
-    return res.data
+// Returns the profile plus its enrollments.
+export async function getStudent(id) {
+    const res = await apiClient.get(`students/${id}`);
+    return res.data;
 }

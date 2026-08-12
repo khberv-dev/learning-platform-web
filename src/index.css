@@ -4,176 +4,77 @@
     box-sizing: border-box;
 }
 
-:root {
-    /* Brand */
-    --it-green: #18C96A;
-    --it-green-600: #14B25E;
-    --it-green-700: #0F9C53;
-    --it-green-50: #ECFDF5;
-    --it-green-100: #DCFCE7;
-    --it-green-tint: rgba(24, 201, 106, 0.15);
-    --it-green-ring: rgba(24, 201, 106, 0.20);
-
-    /* Surfaces (from design) */
-    --it-sidebar-bg: #111827;
-    --it-sidebar-divider: #1F2937;
-    --it-sidebar-muted: #6B7280;
-    --it-bg: #F8FAFC;
-    --it-surface: #FFFFFF;
-    --it-surface-hover: #F9FAFB;
-    --it-surface-alt: #F3F4F6;
-    --it-surface-input: #F9FAFB;
-
-    /* Borders */
-    --it-border: #E5E7EB;
-    --it-border-strong: #D1D5DB;
-    --it-border-row: #F3F4F6;
-
-    /* Text */
-    --it-text-primary: #111827;
-    --it-text-strong: #0F172A;
-    --it-text-body: #374151;
-    --it-text-secondary: #6B7280;
-    --it-text-tertiary: #9CA3AF;
-    --it-text-on-dark: #F9FAFB;
-    --it-text-on-dark-soft: #6B7280;
-
-    /* Status */
-    --it-success-bg: #ECFDF5;
-    --it-success-bg-strong: #DCFCE7;
-    --it-success-border: #BBF7D0;
-    --it-success-text: #16A34A;
-    --it-success-text-strong: #047857;
-
-    --it-info-bg: #EFF6FF;
-    --it-info-border: #BFDBFE;
-    --it-info-text: #3B82F6;
-    --it-info-text-strong: #1D4ED8;
-
-    --it-warning-bg: #FFFBEB;
-    --it-warning-bg-soft: #FEF3C7;
-    --it-warning-border: #FDE68A;
-    --it-warning-text: #F59E0B;
-    --it-warning-text-strong: #B45309;
-
-    --it-danger-bg: #FEF2F2;
-    --it-danger-border: #FECACA;
-    --it-danger-text: #EF4444;
-    --it-danger-text-strong: #B91C1C;
-    --it-danger-soft: #FEE2E2;
-
-    --it-violet-bg: #F5F3FF;
-    --it-violet-bg-soft: #EDE9FE;
-    --it-violet-border: #DDD6FE;
-    --it-violet-text: #8B5CF6;
-    --it-violet-text-strong: #7C3AED;
-
-    --it-orange-bg: #FFF7ED;
-    --it-orange-border: #FED7AA;
-    --it-orange-text: #F97316;
-    --it-orange-text-strong: #C2410C;
-
-    /* Avatar palette (used by initials avatars) */
-    --it-avatar-purple-bg: #EDE9FE;
-    --it-avatar-purple-text: #7C3AED;
-    --it-avatar-blue-bg: #EFF6FF;
-    --it-avatar-blue-text: #1D4ED8;
-    --it-avatar-orange-bg: #FFF7ED;
-    --it-avatar-orange-text: #EA580C;
-    --it-avatar-green-bg: #DCFCE7;
-    --it-avatar-green-text: #16A34A;
-    --it-avatar-red-bg: #FEE2E2;
-    --it-avatar-red-text: #DC2626;
-
-    /* Elevation */
-    --it-shadow-xs: 0 1px 1px rgba(15, 23, 42, 0.04);
-    --it-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.03);
-    --it-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-    --it-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.10), 0 4px 8px rgba(15, 23, 42, 0.06);
-    --it-shadow-focus: 0 0 0 3px var(--it-green-ring);
-
-    /* Radii */
-    --it-radius-xs: 4px;
-    --it-radius-sm: 6px;
-    --it-radius-md: 8px;
-    --it-radius-lg: 12px;
-    --it-radius-xl: 18px;
-    --it-radius-pill: 999px;
-
-    /* Override Gravity UI brand color → iTeach green */
-    --g-color-base-brand: var(--it-green);
-    --g-color-base-brand-hover: var(--it-green-600);
-    --g-color-base-brand-heavy: var(--it-green-700);
-    --g-color-base-brand-simple: var(--it-green-tint);
-    --g-color-base-selection: var(--it-green-tint);
-    --g-color-base-selection-hover: var(--it-green-tint);
-    --g-color-line-brand: var(--it-green);
-    --g-color-text-brand: var(--it-green-700);
-    --g-color-text-brand-heavy: var(--it-green-700);
-    --g-color-text-link: var(--it-green-700);
-    --g-color-text-link-hover: var(--it-green-600);
-    --g-color-text-brand-contrast: #FFFFFF;
-    --g-color-private-brand-50-solid: #F0FDF4;
-    --g-color-private-brand-100-solid: #DCFCE7;
-    --g-color-private-brand-500-solid: var(--it-green);
-    --g-color-private-brand-600-solid: var(--it-green-600);
-    --g-color-private-brand-700-solid: var(--it-green-700);
-}
-
-html, body, #root {
+html,
+body,
+#root {
     height: 100%;
-    background: var(--it-bg);
-    color: var(--it-text-primary);
-    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
 }
 
 body {
-    font-size: 14px;
-    line-height: 1.5;
+    background: var(--g-color-base-background);
+    color: var(--g-color-text-primary);
 }
 
 a {
     color: inherit;
-    text-decoration: none;
 }
 
-button {
-    font-family: inherit;
+/* Rows that navigate somewhere need to look like it - Gravity's Table has no
+   built-in affordance for a clickable row. */
+.data-table__row_clickable {
     cursor: pointer;
-    border: 0;
-    background: transparent;
 }
 
-input, textarea, select {
-    font-family: inherit;
+/* ── Sidebar ───────────────────────────────────────────────────────────────
+   The nav tree is a plain <aside> rather than Gravity's AsideHeader, whose
+   MenuItem type is flat (divider only, no children) and so can't express
+   collapsible groups. */
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    border-right: 1px solid var(--g-color-line-generic);
+    background: var(--g-color-base-generic-ultralight);
+    transition: width 0.15s ease;
 }
 
-::selection {
-    background: var(--it-green-tint);
-    color: var(--it-text-primary);
+.sidebar__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 34px;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--g-color-text-primary);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
 }
 
-*::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+.sidebar__item:hover {
+    background: var(--g-color-base-simple-hover);
 }
 
-*::-webkit-scrollbar-track {
-    background: transparent;
+.sidebar__item[data-active='true'] {
+    background: var(--g-color-base-selection);
+    color: var(--g-color-text-brand);
+    font-weight: 500;
 }
 
-*::-webkit-scrollbar-thumb {
-    background: #E2E8F0;
-    border-radius: 8px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-    background: #CBD5E1;
-    background-clip: padding-box;
-    border: 2px solid transparent;
+/* Labels must ellipsize rather than wrap - group names sit next to a chevron
+   in a fixed-width rail. */
+.sidebar__label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
