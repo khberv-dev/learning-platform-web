@@ -6,6 +6,7 @@ import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {
     useCourse,
     useDeleteTask,
+    useDeleteTaskQuestion,
     useLesson,
     useTask,
     useUnit,
@@ -66,6 +67,7 @@ function AdminTask() {
     const taskQuery = useTask({courseId, unitId, lessonId, taskId});
     const updateTask = useUpdateTask();
     const deleteTask = useDeleteTask();
+    const deleteQuestion = useDeleteTaskQuestion();
     const uploadFile = useUploadTaskFile();
 
     const fileInputRef = useRef(null);
@@ -108,26 +110,6 @@ function AdminTask() {
 
     const task = taskQuery.data;
     const questions = task.questions ?? [];
-
-    // Questions are a jsonb array on the task with no ids of their own, so
-    // every question write sends the whole rebuilt array.
-    const saveQuestions = (nextQuestions, onDone) => {
-        updateTask.mutate(
-            {...base, questions: nextQuestions},
-            {
-                onSuccess: () => {
-                    toaster.add({name: 'questions-saved', theme: 'success', title: t('common.saved')});
-                    onDone?.();
-                },
-                onError: (error) =>
-                    toaster.add({
-                        name: 'questions-failed',
-                        theme: 'danger',
-                        title: extractApiErrorMessage(error, t('common.error')),
-                    }),
-            }
-        );
-    };
 
     const columns = [
         {
@@ -258,19 +240,13 @@ function AdminTask() {
                     )}
                 </PageSection>
 
+                {/* "Add question" opens an empty form; the question is only
+                    created once it's filled in, so no blank entry is ever
+                    written - which the API rightly rejects. */}
                 <PageSection
                     title={t('course.questions')}
                     actions={
-                        <Button
-                            view="action"
-                            loading={updateTask.isPending}
-                            onClick={() =>
-                                saveQuestions(
-                                    [...questions, {question: '', options: null, answer: ''}],
-                                    () => navigate(`${taskPath}/questions/${questions.length}`)
-                                )
-                            }
-                        >
+                        <Button view="action" onClick={() => navigate(`${taskPath}/questions/new`)}>
                             <Button.Icon>
                                 <Plus size={16}/>
                             </Button.Icon>
@@ -321,12 +297,27 @@ function AdminTask() {
                 title={t('common.delete')}
                 message={t('course.deleteQuestionConfirm')}
                 confirmText={t('common.delete')}
-                loading={updateTask.isPending}
+                loading={deleteQuestion.isPending}
                 onClose={() => setConfirmDeleteQuestion(null)}
                 onConfirm={() =>
-                    saveQuestions(
-                        questions.filter((_, index) => index !== confirmDeleteQuestion),
-                        () => setConfirmDeleteQuestion(null)
+                    deleteQuestion.mutate(
+                        {...base, index: confirmDeleteQuestion},
+                        {
+                            onSuccess: () => {
+                                toaster.add({
+                                    name: 'question-deleted',
+                                    theme: 'success',
+                                    title: t('common.deleted'),
+                                });
+                                setConfirmDeleteQuestion(null);
+                            },
+                            onError: (error) =>
+                                toaster.add({
+                                    name: 'question-delete-failed',
+                                    theme: 'danger',
+                                    title: extractApiErrorMessage(error, t('common.error')),
+                                }),
+                        }
                     )
                 }
             />

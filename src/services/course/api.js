@@ -113,6 +113,35 @@ export async function getTasks({courseId, unitId, lessonId}) {
     return res.data;
 }
 
+// ── Task questions ───────────────────────────────────────────────────────────
+
+// Questions live in a jsonb array with no ids of their own, so each one is
+// addressed by its position. These endpoints exist so adding or editing a
+// single question doesn't mean resubmitting (and revalidating) the whole array.
+export async function addTaskQuestion({courseId, unitId, lessonId, taskId, ...question}) {
+    const res = await apiClient.post(
+        `admin/courses/${courseId}/units/${unitId}/lessons/${lessonId}/tasks/${taskId}/questions`,
+        question
+    );
+    return res.data;
+}
+
+export async function updateTaskQuestion({courseId, unitId, lessonId, taskId, index, ...question}) {
+    const res = await apiClient.patch(
+        `admin/courses/${courseId}/units/${unitId}/lessons/${lessonId}/tasks/${taskId}/questions/${index}`,
+        question
+    );
+    return res.data;
+}
+
+export async function deleteTaskQuestion({courseId, unitId, lessonId, taskId, index}) {
+    const res = await apiClient.delete(
+        `admin/courses/${courseId}/units/${unitId}/lessons/${lessonId}/tasks/${taskId}/questions/${index}`
+    );
+    return res.data;
+}
+
+// `questions` is optional - a task can be created empty and filled in after.
 export async function createTask({courseId, unitId, lessonId, ...payload}) {
     const res = await apiClient.post(
         `admin/courses/${courseId}/units/${unitId}/lessons/${lessonId}/tasks`,

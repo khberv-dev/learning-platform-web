@@ -124,8 +124,8 @@ function AdminLesson() {
         );
     };
 
-    // A task is created empty here and filled in on its own page - the create
-    // DTO requires a questions array, so it starts as one blank entry.
+    // Created empty and filled in on its own page - `questions` is optional,
+    // so no placeholder entry is needed.
     const submitTask = () => {
         createTask.mutate(
             {
@@ -133,7 +133,6 @@ function AdminLesson() {
                 unitId,
                 lessonId,
                 name: taskName.trim() || undefined,
-                questions: [{question: '—', answer: '—'}],
             },
             {
                 onSuccess: (task) => {

@@ -66,6 +66,8 @@ function App() {
                             path="course/courses/:courseId/units/:unitId/lessons/:lessonId/tasks/:taskId"
                             element={<AdminTask/>}
                         />
+                        {/* `:index` also matches the literal "new", which the
+                            page renders as an empty create form. */}
                         <Route
                             path="course/courses/:courseId/units/:unitId/lessons/:lessonId/tasks/:taskId/questions/:index"
                             element={<AdminQuestion/>}

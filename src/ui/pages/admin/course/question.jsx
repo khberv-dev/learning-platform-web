@@ -3,7 +3,14 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {Button, Select, TextArea, TextInput} from '@gravity-ui/uikit';
 import {Plus, X} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
-import {useCourse, useLesson, useTask, useUnit, useUpdateTask} from '@/services/course/query.js';
+import {
+    useAddTaskQuestion,
+    useCourse,
+    useLesson,
+    useTask,
+    useUnit,
+    useUpdateTaskQuestion,
+} from '@/services/course/query.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
@@ -53,9 +60,11 @@ function OptionsInput({options, onChange}) {
     );
 }
 
-function QuestionForm({base, questions, index, initialValues, onSaved}) {
+function QuestionForm({base, index, isNew, initialValues, onSaved}) {
     const {t} = useI18n();
-    const updateTask = useUpdateTask();
+    const addQuestion = useAddTaskQuestion();
+    const updateQuestion = useUpdateTaskQuestion();
+    const mutation = isNew ? addQuestion : updateQuestion;
     const [form, setForm] = useState(initialValues);
     const [errors, setErrors] = useState({});
 
@@ -85,33 +94,27 @@ function QuestionForm({base, questions, index, initialValues, onSaved}) {
         setErrors(next);
         if (Object.keys(next).length) return;
 
-        // The whole array is rewritten - questions are a jsonb column with no
-        // per-entry route. `options` is null for a free-text question.
-        const nextQuestions = questions.map((question, questionIndex) =>
-            questionIndex === index
-                ? {
-                      question: form.question.trim(),
-                      options: isMultipleChoice ? filledOptions : null,
-                      answer: form.answer.trim(),
-                  }
-                : question
-        );
+        // One question at a time - the API addresses each by its position, so
+        // the rest of the array is untouched. `options` is null for free text.
+        const payload = {
+            ...base,
+            question: form.question.trim(),
+            options: isMultipleChoice ? filledOptions : null,
+            answer: form.answer.trim(),
+        };
 
-        updateTask.mutate(
-            {...base, questions: nextQuestions},
-            {
-                onSuccess: () => {
-                    toaster.add({name: 'question-saved', theme: 'success', title: t('common.saved')});
-                    onSaved();
-                },
-                onError: (error) =>
-                    toaster.add({
-                        name: 'question-failed',
-                        theme: 'danger',
-                        title: extractApiErrorMessage(error, t('common.error')),
-                    }),
-            }
-        );
+        mutation.mutate(isNew ? payload : {...payload, index}, {
+            onSuccess: () => {
+                toaster.add({name: 'question-saved', theme: 'success', title: t('common.saved')});
+                onSaved();
+            },
+            onError: (error) =>
+                toaster.add({
+                    name: 'question-failed',
+                    theme: 'danger',
+                    title: extractApiErrorMessage(error, t('common.error')),
+                }),
+        });
     };
 
     const setField = (key) => (value) => setForm((current) => ({...current, [key]: value}));
@@ -158,7 +161,7 @@ function QuestionForm({base, questions, index, initialValues, onSaved}) {
             </FormField>
 
             <div style={{display: 'flex', gap: 8}}>
-                <Button type="submit" view="action" size="l" loading={updateTask.isPending}>
+                <Button type="submit" view="action" size="l" loading={mutation.isPending}>
                     {t('common.save')}
                 </Button>
                 <Button size="l" onClick={onSaved}>
@@ -190,8 +193,15 @@ function AdminQuestion() {
 
     const task = taskQuery.data;
     const questions = task?.questions ?? [];
-    const questionIndex = Number(index);
-    const question = questions[questionIndex];
+    // The "add" route reuses this page with an empty form; the question is
+    // only written once it's valid, so nothing blank is ever stored.
+    const isNew = index === 'new';
+    const questionIndex = isNew ? questions.length : Number(index);
+    const question = isNew ? null : questions[questionIndex];
+
+    const title = isNew
+        ? t('course.addQuestion')
+        : `${t('course.question')} ${questionIndex + 1}`;
 
     const breadcrumbs = [
         {title: t('course.title'), to: '/admin/course/courses'},
@@ -199,12 +209,12 @@ function AdminQuestion() {
         {title: unitQuery.data?.title ?? '…', to: unitPath},
         {title: lessonQuery.data?.title ?? '…', to: lessonPath},
         {title: task?.name || t('course.task'), to: taskPath},
-        {title: `${t('course.question')} ${questionIndex + 1}`},
+        {title},
     ];
 
     // A stale link (or a question deleted from another tab) lands here with
     // nothing at that index.
-    if (!task || !question) {
+    if (!task || (!isNew && !question)) {
         return (
             <>
                 <PageHeader title={t('common.notFound')} backTo={taskPath}/>
@@ -216,21 +226,21 @@ function AdminQuestion() {
     return (
         <>
             <PageHeader
-                title={`${t('course.question')} ${questionIndex + 1}`}
+                title={title}
                 description={task.name || t('course.task')}
                 backTo={taskPath}
                 breadcrumbs={breadcrumbs}
             />
-            <PageSection title={t('course.editQuestion')}>
+            <PageSection title={isNew ? t('course.addQuestion') : t('course.editQuestion')}>
                 <QuestionForm
-                    key={questionIndex}
+                    key={index}
                     base={base}
-                    questions={questions}
                     index={questionIndex}
+                    isNew={isNew}
                     initialValues={{
-                        question: question.question ?? '',
-                        options: Array.isArray(question.options) ? question.options : [],
-                        answer: question.answer ?? '',
+                        question: question?.question ?? '',
+                        options: Array.isArray(question?.options) ? question.options : [],
+                        answer: question?.answer ?? '',
                     }}
                     onSaved={() => navigate(taskPath)}
                 />

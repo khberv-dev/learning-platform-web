@@ -1,8 +1,11 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {
+    addTaskQuestion,
     createCourse,
     createLesson,
     createTask,
+    deleteTaskQuestion,
+    updateTaskQuestion,
     createUnit,
     deleteCourse,
     deleteLesson,
@@ -119,6 +122,9 @@ export const useUploadLessonMedia = () => useCourseMutation(uploadLessonMedia);
 export const useDeleteLesson = () => useCourseMutation(deleteLesson);
 
 export const useCreateTask = () => useCourseMutation(createTask);
+export const useAddTaskQuestion = () => useCourseMutation(addTaskQuestion);
+export const useUpdateTaskQuestion = () => useCourseMutation(updateTaskQuestion);
+export const useDeleteTaskQuestion = () => useCourseMutation(deleteTaskQuestion);
 export const useUpdateTask = () => useCourseMutation(updateTask);
 export const useUploadTaskFile = () => useCourseMutation(uploadTaskFile);
 export const useDeleteTask = () => useCourseMutation(deleteTask);
