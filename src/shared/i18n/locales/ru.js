@@ -134,6 +134,8 @@ export default {
         lessonsCount: 'Кол-во уроков',
         tasksCount: 'Кол-во заданий',
         questionsCount: 'Кол-во вопросов',
+        index: 'Порядок',
+        indexHint: 'Сортировка по возрастанию. При равенстве — по времени создания.',
         unitTitle: 'Название раздела',
         lessonTitle: 'Название урока',
         taskName: 'Название задания',

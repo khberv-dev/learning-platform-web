@@ -1,6 +1,15 @@
 import dayjs from 'dayjs';
 import config from '@/shared/config.js';
 
+// Number inputs hand back a string, and '' / a partial entry would become NaN
+// and serialise to null - which a NOT NULL column rejects. Returning undefined
+// instead drops the key so the server keeps its default (or existing value).
+export function toOptionalNumber(value) {
+    if (value === '' || value === null || value === undefined) return undefined;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export function fullName(user) {
     if (!user) return '';
     return [user.firstName, user.lastName].filter(Boolean).join(' ').trim();

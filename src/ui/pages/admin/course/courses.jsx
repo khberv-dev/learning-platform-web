@@ -4,7 +4,7 @@ import {Button, Checkbox, Dialog, TextArea, TextInput} from '@gravity-ui/uikit';
 import {ImageIcon, Plus} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useCourses, useCreateCourse} from '@/services/course/query.js';
-import {cdnUrl, formatDate} from '@/shared/utils/format.js';
+import {cdnUrl, formatDate, toOptionalNumber} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
@@ -52,9 +52,14 @@ function AdminCourses() {
     const createCourse = useCreateCourse();
     const fileInputRef = useRef(null);
     const [open, setOpen] = useState(false);
-    const [form, setForm] = useState({title: '', description: '', isActive: true, image: null});
+    const [form, setForm] = useState({title: '', description: '', index: '', isActive: true, image: null});
 
     const setField = (key) => (value) => setForm((current) => ({...current, [key]: value}));
+
+    // New courses land at the end by default - one past the highest in use.
+    // Courses left at 0 keep the old newest-first order, since the API breaks
+    // ties on createdAt DESC here (units and lessons tie on ASC instead).
+    const nextIndex = () => Math.max(0, ...(query.data ?? []).map((course) => course.index ?? 0)) + 1;
 
     const handleCreate = () => {
         if (!form.title.trim()) return;
@@ -63,6 +68,7 @@ function AdminCourses() {
             {
                 title: form.title.trim(),
                 description: form.description.trim() || undefined,
+                index: toOptionalNumber(form.index),
                 isActive: form.isActive,
                 image: form.image,
             },
@@ -70,7 +76,7 @@ function AdminCourses() {
                 onSuccess: (data) => {
                     toaster.add({name: 'course-created', theme: 'success', title: t('course.created')});
                     setOpen(false);
-                    setForm({title: '', description: '', isActive: true, image: null});
+                    setForm({title: '', description: '', index: '', isActive: true, image: null});
                     navigate(`/admin/course/courses/${data.id}`);
                 },
                 onError: (error) =>
@@ -84,6 +90,13 @@ function AdminCourses() {
     };
 
     const columns = [
+        {
+            id: 'index',
+            name: t('course.index'),
+            width: 80,
+            // Server-sorted by this already - shown to make the order legible.
+            template: (row) => row.index ?? 0,
+        },
         {
             id: 'title',
             name: t('course.name'),
@@ -136,7 +149,19 @@ function AdminCourses() {
             <PageHeader
                 title={t('course.title')}
                 actions={
-                    <Button view="action" onClick={() => setOpen(true)}>
+                    <Button
+                        view="action"
+                        onClick={() => {
+                            setForm({
+                                title: '',
+                                description: '',
+                                index: String(nextIndex()),
+                                isActive: true,
+                                image: null,
+                            });
+                            setOpen(true);
+                        }}
+                    >
                         <Button.Icon>
                             <Plus size={16}/>
                         </Button.Icon>
@@ -168,6 +193,15 @@ function AdminCourses() {
                                 minRows={3}
                                 value={form.description}
                                 onUpdate={setField('description')}
+                            />
+                        </FormField>
+                        <FormField label={t('course.index')} hint={t('course.indexHint')}>
+                            <TextInput
+                                size="l"
+                                type="number"
+                                value={form.index}
+                                onUpdate={setField('index')}
+                                controlProps={{min: 0}}
                             />
                         </FormField>
                         <FormField label={t('course.image')}>

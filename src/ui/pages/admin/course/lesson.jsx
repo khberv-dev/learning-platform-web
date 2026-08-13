@@ -13,7 +13,7 @@ import {
     useUpdateLesson,
     useUploadLessonMedia,
 } from '@/services/course/query.js';
-import {cdnUrl} from '@/shared/utils/format.js';
+import {cdnUrl, toOptionalNumber} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
@@ -37,7 +37,14 @@ function LessonForm({courseId, unitId, lessonId, initialValues}) {
 
         // Text fields only - the video goes through its own endpoint.
         updateLesson.mutate(
-            {courseId, unitId, lessonId, title, description: form.description.trim() || undefined},
+            {
+                courseId,
+                unitId,
+                lessonId,
+                title,
+                description: form.description.trim() || undefined,
+                index: toOptionalNumber(form.index),
+            },
             {
                 onSuccess: () =>
                     toaster.add({name: 'lesson-saved', theme: 'success', title: t('common.saved')}),
@@ -59,6 +66,17 @@ function LessonForm({courseId, unitId, lessonId, initialValues}) {
             <FormField label={t('course.description')}>
                 <TextArea size="l" minRows={3} value={form.description} onUpdate={setField('description')}/>
             </FormField>
+            <div style={{maxWidth: 160}}>
+                <FormField label={t('course.index')} hint={t('course.indexHint')}>
+                    <TextInput
+                        size="l"
+                        type="number"
+                        value={form.index}
+                        onUpdate={setField('index')}
+                        controlProps={{min: 0}}
+                    />
+                </FormField>
+            </div>
             <div>
                 <Button type="submit" view="action" size="l" loading={updateLesson.isPending}>
                     {t('common.save')}
@@ -194,13 +212,14 @@ function AdminLesson() {
             <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
                 <PageSection title={t('course.lesson')}>
                     <LessonForm
-                        key={`${lesson.title}|${lesson.description ?? ''}`}
+                        key={`${lesson.title}|${lesson.description ?? ''}|${lesson.index ?? 0}`}
                         courseId={courseId}
                         unitId={unitId}
                         lessonId={lessonId}
                         initialValues={{
                             title: lesson.title ?? '',
                             description: lesson.description ?? '',
+                            index: String(lesson.index ?? 0),
                         }}
                     />
                 </PageSection>

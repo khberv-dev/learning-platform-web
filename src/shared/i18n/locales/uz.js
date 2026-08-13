@@ -134,6 +134,8 @@ export default {
         lessonsCount: 'Darslar soni',
         tasksCount: 'Topshiriqlar soni',
         questionsCount: 'Savollar soni',
+        index: 'Tartib',
+        indexHint: 'Kichikdan kattaga saralanadi. Teng bo\'lsa — yaratilgan vaqti bo\'yicha.',
         unitTitle: 'Bo\'lim nomi',
         lessonTitle: 'Dars nomi',
         taskName: 'Topshiriq nomi',

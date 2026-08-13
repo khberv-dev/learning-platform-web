@@ -11,6 +11,7 @@ import {
     useUnit,
     useUpdateUnit,
 } from '@/services/course/query.js';
+import {toOptionalNumber} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
@@ -20,10 +21,11 @@ import DataTable from '@/ui/components/dataTable.jsx';
 import ConfirmDialog from '@/ui/components/confirmDialog.jsx';
 import {ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 
-function UnitTitleForm({courseId, unitId, initialTitle}) {
+function UnitTitleForm({courseId, unitId, initialValues}) {
     const {t} = useI18n();
     const updateUnit = useUpdateUnit();
-    const [title, setTitle] = useState(initialTitle);
+    const [title, setTitle] = useState(initialValues.title);
+    const [index, setIndex] = useState(initialValues.index);
 
     const submit = (event) => {
         event.preventDefault();
@@ -31,7 +33,7 @@ function UnitTitleForm({courseId, unitId, initialTitle}) {
         if (!value) return;
 
         updateUnit.mutate(
-            {courseId, unitId, title: value},
+            {courseId, unitId, title: value, index: toOptionalNumber(index)},
             {
                 onSuccess: () =>
                     toaster.add({name: 'unit-saved', theme: 'success', title: t('common.saved')}),
@@ -47,10 +49,21 @@ function UnitTitleForm({courseId, unitId, initialTitle}) {
 
     return (
         <PageSection title={t('course.unit')}>
-            <form onSubmit={submit} style={{display: 'flex', gap: 12, alignItems: 'flex-end', maxWidth: 560}}>
+            <form onSubmit={submit} style={{display: 'flex', gap: 12, alignItems: 'flex-end', maxWidth: 620}}>
                 <div style={{flex: 1}}>
                     <FormField label={t('course.unitTitle')} required>
                         <TextInput size="l" value={title} onUpdate={setTitle}/>
+                    </FormField>
+                </div>
+                <div style={{width: 110}}>
+                    <FormField label={t('course.index')}>
+                        <TextInput
+                            size="l"
+                            type="number"
+                            value={index}
+                            onUpdate={setIndex}
+                            controlProps={{min: 0}}
+                        />
                     </FormField>
                 </div>
                 <Button type="submit" view="action" size="l" loading={updateUnit.isPending}>
@@ -73,10 +86,14 @@ function AdminUnit() {
     const deleteUnit = useDeleteUnit();
 
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [form, setForm] = useState({title: '', description: '', media: null});
+    const [form, setForm] = useState({title: '', description: '', index: '', media: null});
     const [confirmOpen, setConfirmOpen] = useState(false);
 
     const setField = (key) => (value) => setForm((current) => ({...current, [key]: value}));
+
+    // New lessons land at the end by default - one past the highest in use.
+    const nextIndex = () =>
+        Math.max(0, ...(lessonsQuery.data ?? []).map((lesson) => lesson.index ?? 0)) + 1;
 
     const submitLesson = () => {
         const title = form.title.trim();
@@ -88,13 +105,14 @@ function AdminUnit() {
                 unitId,
                 title,
                 description: form.description.trim() || undefined,
+                index: toOptionalNumber(form.index),
                 media: form.media,
             },
             {
                 onSuccess: () => {
                     toaster.add({name: 'lesson-saved', theme: 'success', title: t('common.saved')});
                     setDialogOpen(false);
-                    setForm({title: '', description: '', media: null});
+                    setForm({title: '', description: '', index: '', media: null});
                 },
                 onError: (error) =>
                     toaster.add({
@@ -113,6 +131,12 @@ function AdminUnit() {
     const unit = unitQuery.data;
 
     const columns = [
+        {
+            id: 'index',
+            name: t('course.index'),
+            width: 80,
+            template: (row) => row.index ?? 0,
+        },
         {id: 'title', name: t('course.lesson'), template: (row) => row.title},
         {
             id: 'description',
@@ -154,19 +178,25 @@ function AdminUnit() {
             />
 
             <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
-                {/* Keyed on the loaded title so the field re-seeds if the unit
-                    is renamed elsewhere, without an effect syncing state. */}
+                {/* Keyed on the loaded values so the fields re-seed if the unit
+                    changes elsewhere, without an effect syncing state. */}
                 <UnitTitleForm
-                    key={unit.title}
+                    key={`${unit.title}|${unit.index ?? 0}`}
                     courseId={courseId}
                     unitId={unitId}
-                    initialTitle={unit.title}
+                    initialValues={{title: unit.title ?? '', index: String(unit.index ?? 0)}}
                 />
 
                 <PageSection
                     title={t('course.lessons')}
                     actions={
-                        <Button view="action" onClick={() => setDialogOpen(true)}>
+                        <Button
+                            view="action"
+                            onClick={() => {
+                                setForm({title: '', description: '', index: String(nextIndex()), media: null});
+                                setDialogOpen(true);
+                            }}
+                        >
                             <Button.Icon>
                                 <Plus size={16}/>
                             </Button.Icon>
@@ -200,6 +230,15 @@ function AdminUnit() {
                                 minRows={3}
                                 value={form.description}
                                 onUpdate={setField('description')}
+                            />
+                        </FormField>
+                        <FormField label={t('course.index')} hint={t('course.indexHint')}>
+                            <TextInput
+                                size="l"
+                                type="number"
+                                value={form.index}
+                                onUpdate={setField('index')}
+                                controlProps={{min: 0}}
                             />
                         </FormField>
                         <FormField label={t('course.media')} hint={t('common.optional')}>

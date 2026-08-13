@@ -49,13 +49,15 @@ export async function deleteCourse(id) {
 
 // ── Unit ─────────────────────────────────────────────────────────────────────
 
-export async function createUnit({courseId, title}) {
-    const res = await apiClient.post(`admin/courses/${courseId}/units`, {title});
+// `index` is the admin-set display order (int, default 0). Lists come back
+// sorted by `index ASC, createdAt ASC`, so equal indexes keep insertion order.
+export async function createUnit({courseId, ...payload}) {
+    const res = await apiClient.post(`admin/courses/${courseId}/units`, payload);
     return res.data;
 }
 
-export async function updateUnit({courseId, unitId, title}) {
-    const res = await apiClient.patch(`admin/courses/${courseId}/units/${unitId}`, {title});
+export async function updateUnit({courseId, unitId, ...payload}) {
+    const res = await apiClient.patch(`admin/courses/${courseId}/units/${unitId}`, payload);
     return res.data;
 }
 

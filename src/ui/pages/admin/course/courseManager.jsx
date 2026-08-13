@@ -4,7 +4,7 @@ import {Button, Checkbox, TabProvider, TabList, Tab, TabPanel, TextArea, TextInp
 import {Trash2} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useCourse, useDeleteCourse, useUpdateCourse} from '@/services/course/query.js';
-import {cdnUrl} from '@/shared/utils/format.js';
+import {cdnUrl, toOptionalNumber} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
@@ -22,6 +22,7 @@ function CourseSettings({course}) {
     const [form, setForm] = useState({
         title: course.title ?? '',
         description: course.description ?? '',
+        index: String(course.index ?? 0),
         isActive: Boolean(course.isActive),
         image: null,
     });
@@ -35,6 +36,7 @@ function CourseSettings({course}) {
                 id: course.id,
                 title: form.title.trim(),
                 description: form.description.trim(),
+                index: toOptionalNumber(form.index),
                 isActive: form.isActive,
                 image: form.image,
             },
@@ -77,6 +79,17 @@ function CourseSettings({course}) {
                 <FormField label={t('course.description')}>
                     <TextArea size="l" minRows={4} value={form.description} onUpdate={setField('description')}/>
                 </FormField>
+                <div style={{maxWidth: 160}}>
+                    <FormField label={t('course.index')} hint={t('course.indexHint')}>
+                        <TextInput
+                            size="l"
+                            type="number"
+                            value={form.index}
+                            onUpdate={setField('index')}
+                            controlProps={{min: 0}}
+                        />
+                    </FormField>
+                </div>
                 <FormField label={t('course.image')}>
                     <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
                         {preview && (
