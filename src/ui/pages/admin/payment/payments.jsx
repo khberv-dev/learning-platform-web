@@ -81,12 +81,13 @@ function AdminPayments() {
     ];
 
     return (
-        <>
+        <div className="page-fill">
             <PageHeader title={t('payment.title')}/>
 
             <Alert theme="info" message={t('payment.readOnlyNote')} style={{marginBottom: 16}}/>
 
             <PageSection
+                className="page-fill__section"
                 actions={
                     <Select
                         value={[status]}
@@ -121,7 +122,7 @@ function AdminPayments() {
                     }}
                 />
             </PageSection>
-        </>
+        </div>
     );
 }
 

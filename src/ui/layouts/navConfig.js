@@ -40,6 +40,12 @@ export const NAV_BY_ROLE = {
             icon: BookOpen,
             children: [
                 {id: 'courses', titleKey: 'nav.courses', icon: BookOpen, path: '/admin/course/courses'},
+                {
+                    id: 'enrollments',
+                    titleKey: 'nav.enrollments',
+                    icon: CalendarClock,
+                    path: '/admin/course/enrollments',
+                },
             ],
         },
         {

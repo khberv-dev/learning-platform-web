@@ -45,9 +45,9 @@ function AdminAssignments() {
     ];
 
     return (
-        <>
+        <div className="page-fill">
             <PageHeader title={t('assignment.title')}/>
-            <PageSection>
+            <PageSection className="page-fill__section">
                 <DataTable
                     query={query}
                     columns={columns}
@@ -59,7 +59,7 @@ function AdminAssignments() {
                     }}
                 />
             </PageSection>
-        </>
+        </div>
     );
 }
 

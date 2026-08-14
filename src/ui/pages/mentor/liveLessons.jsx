@@ -195,7 +195,7 @@ function MentorLiveLessons() {
     ];
 
     return (
-        <>
+        <div className="page-fill">
             <PageHeader
                 title={t('liveLesson.title')}
                 actions={
@@ -213,7 +213,7 @@ function MentorLiveLessons() {
                     </Button>
                 }
             />
-            <PageSection>
+            <PageSection className="page-fill__section">
                 <DataTable
                     query={query}
                     columns={columns}
@@ -338,7 +338,7 @@ function MentorLiveLessons() {
                     })
                 }
             />
-        </>
+        </div>
     );
 }
 

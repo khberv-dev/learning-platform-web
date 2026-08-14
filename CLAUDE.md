@@ -64,7 +64,7 @@ Students have no panel here. A student-only account is rejected at sign-in rathe
 |---|---|---|
 | — | `/admin` | `pages/admin/home.jsx` |
 | `users` | `/admin/users/{students,mentors}` | `pages/admin/users/` |
-| `course` | `/admin/course/courses` | `pages/admin/course/` |
+| `course` | `/admin/course/{courses,enrollments}` | `pages/admin/course/` |
 | `payment` | `/admin/payment/{payments,payment-types}` | `pages/admin/payment/` |
 | — | `/admin/settings` | `pages/admin/settings.jsx` |
 
@@ -79,6 +79,8 @@ The sidebar (`src/ui/layouts/sidebar.jsx`) is a **custom `<aside>`, not Gravity'
 `src/services/<domain>/{api,query}.js` — `api.js` holds plain async functions returning `res.data`; `query.js` holds the `use*` hooks. Query keys are `['<domain>', '<kind>', ...params]`.
 
 Mutations invalidate the whole domain (`['course']`, `['mentor']`, …) rather than a single key: list keys embed their pagination params, and nested payloads (a course carries its units, lessons and tasks) have no single key to patch. Sending a chat message is the deliberate exception — the server broadcasts it back over the socket, so invalidating would refetch a page of history per message.
+
+List pages wrap their content in `.page-fill` and pass `className="page-fill__section"` to `PageSection` (see `index.css`). The section is `flex: 0 1 auto`: it never grows, so a short table sits directly above its own pagination, but it does shrink, so a long one is capped at the viewport, scrolls internally, and keeps the pagination pinned in view. The page itself never scrolls, and the table header sticks while the rows do. Adding a paginated page means applying both classes, or the pagination drops below the fold.
 
 List pages page through `DataTable`, which renders Gravity's `Pagination` right-aligned with the page sizes from `src/shared/pagination.js` (15/20/30/50, default 15 — the API caps `limit` at 100). `compact` is left at its default so the arrows carry no "previous"/"next" labels. The control shows whenever `total` exceeds the *smallest* page size, not the current one: at 50/page with 20 rows there is one page, but hiding it would strand the user with no way back down to 15.
 
@@ -125,7 +127,15 @@ A question's `options` decides its type: a non-empty array makes it multiple-cho
 
 Pages inside a hierarchy pass a `breadcrumbs` trail to `PageHeader` (`[{title, to}, …]`, last entry omitting `to`). Ancestor titles come from the same `select`-based hooks the pages already use, so the trail costs no extra requests. `showRoot` keeps the first crumb pinned when Gravity collapses the middle on narrow viewports.
 
-Admin access to payments is **read-only** by design; status changes only through the Click webhooks. Cash and transfer sales are recorded via `POST admin/enrollments` instead — reachable from the **student detail page** (`EnrollStudentDialog`), where the student is already fixed by the route, rather than from a standalone page with its own student picker. `dto.studentId` is the **Student entity id**, which is what `/admin/users/students/:id` carries. There is no admin endpoint that *lists* enrollments — they only appear nested in a student's detail payload, which is why no enrollments page exists.
+Admin access to payments is **read-only** by design; status changes only through the Click webhooks. Cash and transfer sales are recorded via `POST admin/enrollments` instead — reachable from the **student detail page** (`EnrollStudentDialog`), where the student is already fixed by the route, rather than from the enrollments list, which stays read-only. `dto.studentId` is the **Student entity id**, which is what `/admin/users/students/:id` carries.
+
+`GET students` and `GET admin/teachers` share a shape: a case-insensitive `search`, an `isActive` filter on the *account*, a whitelisted `sortBy` and `sortOrder`. They differ in what's searchable and sortable — students add `level` (`A1`–`C2`) and sort on `points`/`coins`/`balance`; mentors add `profession` (searchable *and* sortable) and filter on `TeacherStatus`. A mentor's employment `status` and whether their account can sign in (`user.isActive`) are separate filters and separate columns.
+
+Both search boxes are debounced through `useDebouncedValue`, but `page` resets on the keystroke itself, not on the debounced value — otherwise a search could land on a page number the narrowed results don't have.
+
+**Sorting lives in the table header, not a dropdown.** `DataTable` wraps Gravity's `withTableSorting`: mark a column `meta: {sort: true}` and pass `sortBy`/`sortOrder`/`onSortChange`. A column's **`id` is sent verbatim as the API's `sortBy`**, so it has to be the field name the endpoint whitelists (hence the name column is keyed `firstName`) — and a column with no server-side counterpart, like the account-status one, simply omits `meta.sort` and renders a plain header. `disableDataSorting` is set because the rows on screen are one server-sorted page; re-sorting them locally would only shuffle that page. Clicks cycle asc → desc → cleared, and a cleared column falls back to `defaultSortBy` (`createdAt`, DESC) rather than sending no sort at all. `meta.defaultSortOrder: 'desc'` makes dates and numbers start newest/highest-first.
+
+`GET admin/enrollments` filters on `studentId`, `courseId`, `status` and `isExpired`, and sorts by a whitelisted `sortBy` (`createdAt`/`updatedAt`/`start`/`end`/`status`) plus `sortOrder`. `isExpired` is a **filter only — rows do not carry it**; `isEnrollmentExpired()` in `services/enrollment/query.js` derives it from `end`, mirroring the server's rule (an *active* row whose `end` has passed). Expiry is deliberately distinct from status, because an enrollment can read `active` and already be past its term. Filtering on `isExpired` implies `status=active` server-side when no status is given, since only an active enrollment has a meaningful term.
 
 ### Conventions
 

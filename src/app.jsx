@@ -13,6 +13,7 @@ import AdminMentorForm from '@/ui/pages/admin/users/mentorForm.jsx';
 import AdminMentorDetail from '@/ui/pages/admin/users/mentorDetail.jsx';
 import AdminCourses from '@/ui/pages/admin/course/courses.jsx';
 import AdminCourseManager from '@/ui/pages/admin/course/courseManager.jsx';
+import AdminEnrollments from '@/ui/pages/admin/course/enrollments.jsx';
 import AdminUnit from '@/ui/pages/admin/course/unit.jsx';
 import AdminLesson from '@/ui/pages/admin/course/lesson.jsx';
 import AdminTask from '@/ui/pages/admin/course/task.jsx';
@@ -72,6 +73,8 @@ function App() {
                             path="course/courses/:courseId/units/:unitId/lessons/:lessonId/tasks/:taskId/questions/:index"
                             element={<AdminQuestion/>}
                         />
+
+                        <Route path="course/enrollments" element={<AdminEnrollments/>}/>
 
                         <Route path="payment/payments" element={<AdminPayments/>}/>
                         <Route path="payment/payment-types" element={<AdminPaymentTypes/>}/>

@@ -4,8 +4,29 @@ import {apiClient} from '@/services/api.js';
 // routes live under `teachers/me`. Both are the same domain from the UI's
 // point of view, so they share this module.
 
-export async function getMentors({page = 1, limit = 15} = {}) {
-    const res = await apiClient.get('admin/teachers', {params: {page, limit}});
+// `search` matches first name, last name, phone, email and profession,
+// case-insensitively. Sorting is whitelisted server-side and maps onto real
+// columns, so only the documented field names are accepted.
+export async function getMentors({
+    page = 1,
+    limit = 15,
+    search,
+    status,
+    isActive,
+    sortBy,
+    sortOrder,
+} = {}) {
+    const res = await apiClient.get('admin/teachers', {
+        params: {
+            page,
+            limit,
+            search: search?.trim() || undefined,
+            status: status || undefined,
+            isActive: isActive === undefined || isActive === '' ? undefined : isActive,
+            sortBy: sortBy || undefined,
+            sortOrder: sortOrder || undefined,
+        },
+    });
     return res.data;
 }
 

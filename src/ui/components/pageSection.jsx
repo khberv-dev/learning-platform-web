@@ -1,9 +1,12 @@
 import {Card} from '@gravity-ui/uikit';
 
 // The standard page block: an optional title row with actions, then content.
-function PageSection({title, description, actions, children, style}) {
+//
+// `className` exists so list pages can pass `page-fill__section`, which turns
+// the card into the flex column the scrolling table needs.
+function PageSection({title, description, actions, children, style, className}) {
     return (
-        <Card view="outlined" style={{padding: 20, ...style}}>
+        <Card view="outlined" className={className} style={{padding: 20, ...style}}>
             {(title || actions) && (
                 <div
                     style={{
@@ -12,6 +15,7 @@ function PageSection({title, description, actions, children, style}) {
                         justifyContent: 'space-between',
                         gap: 16,
                         marginBottom: children ? 16 : 0,
+                        flexShrink: 0,
                     }}
                 >
                     <div style={{minWidth: 0}}>

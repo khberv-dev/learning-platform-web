@@ -25,6 +25,75 @@ a {
     cursor: pointer;
 }
 
+/* ── List pages ────────────────────────────────────────────────────────────
+   Keeps pagination reachable without scrolling past a long table, while a
+   short table still sits directly above its own pagination.
+
+   The trick is `flex: 0 1 auto` on the section: it never *grows*, so with a
+   handful of rows the card is only as tall as its content and the pagination
+   follows the last row. It does *shrink*, so once the rows would overflow the
+   viewport the card is capped, the row area scrolls inside it, and the
+   pagination stays pinned at the bottom of the card. No JS measuring, and no
+   fixed row-count threshold. */
+
+.page-fill {
+    display: flex;
+    flex-direction: column;
+    /* The layout pads the content area by 24px top and bottom. */
+    max-height: calc(100vh - 48px);
+}
+
+.page-fill__section {
+    flex: 0 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* A tab panel sits between the page and the section, so it has to pass the
+   height constraint through. TabProvider renders no element of its own. */
+.page-fill__panel {
+    flex: 0 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* `display: flex` above would otherwise override the hidden attribute Gravity
+   puts on the inactive panel. */
+.page-fill__panel[hidden] {
+    display: none;
+}
+
+.data-table {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 0 1 auto;
+    min-height: 0;
+}
+
+.data-table__scroll {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow: auto;
+}
+
+.data-table__footer {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Once the row area scrolls, the header has to stay put or the columns become
+   unreadable halfway down. */
+.data-table__scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--g-color-base-background);
+}
+
 /* ── Sidebar ───────────────────────────────────────────────────────────────
    The nav tree is a plain <aside> rather than Gravity's AsideHeader, whose
    MenuItem type is flat (divider only, no children) and so can't express

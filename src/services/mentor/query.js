@@ -20,6 +20,18 @@ export const MENTOR_STATUS = {
     SUSPENDED: 'suspended',
 };
 
+// Whitelisted server-side; anything else is rejected rather than reaching SQL.
+// Narrower than the student list - no points/coins/balance - but adds
+// `profession`, which is a mentor-only column.
+export const MENTOR_SORT_FIELDS = [
+    'createdAt',
+    'updatedAt',
+    'status',
+    'profession',
+    'firstName',
+    'lastName',
+];
+
 export const useMentors = (params) => {
     return useQuery({
         queryKey: ['mentor', 'list', params],

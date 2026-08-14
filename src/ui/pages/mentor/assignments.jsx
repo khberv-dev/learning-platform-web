@@ -104,17 +104,19 @@ function MentorAssignments() {
     ];
 
     return (
-        <>
+        <div className="page-fill">
             <PageHeader title={t('assignment.title')}/>
 
+            {/* The tab strip is fixed height; the active panel takes what's
+                left so its table can scroll inside the card. */}
             <TabProvider value={tab} onUpdate={setTab}>
-                <TabList style={{marginBottom: 16}}>
+                <TabList style={{marginBottom: 16, flexShrink: 0}}>
                     <Tab value="pending">{t('assignment.pending')}</Tab>
                     <Tab value="history">{t('assignment.history')}</Tab>
                 </TabList>
 
-                <TabPanel value="pending">
-                    <PageSection>
+                <TabPanel value="pending" className="page-fill__panel">
+                    <PageSection className="page-fill__section">
                         {/* `assignments/pending` returns a bare array, not a
                             paginated envelope - hence `rows`, not pagination. */}
                         <DataTable
@@ -126,8 +128,8 @@ function MentorAssignments() {
                     </PageSection>
                 </TabPanel>
 
-                <TabPanel value="history">
-                    <PageSection>
+                <TabPanel value="history" className="page-fill__panel">
+                    <PageSection className="page-fill__section">
                         <DataTable
                             query={history}
                             columns={historyColumns}
@@ -141,7 +143,7 @@ function MentorAssignments() {
                     </PageSection>
                 </TabPanel>
             </TabProvider>
-        </>
+        </div>
     );
 }
 
