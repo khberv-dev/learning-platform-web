@@ -64,7 +64,7 @@ Students have no panel here. A student-only account is rejected at sign-in rathe
 |---|---|---|
 | — | `/admin` | `pages/admin/home.jsx` |
 | `users` | `/admin/users/{students,mentors}` | `pages/admin/users/` |
-| `course` | `/admin/course/{courses,enrollments}` | `pages/admin/course/` |
+| `course` | `/admin/course/{courses,enrollments,pending-enrollments}` | `pages/admin/course/` |
 | `payment` | `/admin/payment/{payments,payment-types}` | `pages/admin/payment/` |
 | — | `/admin/settings` | `pages/admin/settings.jsx` |
 
@@ -136,6 +136,10 @@ Both search boxes are debounced through `useDebouncedValue`, but `page` resets o
 **Sorting lives in the table header, not a dropdown.** `DataTable` wraps Gravity's `withTableSorting`: mark a column `meta: {sort: true}` and pass `sortBy`/`sortOrder`/`onSortChange`. A column's **`id` is sent verbatim as the API's `sortBy`**, so it has to be the field name the endpoint whitelists (hence the name column is keyed `firstName`) — and a column with no server-side counterpart, like the account-status one, simply omits `meta.sort` and renders a plain header. `disableDataSorting` is set because the rows on screen are one server-sorted page; re-sorting them locally would only shuffle that page. Clicks cycle asc → desc → cleared, and a cleared column falls back to `defaultSortBy` (`createdAt`, DESC) rather than sending no sort at all. `meta.defaultSortOrder: 'desc'` makes dates and numbers start newest/highest-first.
 
 `GET admin/enrollments` filters on `studentId`, `courseId`, `status` and `isExpired`, and sorts by a whitelisted `sortBy` (`createdAt`/`updatedAt`/`start`/`end`/`status`) plus `sortOrder`. `isExpired` is a **filter only — rows do not carry it**; `isEnrollmentExpired()` in `services/enrollment/query.js` derives it from `end`, mirroring the server's rule (an *active* row whose `end` has passed). Expiry is deliberately distinct from status, because an enrollment can read `active` and already be past its term. Filtering on `isExpired` implies `status=active` server-side when no status is given, since only an active enrollment has a meaningful term.
+
+**Pending enrollments are enrolment *requests*, queued by an external service (CRM, terminal) and resolved by an admin** — `GET admin/pending-enrollments` (filters `userId`, `courseId`, `status`; the same sort whitelist as the enrollment list) plus `PATCH .../:id/accept` and `PATCH .../:id/reject`. They live in `services/enrollment/{api,query}.js` under the `['enrollment', 'pending', …]` key rather than a domain of their own, so accepting one invalidates both lists at once.
+
+Only a `created` request can be decided, so the action buttons render on those rows alone and the page's status filter **defaults to `created`** — it is a work queue, not an archive. A request carries no plan: `AcceptPendingEnrollmentDialog` picks one (`usePlans(row.course.id)`, and it must belong to the requested course), because price and duration are only settled at approval. `amount` is optional and falls back to the plan's price. Accepting opens the enrollment `active` **and** writes a `paid` payment in one server-side transaction — the money was collected outside Click/Payme, as with a manual enrollment — hence the `['payment']`/`['student']`/`['stats']` invalidations that rejecting doesn't need. The row points at the **`User`**, not the `Student`, so there is no student page to link a row to.
 
 ### Conventions
 

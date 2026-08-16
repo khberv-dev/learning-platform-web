@@ -12,9 +12,10 @@ const THEMES = {
     created: 'info',
     paid: 'success',
     cancelled: 'danger',
-    // AssignmentStatus
+    // AssignmentStatus / PendingEnrollmentStatus
     pending: 'warning',
     rejected: 'danger',
+    accepted: 'success',
 };
 
 // For plain `isActive` booleans (courses, payment types), which have no status

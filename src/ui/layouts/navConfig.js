@@ -1,6 +1,7 @@
 import {
     BookOpen,
     CalendarClock,
+    ClipboardCheck,
     CreditCard,
     GraduationCap,
     Home,
@@ -45,6 +46,12 @@ export const NAV_BY_ROLE = {
                     titleKey: 'nav.enrollments',
                     icon: CalendarClock,
                     path: '/admin/course/enrollments',
+                },
+                {
+                    id: 'pendingEnrollments',
+                    titleKey: 'nav.pendingEnrollments',
+                    icon: ClipboardCheck,
+                    path: '/admin/course/pending-enrollments',
                 },
             ],
         },
