@@ -44,7 +44,7 @@ Students have no panel here. A student-only account is rejected at sign-in rathe
 
 `QueryClientProvider` → `I18nProvider` → `ThemeModeProvider` → `AuthProvider` → `GravityThemeBridge` (feeds theme + lang into Gravity's `ThemeProvider`, mounts `ToasterProvider`/`ToasterComponent`) → `BrowserRouter`.
 
-- `useI18n()` — `{locale, setLocale, t}`. Locales are plain objects in `src/shared/i18n/locales/{uz,ru}.js`; **`uz` is the default and the fallback** (a key missing from `ru` renders the Uzbek string, not the raw key). Gravity ships no `uz`, so it's mapped onto `en`.
+- `useI18n()` — `{locale, setLocale, t}`. Locales are plain objects in `src/shared/i18n/locales/{uz,ru}.js`; **`uz` is the default and the fallback** (a key missing from `ru` renders the Uzbek string, not the raw key). Gravity ships no `uz`, so it's mapped onto `en`. `t` takes a second argument of variables and fills `{{name}}` placeholders (`t('push.recipients', {count: 3})`) — don't hand-splice values into a translated string.
 - `useThemeMode()` — `{themeMode, setThemeMode, toggleThemeMode}`, seeded from `prefers-color-scheme`.
 - `useAuth()` — `{isAuthenticated, roles, role, isAdmin, isMentor, login, logout, syncRoles}`. Sign-in returns the role list inline, so it's cached in `localStorage` and the guards can pick a panel on the first render; `user/me` stays authoritative and `RoleRoute` re-syncs it.
 
@@ -66,6 +66,7 @@ Students have no panel here. A student-only account is rejected at sign-in rathe
 | `users` | `/admin/users/{students,mentors}` | `pages/admin/users/` |
 | `course` | `/admin/course/{courses,enrollments,pending-enrollments}` | `pages/admin/course/` |
 | `payment` | `/admin/payment/{payments,payment-types}` | `pages/admin/payment/` |
+| `marketing` | `/admin/marketing/push-notifications` | `pages/admin/marketing/` |
 | — | `/admin/settings` | `pages/admin/settings.jsx` |
 
 A nav node with `children` renders as a collapsible group; one with `path` renders as a link. Groups are never navigable themselves. Adding a page means editing `app.jsx`, `navConfig.js`, and every locale file (the `titleKey`), and putting the file in the matching folder.
@@ -140,6 +141,16 @@ Both search boxes are debounced through `useDebouncedValue`, but `page` resets o
 **Pending enrollments are enrolment *requests*, queued by an external service (CRM, terminal) and resolved by an admin** — `GET admin/pending-enrollments` (filters `userId`, `courseId`, `status`; the same sort whitelist as the enrollment list) plus `PATCH .../:id/accept` and `PATCH .../:id/reject`. They live in `services/enrollment/{api,query}.js` under the `['enrollment', 'pending', …]` key rather than a domain of their own, so accepting one invalidates both lists at once.
 
 Only a `created` request can be decided, so the action buttons render on those rows alone and the page's status filter **defaults to `created`** — it is a work queue, not an archive. A request carries no plan: `AcceptPendingEnrollmentDialog` picks one (`usePlans(row.course.id)`, and it must belong to the requested course), because price and duration are only settled at approval. `amount` is optional and falls back to the plan's price. Accepting opens the enrollment `active` **and** writes a `paid` payment in one server-side transaction — the money was collected outside Click/Payme, as with a manual enrollment — hence the `['payment']`/`['student']`/`['stats']` invalidations that rejecting doesn't need. The row points at the **`User`**, not the `Student`, so there is no student page to link a row to.
+
+### Push notifications
+
+Almost every push the platform sends is event-driven and lives entirely in the API (enrollment opened, lesson added, mentor assigned). The panel owns the **one manual path**: `POST admin/notifications/push` in `services/notification/{api,query}.js`, taking `{title (≤100), body (≤1000), audience, phoneNumbers?}`.
+
+`audience` (`all` / `students` / `teachers` / `phones`) is required by the DTO so a blast to everyone can never be a forgotten field, and there is no separate single-recipient route — one user is a `phones` list of one. The page mirrors that intent: it defaults to `phones`, shows a warning instead of a recipient field on the three mass audiences, and routes every send through `ConfirmDialog` naming who is about to get it. Nothing is invalidated afterwards, because a push leaves no row behind to read back.
+
+The response **is** the deliverable: `{devices, sent, failed, removedTokens}`, plus `notFound` (no such user) and `withoutDevice` (user exists, never opened the app) for a `phones` send — a distinction the report renders separately, since a wrong number and an uninstalled app call for different follow-ups. It is held in page state until the next send, as it can't be refetched. Delivery happens *inside* the request in chunks of 500, so a large audience simply means a slow response. A **503** means `GOOGLE_SERVICES_JSON` is unset on the server; its message is surfaced as-is rather than reported as a zero-device success.
+
+The phone box parses newline/comma-separated entries and strips each to digits (numbers are stored bare as `998XXXXXXXXX`), then splits them into valid and invalid *before* sending — a rejected batch is all-or-nothing server-side, so a typo is caught in the field.
 
 ### Conventions
 

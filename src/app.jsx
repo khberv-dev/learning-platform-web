@@ -21,6 +21,7 @@ import AdminTask from '@/ui/pages/admin/course/task.jsx';
 import AdminQuestion from '@/ui/pages/admin/course/question.jsx';
 import AdminPayments from '@/ui/pages/admin/payment/payments.jsx';
 import AdminPaymentTypes from '@/ui/pages/admin/payment/paymentTypes.jsx';
+import AdminPushNotifications from '@/ui/pages/admin/marketing/pushNotifications.jsx';
 import AdminAssignments from '@/ui/pages/admin/assignments.jsx';
 import AdminSettings from '@/ui/pages/admin/settings.jsx';
 
@@ -80,6 +81,11 @@ function App() {
 
                         <Route path="payment/payments" element={<AdminPayments/>}/>
                         <Route path="payment/payment-types" element={<AdminPaymentTypes/>}/>
+
+                        <Route
+                            path="marketing/push-notifications"
+                            element={<AdminPushNotifications/>}
+                        />
 
                         {/* Reachable by URL but deliberately absent from the
                             sidebar tree, which has no assignments entry. */}

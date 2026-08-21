@@ -1,4 +1,5 @@
 import {
+    BellRing,
     BookOpen,
     CalendarClock,
     ClipboardCheck,
@@ -6,6 +7,7 @@ import {
     GraduationCap,
     Home,
     LayoutDashboard,
+    Megaphone,
     MessageSquare,
     Settings,
     UserCheck,
@@ -66,6 +68,19 @@ export const NAV_BY_ROLE = {
                     titleKey: 'nav.paymentTypes',
                     icon: Wallet,
                     path: '/admin/payment/payment-types',
+                },
+            ],
+        },
+        {
+            id: 'marketing',
+            titleKey: 'nav.marketing',
+            icon: Megaphone,
+            children: [
+                {
+                    id: 'pushNotifications',
+                    titleKey: 'nav.pushNotifications',
+                    icon: BellRing,
+                    path: '/admin/marketing/push-notifications',
                 },
             ],
         },
