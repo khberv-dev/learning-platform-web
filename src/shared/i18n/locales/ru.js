@@ -39,6 +39,15 @@ export default {
         logout: 'Выйти',
         logoutConfirm: 'Выйти из аккаунта?',
     },
+    user: {
+        setPassword: 'Установить пароль',
+        setPasswordFor: 'Установите новый пароль для {{name}}.',
+        newPassword: 'Новый пароль',
+        confirmPassword: 'Подтвердите пароль',
+        passwordMinLength: 'Пароль должен содержать не менее 6 символов',
+        passwordMismatch: 'Пароли не совпадают',
+        passwordChanged: 'Пароль успешно изменён',
+    },
     nav: {
         home: 'Главная',
         users: 'Пользователи',

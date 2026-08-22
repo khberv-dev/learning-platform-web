@@ -39,6 +39,15 @@ export default {
         logout: 'Chiqish',
         logoutConfirm: 'Hisobdan chiqmoqchimisiz?',
     },
+    user: {
+        setPassword: 'Parol o\'rnatish',
+        setPasswordFor: '{{name}} uchun yangi parol o\'rnating.',
+        newPassword: 'Yangi parol',
+        confirmPassword: 'Parolni tasdiqlang',
+        passwordMinLength: 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak',
+        passwordMismatch: 'Parollar bir xil emas',
+        passwordChanged: 'Parol muvaffaqiyatli o\'zgartirildi',
+    },
     nav: {
         home: 'Bosh sahifa',
         users: 'Foydalanuvchilar',

@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {useParams} from 'react-router-dom';
 import {Button, Table} from '@gravity-ui/uikit';
-import {Plus} from 'lucide-react';
+import {KeyRound, Plus} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useStudent} from '@/services/student/query.js';
 import {formatDate, formatMoney, formatPhone, fullName} from '@/shared/utils/format.js';
@@ -12,12 +12,14 @@ import UserAvatar from '@/ui/components/userAvatar.jsx';
 import StatusLabel from '@/ui/components/statusLabel.jsx';
 import {EmptyState, ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 import EnrollStudentDialog from '@/ui/pages/admin/users/enrollStudentDialog.jsx';
+import SetUserPasswordDialog from '@/ui/pages/admin/users/setUserPasswordDialog.jsx';
 
 function AdminStudentDetail() {
     const {t} = useI18n();
     const {id} = useParams();
     const query = useStudent(id);
     const [enrollOpen, setEnrollOpen] = useState(false);
+    const [passwordOpen, setPasswordOpen] = useState(false);
 
     if (query.isPending) return <LoadingState rows={6}/>;
     if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch}/>;
@@ -51,12 +53,20 @@ function AdminStudentDetail() {
                     {title: name},
                 ]}
                 actions={
-                    <Button view="action" onClick={() => setEnrollOpen(true)}>
-                        <Button.Icon>
-                            <Plus size={16}/>
-                        </Button.Icon>
-                        {t('enrollment.create')}
-                    </Button>
+                    <div style={{display: 'flex', gap: 8}}>
+                        <Button onClick={() => setPasswordOpen(true)}>
+                            <Button.Icon>
+                                <KeyRound size={16}/>
+                            </Button.Icon>
+                            {t('user.setPassword')}
+                        </Button>
+                        <Button view="action" onClick={() => setEnrollOpen(true)}>
+                            <Button.Icon>
+                                <Plus size={16}/>
+                            </Button.Icon>
+                            {t('enrollment.create')}
+                        </Button>
+                    </div>
                 }
             />
 
@@ -108,6 +118,12 @@ function AdminStudentDetail() {
                 studentId={id}
                 studentName={name}
                 onClose={() => setEnrollOpen(false)}
+            />
+            <SetUserPasswordDialog
+                open={passwordOpen}
+                userId={student.user.id}
+                userName={name}
+                onClose={() => setPasswordOpen(false)}
             />
         </>
     );

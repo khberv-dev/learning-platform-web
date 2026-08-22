@@ -11,3 +11,7 @@ export async function updateMyAvatar(file) {
     const res = await apiClient.patch('user/me/avatar', form);
     return res.data;
 }
+
+export async function setUserPassword({id, password}) {
+    await apiClient.patch(`admin/users/${id}/password`, {password});
+}

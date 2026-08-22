@@ -1,5 +1,5 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {getMe, updateMyAvatar} from '@/services/user/api.js';
+import {getMe, setUserPassword, updateMyAvatar} from '@/services/user/api.js';
 
 export const useMe = () => {
     return useQuery({
@@ -17,4 +17,8 @@ export const useUpdateMyAvatar = () => {
         // response rather than paying for a second user/me round-trip.
         onSuccess: (data) => queryClient.setQueryData(['me'], data),
     });
+};
+
+export const useSetUserPassword = () => {
+    return useMutation({mutationFn: setUserPassword});
 };

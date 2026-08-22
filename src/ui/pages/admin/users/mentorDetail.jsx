@@ -1,7 +1,7 @@
 import {useRef, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {Button, Select, Table} from '@gravity-ui/uikit';
-import {Pencil, Upload} from 'lucide-react';
+import {KeyRound, Pencil, Upload} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {
     MENTOR_STATUS,
@@ -17,6 +17,7 @@ import PageSection from '@/ui/components/pageSection.jsx';
 import UserAvatar from '@/ui/components/userAvatar.jsx';
 import StatusLabel from '@/ui/components/statusLabel.jsx';
 import {EmptyState, ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
+import SetUserPasswordDialog from '@/ui/pages/admin/users/setUserPasswordDialog.jsx';
 
 function Field({label, value}) {
     return (
@@ -36,6 +37,7 @@ function AdminMentorDetail() {
     const uploadVideo = useUploadMentorIntroVideo();
     const fileInputRef = useRef(null);
     const [status, setStatus] = useState(null);
+    const [passwordOpen, setPasswordOpen] = useState(false);
 
     if (query.isPending) return <LoadingState rows={6}/>;
     if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch}/>;
@@ -124,12 +126,20 @@ function AdminMentorDetail() {
                     {title: name},
                 ]}
                 actions={
-                    <Button onClick={() => navigate(`/admin/users/mentors/${id}/edit`)}>
-                        <Button.Icon>
-                            <Pencil size={16}/>
-                        </Button.Icon>
-                        {t('common.edit')}
-                    </Button>
+                    <div style={{display: 'flex', gap: 8}}>
+                        <Button onClick={() => setPasswordOpen(true)}>
+                            <Button.Icon>
+                                <KeyRound size={16}/>
+                            </Button.Icon>
+                            {t('user.setPassword')}
+                        </Button>
+                        <Button onClick={() => navigate(`/admin/users/mentors/${id}/edit`)}>
+                            <Button.Icon>
+                                <Pencil size={16}/>
+                            </Button.Icon>
+                            {t('common.edit')}
+                        </Button>
+                    </div>
                 }
             />
 
@@ -227,6 +237,12 @@ function AdminMentorDetail() {
                     <EmptyState/>
                 )}
             </PageSection>
+            <SetUserPasswordDialog
+                open={passwordOpen}
+                userId={mentor.user.id}
+                userName={name}
+                onClose={() => setPasswordOpen(false)}
+            />
         </>
     );
 }
