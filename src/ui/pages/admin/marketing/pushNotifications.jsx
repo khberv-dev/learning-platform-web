@@ -1,5 +1,5 @@
 import {useMemo, useState} from 'react';
-import {Alert, Button, Label, Select, TextArea, TextInput} from '@gravity-ui/uikit';
+import {Alert, Button, Checkbox, Label, Select, TextArea, TextInput} from '@gravity-ui/uikit';
 import {BellRing, Send, Smartphone, TriangleAlert, Trash2} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {MAX_PUSH_PHONE_NUMBERS, PUSH_AUDIENCE, useSendPush} from '@/services/notification/query.js';
@@ -59,6 +59,7 @@ function AdminPushNotifications() {
     const [body, setBody] = useState('');
     const [audience, setAudience] = useState(PUSH_AUDIENCE.PHONES);
     const [phonesRaw, setPhonesRaw] = useState('');
+    const [isPermanent, setIsPermanent] = useState(false);
     const [errors, setErrors] = useState({});
     const [confirming, setConfirming] = useState(false);
     // Kept until the next send so the admin can read the report after the
@@ -103,10 +104,11 @@ function AdminPushNotifications() {
                 body: body.trim(),
                 audience,
                 phoneNumbers: toPhones ? valid : undefined,
+                isPermanent,
             },
             {
                 onSuccess: (result) => {
-                    setReport(result);
+                    setReport({...result, isPermanent});
                     setConfirming(false);
                     toaster.add({
                         name: 'push-sent',
@@ -133,6 +135,7 @@ function AdminPushNotifications() {
         setTitle('');
         setBody('');
         setPhonesRaw('');
+        setIsPermanent(false);
         setErrors({});
         setReport(null);
     };
@@ -199,6 +202,15 @@ function AdminPushNotifications() {
                             </Select>
                         </FormField>
 
+                        <Checkbox checked={isPermanent} onUpdate={setIsPermanent} size="l">
+                            <div>
+                                <div>{t('push.permanent')}</div>
+                                <div style={{fontSize: 12, color: 'var(--g-color-text-secondary)', marginTop: 2}}>
+                                    {t('push.permanentHint')}
+                                </div>
+                            </div>
+                        </Checkbox>
+
                         {toPhones ? (
                             <FormField
                                 label={t('push.phoneNumbers')}
@@ -258,6 +270,7 @@ function AdminPushNotifications() {
                 {report && (
                     <PageSection title={t('push.report')} description={t('push.reportNote')}>
                         <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                            {report.isPermanent && <Alert theme="success" message={t('push.permanentRequested')}/>}
                             <div
                                 style={{
                                     display: 'grid',
@@ -294,8 +307,12 @@ function AdminPushNotifications() {
                 title={t('push.send')}
                 message={
                     toPhones
-                        ? t('push.confirmPhones', {count: valid.length})
-                        : t('push.confirmMass', {audience: audienceLabel})
+                        ? t(isPermanent ? 'push.confirmPermanentPhones' : 'push.confirmPhones', {
+                              count: valid.length,
+                          })
+                        : t(isPermanent ? 'push.confirmPermanentMass' : 'push.confirmMass', {
+                              audience: audienceLabel,
+                          })
                 }
                 confirmText={t('push.send')}
                 danger={false}

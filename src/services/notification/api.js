@@ -7,8 +7,8 @@ import {apiClient} from '@/services/api.js';
 // `audience` is required server-side precisely so a blast to everyone can never
 // be a forgotten field, and there is no separate "send to one user" route -
 // that is a `phones` list of one.
-export async function sendPush({title, body, audience, phoneNumbers}) {
-    const payload = {title, body, audience};
+export async function sendPush({title, body, audience, phoneNumbers, isPermanent}) {
+    const payload = {title, body, audience, isPermanent};
     if (phoneNumbers?.length) payload.phoneNumbers = phoneNumbers;
 
     // Delivery happens inside the request (chunks of 500 go sequentially), so a
