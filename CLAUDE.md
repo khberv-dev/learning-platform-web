@@ -50,7 +50,7 @@ Students have no panel here. A student-only account is rejected at sign-in rathe
 
 ### Auth flow
 
-`POST auth/sign-in` takes `{phoneNumber, password}` (staff accounts are keyed by phone) and returns `{accessToken, refreshToken, roles}`.
+`POST auth/sign-in` takes exactly one identity — `{phoneNumber, password}` or `{email, password}` — and returns `{accessToken, refreshToken, roles}`. The login form accepts either in one field, normalises email to lowercase and phone to bare digits, and sends only the matching identity key.
 
 **`POST auth/refresh` takes no body — it is guarded by `JwtRefreshGuard`, which reads the *refresh* token out of the `Authorization: Bearer` header.** This differs from most refresh endpoints; `services/api.js` sends it through bare axios so the request interceptor can't overwrite the header with the stale access token. A 401 from any non-auth endpoint triggers one refresh-and-retry, queuing concurrent requests behind it; 403 (the role guard) rejects normally, since refreshing can't fix it.
 
@@ -86,6 +86,8 @@ List pages wrap their content in `.page-fill` and pass `className="page-fill__se
 List pages page through `DataTable`, which renders Gravity's `Pagination` right-aligned with the page sizes from `src/shared/pagination.js` (15/20/30/50, default 15 — the API caps `limit` at 100). `compact` is left at its default so the arrows carry no "previous"/"next" labels. The control shows whenever `total` exceeds the *smallest* page size, not the current one: at 50/page with 20 rows there is one page, but hiding it would strand the user with no way back down to 15.
 
 Multipart is required wherever a file rides along (course image, lesson media, task file, avatars, intro videos, payment-type icons, chat files). The local `asForm` helpers stringify booleans — the DTOs' `@Transform` compares against `'true'`/`'false'` — and drop null/undefined keys so a PATCH can't blank an untouched field.
+
+The admin dashboard keeps growth and activity metrics visually separate. `stats/summary` exposes current totals. `stats/timeseries` returns `{businessMetrics, activeUserMetrics}`: business metrics are daily rows, while activity is split into daily `dau`, weekly range-based `wau`, and month-based `mau` arrays whose values live in `count`. Growth has a 7/14/30 period control. Activity uses the 30-day response and renders one selected DAU/WAU/MAU chart at a time, preserving each metric's natural time axis.
 
 CDN paths go through `cdnUrl()` (`src/shared/utils/format.js`), which passes `http(s):`, `blob:` and `data:` through untouched so local previews work.
 
@@ -130,9 +132,11 @@ Pages inside a hierarchy pass a `breadcrumbs` trail to `PageHeader` (`[{title, t
 
 Admin access to payments is **read-only** by design; status changes only through the Click webhooks. Cash and transfer sales are recorded via `POST admin/enrollments` instead — reachable from the **student detail page** (`EnrollStudentDialog`), where the student is already fixed by the route, rather than from the enrollments list, which stays read-only. `dto.studentId` is the **Student entity id**, which is what `/admin/users/students/:id` carries.
 
-`GET students` and `GET admin/teachers` share a shape: a case-insensitive `search`, an `isActive` filter on the *account*, a whitelisted `sortBy` and `sortOrder`. They differ in what's searchable and sortable — students add `level` (`A1`–`C2`) and sort on `points`/`coins`/`balance`; mentors add `profession` (searchable *and* sortable) and filter on `TeacherStatus`. A mentor's employment `status` and whether their account can sign in (`user.isActive`) are separate filters and separate columns.
+`GET students` and `GET admin/teachers` share a shape: a case-insensitive `search`, an `isActive` filter on the *account*, a whitelisted `sortBy` and `sortOrder`. They differ in what's searchable and sortable — students add `level` (`A1`–`C2`), `hasCourse`, an `activeCoursesCount` response field, and sort on `points`/`coins`/`balance`; mentors add `profession` (searchable *and* sortable) and filter on `TeacherStatus`. A mentor's employment `status` and whether their account can sign in (`user.isActive`) are separate filters and separate columns.
 
 Both search boxes are debounced through `useDebouncedValue`, but `page` resets on the keystroke itself, not on the debounced value — otherwise a search could land on a page number the narrowed results don't have.
+
+List-page filter controls carry persistent labels through `FormField`; option text such as "all" is a value, not a substitute for naming the filter. This is especially important where multiple filters can simultaneously display the same "all" value.
 
 **Sorting lives in the table header, not a dropdown.** `DataTable` wraps Gravity's `withTableSorting`: mark a column `meta: {sort: true}` and pass `sortBy`/`sortOrder`/`onSortChange`. A column's **`id` is sent verbatim as the API's `sortBy`**, so it has to be the field name the endpoint whitelists (hence the name column is keyed `firstName`) — and a column with no server-side counterpart, like the account-status one, simply omits `meta.sort` and renders a plain header. `disableDataSorting` is set because the rows on screen are one server-sorted page; re-sorting them locally would only shuffle that page. Clicks cycle asc → desc → cleared, and a cleared column falls back to `defaultSortBy` (`createdAt`, DESC) rather than sending no sort at all. `meta.defaultSortOrder: 'desc'` makes dates and numbers start newest/highest-first.
 

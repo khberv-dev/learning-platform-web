@@ -9,6 +9,7 @@ import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import FormField from '@/ui/components/formField.jsx';
 
 const PHONE_PATTERN = /^998\d{9}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_MIN_LENGTH = 6;
 
 function Login() {
@@ -16,7 +17,7 @@ function Login() {
     const navigate = useNavigate();
     const {login} = useAuth();
     const signIn = useSignIn();
-    const [phoneNumber, setPhoneNumber] = useState('');
+    const [identity, setIdentity] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
 
@@ -24,15 +25,18 @@ function Login() {
         event.preventDefault();
         setError(null);
 
-        const digits = phoneNumber.replace(/\D/g, '');
+        const normalized = identity.trim();
+        const validIdentity = normalized.includes('@')
+            ? EMAIL_PATTERN.test(normalized)
+            : PHONE_PATTERN.test(normalized.replace(/\D/g, ''));
 
-        if (!PHONE_PATTERN.test(digits) || password.length < PASSWORD_MIN_LENGTH) {
+        if (!validIdentity || password.length < PASSWORD_MIN_LENGTH) {
             setError(t('auth.formatError'));
             return;
         }
 
         signIn.mutate(
-            {phoneNumber: digits, password},
+            {identity: normalized, password},
             {
                 onSuccess: (data) => {
                     // sign-in returns the role list inline. A student-only
@@ -85,14 +89,13 @@ function Login() {
                 </div>
 
                 <form onSubmit={handleSubmit} style={{display: 'flex', flexDirection: 'column', gap: 16}}>
-                    <FormField label={t('auth.phone')}>
+                    <FormField label={t('auth.identity')}>
                         <TextInput
                             size="l"
-                            value={phoneNumber}
-                            onUpdate={setPhoneNumber}
-                            placeholder="998901234567"
-                            autoComplete="tel"
-                            inputMode="numeric"
+                            value={identity}
+                            onUpdate={setIdentity}
+                            placeholder={t('auth.identityPlaceholder')}
+                            autoComplete="username"
                         />
                     </FormField>
                     <FormField label={t('auth.password')}>

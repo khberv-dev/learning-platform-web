@@ -12,6 +12,7 @@ import DataTable from '@/ui/components/dataTable.jsx';
 import UserCell from '@/ui/components/userCell.jsx';
 import {ActiveLabel} from '@/ui/components/statusLabel.jsx';
 import {DEFAULT_PAGE_SIZE} from '@/shared/pagination.js';
+import FormField from '@/ui/components/formField.jsx';
 
 function AdminStudents() {
     const {t} = useI18n();
@@ -22,6 +23,8 @@ function AdminStudents() {
     const [search, setSearch] = useState('');
     const [level, setLevel] = useState('');
     const [active, setActive] = useState('');
+    // Three-state API filter: true / false / null (all).
+    const [hasCourse, setHasCourse] = useState(null);
     const [sort, setSort] = useState({sortBy: 'createdAt', sortOrder: 'DESC'});
 
     // Only the request is delayed - `page` resets on the keystroke itself
@@ -34,6 +37,7 @@ function AdminStudents() {
         search: debouncedSearch,
         level,
         isActive: active === '' ? undefined : active === 'active',
+        hasCourse,
         ...sort,
     });
 
@@ -78,6 +82,11 @@ function AdminStudents() {
             template: (row) => formatMoney(row.balance),
         },
         {
+            id: 'activeCoursesCount',
+            name: t('student.activeCourses'),
+            template: (row) => row.activeCoursesCount ?? 0,
+        },
+        {
             id: 'isActive',
             name: t('common.status'),
             template: (row) => <ActiveLabel active={row.user?.isActive}/>,
@@ -97,42 +106,52 @@ function AdminStudents() {
                 className="page-fill__section"
                 actions={
                     <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
-                        <TextInput
-                            value={search}
-                            onUpdate={withReset(setSearch)}
-                            placeholder={t('student.searchPlaceholder')}
-                            hasClear
-                            startContent={
-                                <Search
-                                    size={15}
-                                    style={{marginLeft: 8, color: 'var(--g-color-text-secondary)'}}
-                                />
-                            }
-                            style={{width: 240}}
-                        />
+                        <FormField label={t('common.search')}>
+                            <TextInput
+                                value={search}
+                                onUpdate={withReset(setSearch)}
+                                placeholder={t('student.searchPlaceholder')}
+                                hasClear
+                                startContent={
+                                    <Search
+                                        size={15}
+                                        style={{marginLeft: 8, color: 'var(--g-color-text-secondary)'}}
+                                    />
+                                }
+                                style={{width: 240}}
+                            />
+                        </FormField>
 
-                        <Select
-                            value={[level]}
-                            onUpdate={([value]) => withReset(setLevel)(value)}
-                            width={160}
-                        >
-                            <Select.Option value="">{t('student.allLevels')}</Select.Option>
-                            {STUDENT_LEVELS.map((value) => (
-                                <Select.Option key={value} value={value}>
-                                    {value}
-                                </Select.Option>
-                            ))}
-                        </Select>
+                        <FormField label={t('student.level')}>
+                            <Select value={[level]} onUpdate={([value]) => withReset(setLevel)(value)} width={160}>
+                                <Select.Option value="">{t('student.allLevels')}</Select.Option>
+                                {STUDENT_LEVELS.map((value) => (
+                                    <Select.Option key={value} value={value}>
+                                        {value}
+                                    </Select.Option>
+                                ))}
+                            </Select>
+                        </FormField>
 
-                        <Select
-                            value={[active]}
-                            onUpdate={([value]) => withReset(setActive)(value)}
-                            width={150}
-                        >
-                            <Select.Option value="">{t('common.all')}</Select.Option>
-                            <Select.Option value="active">{t('common.active')}</Select.Option>
-                            <Select.Option value="inactive">{t('common.inactive')}</Select.Option>
-                        </Select>
+                        <FormField label={t('common.accountStatus')}>
+                            <Select value={[active]} onUpdate={([value]) => withReset(setActive)(value)} width={150}>
+                                <Select.Option value="">{t('common.all')}</Select.Option>
+                                <Select.Option value="active">{t('common.active')}</Select.Option>
+                                <Select.Option value="inactive">{t('common.inactive')}</Select.Option>
+                            </Select>
+                        </FormField>
+
+                        <FormField label={t('student.activeCourses')}>
+                            <Select
+                                value={[hasCourse === null ? '' : String(hasCourse)]}
+                                onUpdate={([value]) => withReset(setHasCourse)(value === '' ? null : value === 'true')}
+                                width={170}
+                            >
+                                <Select.Option value="">{t('common.all')}</Select.Option>
+                                <Select.Option value="true">{t('student.withCourse')}</Select.Option>
+                                <Select.Option value="false">{t('student.withoutCourse')}</Select.Option>
+                            </Select>
+                        </FormField>
                     </div>
                 }
             >

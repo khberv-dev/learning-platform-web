@@ -19,6 +19,7 @@ import StatusLabel from '@/ui/components/statusLabel.jsx';
 import ConfirmDialog from '@/ui/components/confirmDialog.jsx';
 import UserCell from '@/ui/components/userCell.jsx';
 import AcceptPendingEnrollmentDialog from '@/ui/pages/admin/course/acceptPendingEnrollmentDialog.jsx';
+import FormField from '@/ui/components/formField.jsx';
 
 // Enrolment requests an external service (CRM, terminal) queued for approval.
 // The page is a work queue, so it opens on the open ones rather than on every
@@ -139,39 +140,41 @@ function AdminPendingEnrollments() {
                 className="page-fill__section"
                 actions={
                     <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
-                        <Select
-                            value={[courseId]}
-                            onUpdate={([value]) => withReset(setCourseId)(value)}
-                            width={200}
-                            filterable
-                            loading={courses.isPending}
-                            placeholder={t('pendingEnrollment.course')}
-                        >
-                            <Select.Option value="">{t('common.all')}</Select.Option>
-                            {(courses.data ?? []).map((course) => (
-                                <Select.Option key={course.id} value={course.id}>
-                                    {course.title}
-                                </Select.Option>
-                            ))}
-                        </Select>
+                        <FormField label={t('pendingEnrollment.course')}>
+                            <Select
+                                value={[courseId]}
+                                onUpdate={([value]) => withReset(setCourseId)(value)}
+                                width={200}
+                                filterable
+                                loading={courses.isPending}
+                            >
+                                <Select.Option value="">{t('common.all')}</Select.Option>
+                                {(courses.data ?? []).map((course) => (
+                                    <Select.Option key={course.id} value={course.id}>
+                                        {course.title}
+                                    </Select.Option>
+                                ))}
+                            </Select>
+                        </FormField>
 
-                        <Select
-                            value={[status]}
-                            onUpdate={([value]) => withReset(setStatus)(value)}
-                            width={190}
-                            placeholder={t('common.status')}
-                        >
-                            <Select.Option value="">{t('common.all')}</Select.Option>
-                            <Select.Option value={PENDING_ENROLLMENT_STATUS.CREATED}>
-                                {t('pendingEnrollment.statusCreated')}
-                            </Select.Option>
-                            <Select.Option value={PENDING_ENROLLMENT_STATUS.ACCEPTED}>
-                                {t('pendingEnrollment.statusAccepted')}
-                            </Select.Option>
-                            <Select.Option value={PENDING_ENROLLMENT_STATUS.REJECTED}>
-                                {t('pendingEnrollment.statusRejected')}
-                            </Select.Option>
-                        </Select>
+                        <FormField label={t('common.status')}>
+                            <Select
+                                value={[status]}
+                                onUpdate={([value]) => withReset(setStatus)(value)}
+                                width={190}
+                            >
+                                <Select.Option value="">{t('common.all')}</Select.Option>
+                                <Select.Option value={PENDING_ENROLLMENT_STATUS.CREATED}>
+                                    {t('pendingEnrollment.statusCreated')}
+                                </Select.Option>
+                                <Select.Option value={PENDING_ENROLLMENT_STATUS.ACCEPTED}>
+                                    {t('pendingEnrollment.statusAccepted')}
+                                </Select.Option>
+                                <Select.Option value={PENDING_ENROLLMENT_STATUS.REJECTED}>
+                                    {t('pendingEnrollment.statusRejected')}
+                                </Select.Option>
+                            </Select>
+                        </FormField>
                     </div>
                 }
             >

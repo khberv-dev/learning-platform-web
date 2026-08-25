@@ -8,6 +8,7 @@ import PageSection from '@/ui/components/pageSection.jsx';
 import DataTable from '@/ui/components/dataTable.jsx';
 import {DEFAULT_PAGE_SIZE} from '@/shared/pagination.js';
 import StatusLabel from '@/ui/components/statusLabel.jsx';
+import FormField from '@/ui/components/formField.jsx';
 
 // A payment type is recognised by its logo first, so the icon leads and the
 // title follows. Pending payments have no type attached yet, and a type may
@@ -89,26 +90,27 @@ function AdminPayments() {
             <PageSection
                 className="page-fill__section"
                 actions={
-                    <Select
-                        value={[status]}
-                        onUpdate={([value]) => {
-                            setStatus(value);
-                            setPage(1);
-                        }}
-                        width={200}
-                        placeholder={t('common.all')}
-                    >
-                        <Select.Option value="">{t('common.all')}</Select.Option>
-                        <Select.Option value={PAYMENT_STATUS.CREATED}>
-                            {t('payment.statusCreated')}
-                        </Select.Option>
-                        <Select.Option value={PAYMENT_STATUS.PAID}>
-                            {t('payment.statusPaid')}
-                        </Select.Option>
-                        <Select.Option value={PAYMENT_STATUS.CANCELLED}>
-                            {t('payment.statusCancelled')}
-                        </Select.Option>
-                    </Select>
+                    <FormField label={t('common.status')}>
+                        <Select
+                            value={[status]}
+                            onUpdate={([value]) => {
+                                setStatus(value);
+                                setPage(1);
+                            }}
+                            width={200}
+                        >
+                            <Select.Option value="">{t('common.all')}</Select.Option>
+                            <Select.Option value={PAYMENT_STATUS.CREATED}>
+                                {t('payment.statusCreated')}
+                            </Select.Option>
+                            <Select.Option value={PAYMENT_STATUS.PAID}>
+                                {t('payment.statusPaid')}
+                            </Select.Option>
+                            <Select.Option value={PAYMENT_STATUS.CANCELLED}>
+                                {t('payment.statusCancelled')}
+                            </Select.Option>
+                        </Select>
+                    </FormField>
                 }
             >
                 <DataTable

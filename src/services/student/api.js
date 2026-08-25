@@ -12,6 +12,7 @@ export async function getStudents({
     search,
     level,
     isActive,
+    hasCourse,
     sortBy,
     sortOrder,
 } = {}) {
@@ -22,6 +23,7 @@ export async function getStudents({
             search: search?.trim() || undefined,
             level: level || undefined,
             isActive: isActive === undefined || isActive === '' ? undefined : isActive,
+            hasCourse: hasCourse == null ? undefined : hasCourse,
             sortBy: sortBy || undefined,
             sortOrder: sortOrder || undefined,
         },

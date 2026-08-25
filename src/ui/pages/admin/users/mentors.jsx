@@ -12,6 +12,7 @@ import DataTable from '@/ui/components/dataTable.jsx';
 import UserCell from '@/ui/components/userCell.jsx';
 import StatusLabel, {ActiveLabel} from '@/ui/components/statusLabel.jsx';
 import {DEFAULT_PAGE_SIZE} from '@/shared/pagination.js';
+import FormField from '@/ui/components/formField.jsx';
 
 function AdminMentors() {
     const {t} = useI18n();
@@ -94,47 +95,52 @@ function AdminMentors() {
                 className="page-fill__section"
                 actions={
                     <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
-                        <TextInput
-                            value={search}
-                            onUpdate={withReset(setSearch)}
-                            placeholder={t('mentor.searchPlaceholder')}
-                            hasClear
-                            startContent={
-                                <Search
-                                    size={15}
-                                    style={{marginLeft: 8, color: 'var(--g-color-text-secondary)'}}
-                                />
-                            }
-                            style={{width: 250}}
-                        />
+                        <FormField label={t('common.search')}>
+                            <TextInput
+                                value={search}
+                                onUpdate={withReset(setSearch)}
+                                placeholder={t('mentor.searchPlaceholder')}
+                                hasClear
+                                startContent={
+                                    <Search
+                                        size={15}
+                                        style={{marginLeft: 8, color: 'var(--g-color-text-secondary)'}}
+                                    />
+                                }
+                                style={{width: 250}}
+                            />
+                        </FormField>
 
-                        <Select
-                            value={[status]}
-                            onUpdate={([value]) => withReset(setStatus)(value)}
-                            width={180}
-                        >
-                            <Select.Option value="">{t('mentor.allStatuses')}</Select.Option>
-                            <Select.Option value={MENTOR_STATUS.ACTIVE}>
-                                {t('mentor.statusActive')}
-                            </Select.Option>
-                            <Select.Option value={MENTOR_STATUS.SUSPENDED}>
-                                {t('mentor.statusSuspended')}
-                            </Select.Option>
-                            <Select.Option value={MENTOR_STATUS.FIRED}>
-                                {t('mentor.statusFired')}
-                            </Select.Option>
-                        </Select>
+                        <FormField label={t('mentor.status')}>
+                            <Select
+                                value={[status]}
+                                onUpdate={([value]) => withReset(setStatus)(value)}
+                                width={180}
+                            >
+                                <Select.Option value="">{t('mentor.allStatuses')}</Select.Option>
+                                <Select.Option value={MENTOR_STATUS.ACTIVE}>
+                                    {t('mentor.statusActive')}
+                                </Select.Option>
+                                <Select.Option value={MENTOR_STATUS.SUSPENDED}>
+                                    {t('mentor.statusSuspended')}
+                                </Select.Option>
+                                <Select.Option value={MENTOR_STATUS.FIRED}>
+                                    {t('mentor.statusFired')}
+                                </Select.Option>
+                            </Select>
+                        </FormField>
 
-                        <Select
-                            value={[active]}
-                            onUpdate={([value]) => withReset(setActive)(value)}
-                            width={150}
-                        >
-                            <Select.Option value="">{t('common.all')}</Select.Option>
-                            <Select.Option value="active">{t('common.active')}</Select.Option>
-                            <Select.Option value="inactive">{t('common.inactive')}</Select.Option>
-                        </Select>
-
+                        <FormField label={t('common.accountStatus')}>
+                            <Select
+                                value={[active]}
+                                onUpdate={([value]) => withReset(setActive)(value)}
+                                width={150}
+                            >
+                                <Select.Option value="">{t('common.all')}</Select.Option>
+                                <Select.Option value="active">{t('common.active')}</Select.Option>
+                                <Select.Option value="inactive">{t('common.inactive')}</Select.Option>
+                            </Select>
+                        </FormField>
                     </div>
                 }
             >

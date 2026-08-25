@@ -10,6 +10,7 @@ import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import DataTable from '@/ui/components/dataTable.jsx';
 import StatusLabel from '@/ui/components/statusLabel.jsx';
+import FormField from '@/ui/components/formField.jsx';
 
 // Read-only. Enrollments are opened from a student's own page, where the
 // student is already fixed - see EnrollStudentDialog.
@@ -102,51 +103,53 @@ function AdminEnrollments() {
                 className="page-fill__section"
                 actions={
                     <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
-                        <Select
-                            value={[courseId]}
-                            onUpdate={([value]) => withReset(setCourseId)(value)}
-                            width={200}
-                            filterable
-                            loading={courses.isPending}
-                            placeholder={t('enrollment.course')}
-                        >
-                            <Select.Option value="">{t('common.all')}</Select.Option>
-                            {(courses.data ?? []).map((course) => (
-                                <Select.Option key={course.id} value={course.id}>
-                                    {course.title}
+                        <FormField label={t('enrollment.course')}>
+                            <Select
+                                value={[courseId]}
+                                onUpdate={([value]) => withReset(setCourseId)(value)}
+                                width={200}
+                                filterable
+                                loading={courses.isPending}
+                            >
+                                <Select.Option value="">{t('common.all')}</Select.Option>
+                                {(courses.data ?? []).map((course) => (
+                                    <Select.Option key={course.id} value={course.id}>
+                                        {course.title}
+                                    </Select.Option>
+                                ))}
+                            </Select>
+                        </FormField>
+
+                        <FormField label={t('common.status')}>
+                            <Select
+                                value={[status]}
+                                onUpdate={([value]) => withReset(setStatus)(value)}
+                                width={170}
+                            >
+                                <Select.Option value="">{t('common.all')}</Select.Option>
+                                <Select.Option value={ENROLLMENT_STATUS.CREATED}>
+                                    {t('enrollment.statusCreated')}
                                 </Select.Option>
-                            ))}
-                        </Select>
+                                <Select.Option value={ENROLLMENT_STATUS.ACTIVE}>
+                                    {t('enrollment.statusActive')}
+                                </Select.Option>
+                                <Select.Option value={ENROLLMENT_STATUS.CANCELLED}>
+                                    {t('enrollment.statusCancelled')}
+                                </Select.Option>
+                            </Select>
+                        </FormField>
 
-                        <Select
-                            value={[status]}
-                            onUpdate={([value]) => withReset(setStatus)(value)}
-                            width={170}
-                            placeholder={t('common.status')}
-                        >
-                            <Select.Option value="">{t('common.all')}</Select.Option>
-                            <Select.Option value={ENROLLMENT_STATUS.CREATED}>
-                                {t('enrollment.statusCreated')}
-                            </Select.Option>
-                            <Select.Option value={ENROLLMENT_STATUS.ACTIVE}>
-                                {t('enrollment.statusActive')}
-                            </Select.Option>
-                            <Select.Option value={ENROLLMENT_STATUS.CANCELLED}>
-                                {t('enrollment.statusCancelled')}
-                            </Select.Option>
-                        </Select>
-
-                        <Select
-                            value={[expiry]}
-                            onUpdate={([value]) => withReset(setExpiry)(value)}
-                            width={190}
-                            placeholder={t('enrollment.expiryFilter')}
-                        >
-                            <Select.Option value="">{t('enrollment.allTerms')}</Select.Option>
-                            <Select.Option value="active">{t('enrollment.notExpired')}</Select.Option>
-                            <Select.Option value="expired">{t('enrollment.expired')}</Select.Option>
-                        </Select>
-
+                        <FormField label={t('enrollment.expiryFilter')}>
+                            <Select
+                                value={[expiry]}
+                                onUpdate={([value]) => withReset(setExpiry)(value)}
+                                width={190}
+                            >
+                                <Select.Option value="">{t('enrollment.allTerms')}</Select.Option>
+                                <Select.Option value="active">{t('enrollment.notExpired')}</Select.Option>
+                                <Select.Option value="expired">{t('enrollment.expired')}</Select.Option>
+                            </Select>
+                        </FormField>
                     </div>
                 }
             >

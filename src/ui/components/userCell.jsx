@@ -1,10 +1,11 @@
 import UserAvatar from '@/ui/components/userAvatar.jsx';
 import {formatPhone, fullName} from '@/shared/utils/format.js';
 
-// The shared "who is this" table cell: avatar, name, and the phone number as a
-// secondary line (staff accounts are keyed by phone, not email).
+// The shared "who is this" table cell: avatar, name, and the available account
+// identity. New accounts may use either phone or email.
 function UserCell({user, secondary}) {
     const name = fullName(user) || '—';
+    const contact = user?.phoneNumber ? formatPhone(user.phoneNumber) : user?.email || '—';
 
     return (
         <div style={{display: 'flex', alignItems: 'center', gap: 10, minWidth: 0}}>
@@ -14,7 +15,7 @@ function UserCell({user, secondary}) {
                     {name}
                 </div>
                 <div style={{fontSize: 12, color: 'var(--g-color-text-secondary)'}}>
-                    {secondary ?? formatPhone(user?.phoneNumber)}
+                    {secondary ?? contact}
                 </div>
             </div>
         </div>
