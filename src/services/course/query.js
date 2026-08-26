@@ -9,6 +9,7 @@ import {
     createUnit,
     deleteCourse,
     deleteLesson,
+    deleteLessonMedia,
     deleteTask,
     deleteUnit,
     getCourse,
@@ -119,6 +120,7 @@ export const useDeleteUnit = () => useCourseMutation(deleteUnit);
 export const useCreateLesson = () => useCourseMutation(createLesson);
 export const useUpdateLesson = () => useCourseMutation(updateLesson);
 export const useUploadLessonMedia = () => useCourseMutation(uploadLessonMedia);
+export const useDeleteLessonMedia = () => useCourseMutation(deleteLessonMedia);
 export const useDeleteLesson = () => useCourseMutation(deleteLesson);
 
 export const useCreateTask = () => useCourseMutation(createTask);

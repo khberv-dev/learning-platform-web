@@ -100,6 +100,10 @@ export async function uploadLessonMedia({courseId, unitId, lessonId, media}) {
     return res.data;
 }
 
+export async function deleteLessonMedia({courseId, unitId, lessonId}) {
+    await apiClient.delete(`admin/courses/${courseId}/units/${unitId}/lessons/${lessonId}/media`);
+}
+
 export async function deleteLesson({courseId, unitId, lessonId}) {
     await apiClient.delete(`admin/courses/${courseId}/units/${unitId}/lessons/${lessonId}`);
 }

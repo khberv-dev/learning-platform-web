@@ -7,6 +7,7 @@ import {
     useCourse,
     useCreateTask,
     useDeleteLesson,
+    useDeleteLessonMedia,
     useLesson,
     useTasks,
     useUnit,
@@ -97,12 +98,14 @@ function AdminLesson() {
     const tasksQuery = useTasks({courseId, unitId, lessonId});
     const createTask = useCreateTask();
     const deleteLesson = useDeleteLesson();
+    const deleteMedia = useDeleteLessonMedia();
     const uploadMedia = useUploadLessonMedia();
 
     const mediaInputRef = useRef(null);
     const [taskName, setTaskName] = useState('');
     const [dialogOpen, setDialogOpen] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmMediaDelete, setConfirmMediaDelete] = useState(false);
 
     const handleMediaPicked = (event) => {
         const file = event.target.files?.[0];
@@ -226,12 +229,22 @@ function AdminLesson() {
                 <PageSection
                     title={t('course.media')}
                     actions={
-                        <Button onClick={() => mediaInputRef.current?.click()} loading={uploadMedia.isPending}>
-                            <Button.Icon>
-                                <Upload size={16}/>
-                            </Button.Icon>
-                            {t('course.media')}
-                        </Button>
+                        <div style={{display: 'flex', gap: 8}}>
+                            <Button onClick={() => mediaInputRef.current?.click()} loading={uploadMedia.isPending}>
+                                <Button.Icon>
+                                    <Upload size={16}/>
+                                </Button.Icon>
+                                {lesson.media ? t('course.replaceVideo') : t('course.uploadVideo')}
+                            </Button>
+                            {lesson.media && (
+                                <Button view="outlined-danger" onClick={() => setConfirmMediaDelete(true)}>
+                                    <Button.Icon>
+                                        <Trash2 size={16}/>
+                                    </Button.Icon>
+                                    {t('course.deleteVideo')}
+                                </Button>
+                            )}
+                        </div>
                     }
                 >
                     <input
@@ -293,6 +306,36 @@ function AdminLesson() {
                     propsButtonApply={{loading: createTask.isPending}}
                 />
             </Dialog>
+
+            <ConfirmDialog
+                open={confirmMediaDelete}
+                title={t('course.deleteVideo')}
+                message={t('course.deleteVideoConfirm')}
+                confirmText={t('common.delete')}
+                loading={deleteMedia.isPending}
+                onClose={() => setConfirmMediaDelete(false)}
+                onConfirm={() =>
+                    deleteMedia.mutate(
+                        {courseId, unitId, lessonId},
+                        {
+                            onSuccess: () => {
+                                setConfirmMediaDelete(false);
+                                toaster.add({
+                                    name: 'lesson-media-deleted',
+                                    theme: 'success',
+                                    title: t('common.deleted'),
+                                });
+                            },
+                            onError: (error) =>
+                                toaster.add({
+                                    name: 'lesson-media-delete-failed',
+                                    theme: 'danger',
+                                    title: extractApiErrorMessage(error, t('common.error')),
+                                }),
+                        }
+                    )
+                }
+            />
 
             <ConfirmDialog
                 open={confirmOpen}

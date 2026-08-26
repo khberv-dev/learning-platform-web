@@ -87,6 +87,8 @@ List pages page through `DataTable`, which renders Gravity's `Pagination` right-
 
 Multipart is required wherever a file rides along (course image, lesson media, task file, avatars, intro videos, payment-type icons, chat files). The local `asForm` helpers stringify booleans — the DTOs' `@Transform` compares against `'true'`/`'false'` — and drop null/undefined keys so a PATCH can't blank an untouched field.
 
+Lesson video replacement uses `PATCH .../lessons/:lessonId/media`; deletion uses `DELETE` on the same path and leaves the lesson intact. Task content supports uploaded `audio`/`picture` files plus plain `text`: uploads derive `contentType` from MIME, while sending a string in the task's `file` field marks it as text.
+
 The admin dashboard keeps growth and activity metrics visually separate. `stats/summary` exposes current totals. `stats/timeseries` returns `{businessMetrics, activeUserMetrics}`: business metrics are daily rows, while activity is split into daily `dau`, weekly range-based `wau`, and month-based `mau` arrays whose values live in `count`. Growth has a 7/14/30 period control. Activity uses the 30-day response and renders one selected DAU/WAU/MAU chart at a time, preserving each metric's natural time axis.
 
 CDN paths go through `cdnUrl()` (`src/shared/utils/format.js`), which passes `http(s):`, `blob:` and `data:` through untouched so local previews work.

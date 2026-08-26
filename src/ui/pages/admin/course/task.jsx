@@ -1,7 +1,7 @@
 import {useRef, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
-import {Button, Label, TextInput} from '@gravity-ui/uikit';
-import {ChevronRight, Plus, Trash2, Upload} from 'lucide-react';
+import {Button, Dialog, Label, TextArea, TextInput} from '@gravity-ui/uikit';
+import {ChevronRight, FileText, Plus, Trash2, Upload} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {
     useCourse,
@@ -73,6 +73,8 @@ function AdminTask() {
     const fileInputRef = useRef(null);
     const [confirmDeleteTask, setConfirmDeleteTask] = useState(false);
     const [confirmDeleteQuestion, setConfirmDeleteQuestion] = useState(null);
+    const [textDialogOpen, setTextDialogOpen] = useState(false);
+    const [textContent, setTextContent] = useState('');
 
     const courseQuery = useCourse(courseId);
     const unitQuery = useUnit({courseId, unitId});
@@ -97,6 +99,29 @@ function AdminTask() {
                 onError: (error) =>
                     toaster.add({
                         name: 'task-file-failed',
+                        theme: 'danger',
+                        title: extractApiErrorMessage(error, t('common.error')),
+                    }),
+            }
+        );
+    };
+
+    const openTextDialog = () => {
+        setTextContent(taskQuery.data?.contentType === 'text' ? taskQuery.data.file ?? '' : '');
+        setTextDialogOpen(true);
+    };
+
+    const saveTextContent = () => {
+        updateTask.mutate(
+            {...base, file: textContent.trim() || null},
+            {
+                onSuccess: () => {
+                    setTextDialogOpen(false);
+                    toaster.add({name: 'task-text', theme: 'success', title: t('common.saved')});
+                },
+                onError: (error) =>
+                    toaster.add({
+                        name: 'task-text-failed',
                         theme: 'danger',
                         title: extractApiErrorMessage(error, t('common.error')),
                     }),
@@ -205,12 +230,20 @@ function AdminTask() {
                     title={t('course.file')}
                     description={t('course.contentType') + ': ' + (task.contentType ?? '—')}
                     actions={
-                        <Button onClick={() => fileInputRef.current?.click()} loading={uploadFile.isPending}>
-                            <Button.Icon>
-                                <Upload size={16}/>
-                            </Button.Icon>
-                            {t('course.uploadFile')}
-                        </Button>
+                        <div style={{display: 'flex', gap: 8}}>
+                            <Button onClick={openTextDialog} loading={updateTask.isPending}>
+                                <Button.Icon>
+                                    <FileText size={16}/>
+                                </Button.Icon>
+                                {task.contentType === 'text' ? t('course.editText') : t('course.addText')}
+                            </Button>
+                            <Button onClick={() => fileInputRef.current?.click()} loading={uploadFile.isPending}>
+                                <Button.Icon>
+                                    <Upload size={16}/>
+                                </Button.Icon>
+                                {t('course.uploadFile')}
+                            </Button>
+                        </div>
                     }
                 >
                     <input
@@ -264,6 +297,28 @@ function AdminTask() {
                     />
                 </PageSection>
             </div>
+
+            <Dialog open={textDialogOpen} onClose={() => setTextDialogOpen(false)} size="m">
+                <Dialog.Header caption={task.contentType === 'text' ? t('course.editText') : t('course.addText')}/>
+                <Dialog.Body>
+                    <FormField label={t('course.textContent')} required>
+                        <TextArea
+                            size="l"
+                            minRows={8}
+                            value={textContent}
+                            onUpdate={setTextContent}
+                            autoFocus
+                        />
+                    </FormField>
+                </Dialog.Body>
+                <Dialog.Footer
+                    onClickButtonCancel={() => setTextDialogOpen(false)}
+                    textButtonCancel={t('common.cancel')}
+                    onClickButtonApply={saveTextContent}
+                    textButtonApply={t('common.save')}
+                    propsButtonApply={{loading: updateTask.isPending, disabled: !textContent.trim()}}
+                />
+            </Dialog>
 
             <ConfirmDialog
                 open={confirmDeleteTask}
