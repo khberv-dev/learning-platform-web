@@ -8,6 +8,7 @@ import NotFound from '@/ui/pages/notFound.jsx';
 import AdminHome from '@/ui/pages/admin/home.jsx';
 import AdminStudents from '@/ui/pages/admin/users/students.jsx';
 import AdminStudentDetail from '@/ui/pages/admin/users/studentDetail.jsx';
+import AdminStudentCourseProgress from '@/ui/pages/admin/users/studentCourseProgress.jsx';
 import AdminMentors from '@/ui/pages/admin/users/mentors.jsx';
 import AdminMentorForm from '@/ui/pages/admin/users/mentorForm.jsx';
 import AdminMentorDetail from '@/ui/pages/admin/users/mentorDetail.jsx';
@@ -48,6 +49,10 @@ function App() {
 
                         <Route path="users/students" element={<AdminStudents/>}/>
                         <Route path="users/students/:id" element={<AdminStudentDetail/>}/>
+                        <Route
+                            path="users/students/:studentId/enrollments/:enrollmentId/progress"
+                            element={<AdminStudentCourseProgress/>}
+                        />
                         <Route path="users/mentors" element={<AdminMentors/>}/>
                         <Route path="users/mentors/new" element={<AdminMentorForm/>}/>
                         <Route path="users/mentors/:id" element={<AdminMentorDetail/>}/>

@@ -2,6 +2,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {
     acceptPendingEnrollment,
     createEnrollment,
+    getEnrollmentProgress,
     getEnrollments,
     getPendingEnrollments,
     rejectPendingEnrollment,
@@ -50,6 +51,14 @@ export const useCreateEnrollment = () => {
             queryClient.invalidateQueries({queryKey: ['student']});
             queryClient.invalidateQueries({queryKey: ['stats']});
         },
+    });
+};
+
+export const useEnrollmentProgress = ({enrollmentId, studentId}) => {
+    return useQuery({
+        queryKey: ['enrollment', 'progress', enrollmentId, studentId],
+        queryFn: () => getEnrollmentProgress({enrollmentId, studentId}),
+        enabled: Boolean(enrollmentId && studentId),
     });
 };
 

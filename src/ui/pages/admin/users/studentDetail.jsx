@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {useParams} from 'react-router-dom';
+import {Link, useParams} from 'react-router-dom';
 import {Button, Table} from '@gravity-ui/uikit';
 import {KeyRound, Plus} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
@@ -31,7 +31,17 @@ function AdminStudentDetail() {
         {
             id: 'course',
             name: t('enrollment.course'),
-            template: (row) => row.course?.title ?? '—',
+            template: (row) =>
+                row.course?.title ? (
+                    <Link
+                        className="student-course-link"
+                        to={`/admin/users/students/${id}/enrollments/${row.id}/progress`}
+                    >
+                        {row.course.title}
+                    </Link>
+                ) : (
+                    '—'
+                ),
         },
         {
             id: 'status',

@@ -19,6 +19,80 @@ a {
     color: inherit;
 }
 
+.student-course-link {
+    color: var(--g-color-text-link);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.student-course-link:hover {
+    color: var(--g-color-text-link-hover);
+    text-decoration: underline;
+}
+
+.progress-unit {
+    border-top: 1px solid var(--g-color-line-generic);
+}
+
+.progress-unit:first-child {
+    border-top: none;
+}
+
+.progress-unit__summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(140px, 260px) 48px;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    cursor: pointer;
+    list-style: none;
+}
+
+.progress-unit__summary::-webkit-details-marker {
+    display: none;
+}
+
+.progress-unit__title {
+    min-width: 0;
+    font-weight: 600;
+}
+
+.progress-unit__lessons {
+    padding: 0 0 12px 24px;
+}
+
+.progress-lesson {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(140px, 260px) 48px;
+    align-items: center;
+    gap: 16px;
+    min-height: 44px;
+    border-top: 1px solid var(--g-color-line-generic-accent);
+}
+
+.progress-percent {
+    color: var(--g-color-text-secondary);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+@media (max-width: 680px) {
+    .progress-unit__summary,
+    .progress-lesson {
+        grid-template-columns: minmax(0, 1fr) 44px;
+    }
+
+    .progress-unit__summary .g-progress,
+    .progress-lesson .g-progress {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .progress-unit__lessons {
+        padding-left: 12px;
+    }
+}
+
 /* Rows that navigate somewhere need to look like it - Gravity's Table has no
    built-in affordance for a clickable row. */
 .data-table__row_clickable {

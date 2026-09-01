@@ -42,6 +42,15 @@ export async function createEnrollment(payload) {
     return res.data;
 }
 
+// Read-only course structure and calculated lesson progress for one student's
+// enrollment. The API validates that the enrollment belongs to studentId.
+export async function getEnrollmentProgress({enrollmentId, studentId}) {
+    const res = await apiClient.get(
+        `admin/enrollments/${enrollmentId}/students/${studentId}/progress`,
+    );
+    return res.data;
+}
+
 // Enrolment requests queued by an external service (CRM, terminal). They sit in
 // `created` until an admin resolves them; the same sort whitelist as the
 // enrollment list applies.
