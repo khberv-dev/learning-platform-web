@@ -1,6 +1,6 @@
 import {Progress} from '@gravity-ui/uikit';
 import {BookOpen, CalendarDays, CheckCircle2, Layers3} from 'lucide-react';
-import {useParams} from 'react-router-dom';
+import {Link, useParams} from 'react-router-dom';
 import {useEnrollmentProgress} from '@/services/enrollment/query.js';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {formatDate} from '@/shared/utils/format.js';
@@ -26,6 +26,9 @@ function AdminStudentCourseProgress() {
     const {studentId, enrollmentId} = useParams();
     const query = useEnrollmentProgress({studentId, enrollmentId});
     const studentPath = `/admin/users/students/${studentId}`;
+    // Lesson rows drill into that lesson's task answers, which hang off the
+    // same student + enrollment pair this page is already scoped to.
+    const basePath = `${studentPath}/enrollments/${enrollmentId}`;
 
     if (query.isPending) return <LoadingState rows={7}/>;
     if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch}/>;
@@ -93,9 +96,13 @@ function AdminStudentCourseProgress() {
                                     {unit.lessons?.length ? (
                                         unit.lessons.map((lesson) => (
                                             <div className="progress-lesson" key={lesson.id}>
-                                                <span>
+                                                <Link
+                                                    className="student-course-link"
+                                                    to={`${basePath}/lessons/${lesson.id}`}
+                                                    title={t('lessonResults.openResults')}
+                                                >
                                                     {lesson.index}. {lesson.title}
-                                                </span>
+                                                </Link>
                                                 <ProgressValue value={lesson.progress}/>
                                             </div>
                                         ))

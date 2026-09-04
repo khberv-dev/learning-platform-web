@@ -102,6 +102,19 @@ a {
     background: var(--g-color-base-selection);
 }
 
+/* Admin grading view: red is what the student picked, green is what was
+   expected. `data-correct` is declared last so an option that is both - a
+   right answer - reads as correct rather than as a mistake. */
+.submission-option[data-picked='true'] {
+    border-color: var(--g-color-line-danger);
+    background: var(--g-color-base-danger-light);
+}
+
+.submission-option[data-correct='true'] {
+    border-color: var(--g-color-line-positive);
+    background: var(--g-color-base-positive-light);
+}
+
 .submission-summary-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(220px, 1fr));
