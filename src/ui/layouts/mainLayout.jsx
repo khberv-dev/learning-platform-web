@@ -25,7 +25,9 @@ function MainLayout({role}) {
             <Sidebar
                 items={items}
                 activeItemPath={activePath(items, location.pathname)}
-                roleLabel={role === ROLE.ADMIN ? 'Admin' : 'Mentor'}
+                roleLabel={
+                    role === ROLE.ADMIN ? 'Admin' : role === ROLE.MENTOR ? 'Mentor' : t('assignment.student')
+                }
                 user={me}
                 userName={name}
                 onLogout={() => setLogoutOpen(true)}

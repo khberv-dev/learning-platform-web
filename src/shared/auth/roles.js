@@ -8,12 +8,12 @@ export const ROLE = {
     STUDENT: 'student',
 };
 
-// Only these two get a panel. A student-only account has nowhere to land.
-export const PANEL_ROLES = [ROLE.ADMIN, ROLE.MENTOR];
+export const PANEL_ROLES = [ROLE.ADMIN, ROLE.MENTOR, ROLE.STUDENT];
 
 export const HOME_PATH_BY_ROLE = {
     [ROLE.ADMIN]: '/admin',
     [ROLE.MENTOR]: '/mentor',
+    [ROLE.STUDENT]: '/student/settings',
 };
 
 // An account can hold several profiles; admin wins so a user who is both

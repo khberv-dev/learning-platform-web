@@ -32,6 +32,8 @@ import MentorLiveLessons from '@/ui/pages/mentor/liveLessons.jsx';
 import MentorSchedule from '@/ui/pages/mentor/schedule.jsx';
 import MentorChat from '@/ui/pages/mentor/chat.jsx';
 import MentorSettings from '@/ui/pages/mentor/settings.jsx';
+import StudentTaskSubmission from '@/ui/pages/student/taskSubmission.jsx';
+import SettingsPage from '@/ui/pages/settingsPage.jsx';
 
 // Route nesting mirrors the sidebar tree in navConfig.js - a group's id is
 // also its path segment (/admin/users/mentors sits under the "users" group).
@@ -100,7 +102,7 @@ function App() {
                     </Route>
                 </Route>
 
-                <Route element={<RoleRoute role={ROLE.MENTOR}/>}>
+                <Route element={<RoleRoute role={ROLE.MENTOR}/> }>
                     <Route path="/mentor" element={<MainLayout role={ROLE.MENTOR}/>}>
                         <Route index element={<MentorDashboard/>}/>
                         <Route path="assignments" element={<MentorAssignments/>}/>
@@ -108,6 +110,13 @@ function App() {
                         <Route path="schedule" element={<MentorSchedule/>}/>
                         <Route path="chat" element={<MentorChat/>}/>
                         <Route path="settings" element={<MentorSettings/>}/>
+                    </Route>
+                </Route>
+
+                <Route element={<RoleRoute role={ROLE.STUDENT}/> }>
+                    <Route path="/student" element={<MainLayout role={ROLE.STUDENT}/> }>
+                        <Route path="tasks/:taskId" element={<StudentTaskSubmission/>}/>
+                        <Route path="settings" element={<SettingsPage/>}/>
                     </Route>
                 </Route>
             </Route>

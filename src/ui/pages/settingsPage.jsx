@@ -11,8 +11,7 @@ import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import UserAvatar from '@/ui/components/userAvatar.jsx';
 
-// Profile, theme and language - identical for both roles, so both panels'
-// settings routes render this.
+// Profile, theme and language are shared by every role-specific panel.
 function SettingsPage({extra}) {
     const {t, locale, setLocale} = useI18n();
     const {themeMode, setThemeMode} = useThemeMode();

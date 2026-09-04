@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Admin + mentor web panel for the iTeach learning platform. Backed by the NestJS API at `../learning-platform-api` (its own CLAUDE.md documents the server side).
+Admin + mentor web panel for the iTeach learning platform, plus a deliberately minimal student surface. Backed by the NestJS API at `../learning-platform-api` (its own CLAUDE.md documents the server side).
 
 ## Commands
 
@@ -30,7 +30,9 @@ Both are read only through `src/shared/config.js`, which normalises them to end 
 
 The API's `UserRole` enum is `student | teacher | admin`. **"Mentor" is this product's name for `teacher`** — the wire value stays `teacher` in every request and every `roles` array; only UI copy says "mentor". `src/shared/auth/roles.js` is the single place that mapping lives (`ROLE.MENTOR === 'teacher'`).
 
-Students have no panel here. A student-only account is rejected at sign-in rather than being let in to bounce between guards.
+All three roles are in `PANEL_ROLES`, and `primaryRole()` resolves a multi-role account by that array's order — admin, then mentor, then student — so a user who is both lands on the wider panel. `HOME_PATH_BY_ROLE` sends students to `/student/settings`, because the student panel has no index route.
+
+**The student surface is not a third panel — it is the shared settings page plus one read-only deep link** (`/student/tasks/:taskId`, a submitted task's result). There is no student dashboard, no index route and no list page, and the sidebar holds a single entry. The guards still reject an account with *no* panel role at sign-in rather than letting it bounce between them.
 
 ## Architecture
 
@@ -46,7 +48,7 @@ Students have no panel here. A student-only account is rejected at sign-in rathe
 
 - `useI18n()` — `{locale, setLocale, t}`. Locales are plain objects in `src/shared/i18n/locales/{uz,ru}.js`; **`uz` is the default and the fallback** (a key missing from `ru` renders the Uzbek string, not the raw key). Gravity ships no `uz`, so it's mapped onto `en`. `t` takes a second argument of variables and fills `{{name}}` placeholders (`t('push.recipients', {count: 3})`) — don't hand-splice values into a translated string.
 - `useThemeMode()` — `{themeMode, setThemeMode, toggleThemeMode}`, seeded from `prefers-color-scheme`.
-- `useAuth()` — `{isAuthenticated, roles, role, isAdmin, isMentor, login, logout, syncRoles}`. Sign-in returns the role list inline, so it's cached in `localStorage` and the guards can pick a panel on the first render; `user/me` stays authoritative and `RoleRoute` re-syncs it.
+- `useAuth()` — `{isAuthenticated, roles, role, isAdmin, isMentor, login, logout, syncRoles}` (there is no `isStudent` flag; the student panel gates on `RoleRoute` alone). Sign-in returns the role list inline, so it's cached in `localStorage` and the guards can pick a panel on the first render; `user/me` stays authoritative and `RoleRoute` re-syncs it.
 
 ### Auth flow
 
@@ -56,7 +58,9 @@ Students have no panel here. A student-only account is rejected at sign-in rathe
 
 ### Routing and navigation
 
-`src/app.jsx`. `GuestRoute` → `/login`; `PrivateRoute` → `RoleRoute role={...}` → `MainLayout role={...}` → pages, under `/admin/*` and `/mentor/*`. `/` forwards via `RootRedirect`.
+`src/app.jsx`. `GuestRoute` → `/login`; `PrivateRoute` → `RoleRoute role={...}` → `MainLayout role={...}` → pages, under `/admin/*`, `/mentor/*` and `/student/*`. `/` forwards via `RootRedirect`.
+
+`src/ui/pages/settingsPage.jsx` (profile, theme, language) is rendered by all three panels. A panel that needs more passes it an `extra` node rather than forking the page — `mentor/settings.jsx` is the one that does, adding the intro-video card.
 
 **`src/ui/layouts/navConfig.js` is the source of truth for both the sidebar tree and the URL layout.** A group's `id` is also its path segment, and the page files mirror it:
 
@@ -68,6 +72,7 @@ Students have no panel here. A student-only account is rejected at sign-in rathe
 | `payment` | `/admin/payment/{payments,payment-types}` | `pages/admin/payment/` |
 | `marketing` | `/admin/marketing/push-notifications` | `pages/admin/marketing/` |
 | — | `/admin/settings` | `pages/admin/settings.jsx` |
+| — | `/student/{settings,tasks/:taskId}` | `pages/settingsPage.jsx`, `pages/student/` |
 
 A nav node with `children` renders as a collapsible group; one with `path` renders as a link. Groups are never navigable themselves. Adding a page means editing `app.jsx`, `navConfig.js`, and every locale file (the `titleKey`), and putting the file in the matching folder.
 
@@ -146,8 +151,15 @@ List-page filter controls carry persistent labels through `FormField`; option te
 
 **Pending enrollments are enrolment *requests*, queued by an external service (CRM, terminal) and resolved by an admin** — `GET admin/pending-enrollments` (filters `userId`, `courseId`, `status`; the same sort whitelist as the enrollment list) plus `PATCH .../:id/accept` and `PATCH .../:id/reject`. They live in `services/enrollment/{api,query}.js` under the `['enrollment', 'pending', …]` key rather than a domain of their own, so accepting one invalidates both lists at once.
 
+**Enrollment progress is the one place the course tree arrives whole.** `GET admin/enrollments/:enrollmentId/students/:studentId/progress` (`useEnrollmentProgress`, key `['enrollment', 'progress', …]`) returns the course with `units[].lessons[]` and a calculated `progress` percentage per level — the opposite of the paged-out tree everywhere else, so this page walks the nested payload directly and derives its "completed" count from `lesson.progress === 100`. Both ids are in the URL (`/admin/users/students/:studentId/enrollments/:enrollmentId/progress`, linked from the student detail page) and the API validates that the enrollment belongs to the student.
+
 Only a `created` request can be decided, so the action buttons render on those rows alone and the page's status filter **defaults to `created`** — it is a work queue, not an archive. A request carries no plan: `AcceptPendingEnrollmentDialog` picks one (`usePlans(row.course.id)`, and it must belong to the requested course), because price and duration are only settled at approval. `amount` is optional and falls back to the plan's price. Accepting opens the enrollment `active` **and** writes a `paid` payment in one server-side transaction — the money was collected outside Click/Payme, as with a manual enrollment — hence the `['payment']`/`['student']`/`['stats']` invalidations that rejecting doesn't need. The row points at the **`User`**, not the `Student`, so there is no student page to link a row to.
 
+### Task submissions
+
+`GET task-submissions/:taskId` (`services/task-submission/`) returns the *authenticated student's* own answers for one task, which is why it is the student panel's only data route and takes no student id. The response merges the task itself (`name`, `file`, `contentType`, `questions`) with what was submitted: `isCorrect`, `submittedAt`, and an `answer` on each question. **The API deliberately omits the correct-answer keys**, so the page can only mark which option the student picked — never which one was right. Matching the picked option is case-insensitive and trims, mirroring the grading rule in `task-submission.service.ts`.
+
+The page is read-only; there is no submit path here (the mobile app owns answering). `contentType` picks the renderer for `file` exactly as the admin task pages do — `picture`, `audio`, or plain text.
 ### Push notifications
 
 Almost every push the platform sends is event-driven and lives entirely in the API (enrollment opened, lesson added, mentor assigned). The panel owns the **one manual path**: `POST admin/notifications/push` in `services/notification/{api,query}.js`, taking `{title (≤100), body (≤1000), audience, phoneNumbers?}`.
@@ -160,7 +172,7 @@ The phone box parses newline/comma-separated entries and strips each to digits (
 
 ### Conventions
 
-4-space indent, single quotes, semicolons. Admin pages are grouped by nav section (see the table above); mentor pages are flat under `src/ui/pages/mentor/`. Shared building blocks are `src/ui/components/<name>.jsx`. Component styling is inline `style={{...}}` objects with `var(--g-color-*)` tokens — no CSS modules; `src/index.css` holds the reset, the clickable-row class and the `.sidebar*` rules.
+4-space indent, single quotes, semicolons. Admin pages are grouped by nav section (see the table above); mentor and student pages are flat under `src/ui/pages/{mentor,student}/`. Shared building blocks are `src/ui/components/<name>.jsx`. Component styling is inline `style={{...}}` objects with `var(--g-color-*)` tokens — no CSS modules. `src/index.css` takes what inline styles cannot express: the reset, `.sidebar*`, `.page-fill*`, `.data-table*`, and the page-specific `.progress-*` / `.submission-*` blocks, which exist because they need `:first-child`, `[data-selected]` or a `max-width: 680px` query rather than because they are shared.
 
 **Theme.** `src/theme.css` (imported after Gravity's own stylesheets) overrides Gravity's brand tokens with a green ramp derived from `public/brand.png` — the logo's average green is `#31cf70`, i.e. `hsl(144, 62%, 50%)`. Buttons carry **white** label text, and that choice sets the base: white needs 4.5:1 for normal-size text, which the logo green itself fails badly (2.04:1). So `--g-color-base-brand` is the deeper `#1d7c43` of the same hue — 5.23:1 against white — rather than the literal logo colour, which survives in the selection tint and the dark theme's accent text. Both themes use the same base, since the label is white in both. `--g-color-text-brand` matches it on light and inverts lighter on dark, where it has to lift off a dark background. Light is the default mode, and `prefers-color-scheme` is deliberately **not** consulted — only an explicit in-app choice switches it.
 

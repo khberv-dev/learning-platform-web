@@ -94,6 +94,9 @@ export const NAV_BY_ROLE = {
         {id: 'chat', titleKey: 'nav.chat', icon: MessageSquare, path: '/mentor/chat'},
         {id: 'settings', titleKey: 'nav.settings', icon: Settings, path: '/mentor/settings'},
     ],
+    [ROLE.STUDENT]: [
+        {id: 'settings', titleKey: 'nav.settings', icon: Settings, path: '/student/settings'},
+    ],
 };
 
 export function flattenNav(items) {

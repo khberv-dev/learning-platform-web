@@ -76,7 +76,44 @@ a {
     text-align: right;
 }
 
+.submission-question {
+    padding: 20px 0;
+    border-top: 1px solid var(--g-color-line-generic);
+}
+
+.submission-question:first-child {
+    padding-top: 0;
+    border-top: none;
+}
+
+.submission-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1px solid var(--g-color-line-generic);
+    border-radius: 8px;
+}
+
+.submission-option[data-selected='true'] {
+    border-color: var(--g-color-line-brand);
+    background: var(--g-color-base-selection);
+}
+
+.submission-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
 @media (max-width: 680px) {
+    .submission-summary-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
     .progress-unit__summary,
     .progress-lesson {
         grid-template-columns: minmax(0, 1fr) 44px;
