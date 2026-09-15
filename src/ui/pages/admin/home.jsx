@@ -87,11 +87,32 @@ const ACTIVITY_CHARTS = [
     },
 ];
 
-function ActivityMetricChart({metric, data, t}) {
+// The course split shares the selected DAU/WAU/MAU metric's axis and only
+// swaps the population, so each segment gets its own colour and title.
+// `stats/summary` carries the same two keys, so the stat cards' breakdown
+// reuses this list and its colours tie each number to its chart.
+const ACTIVITY_SEGMENTS = [
+    {
+        dataKey: 'activeCourseUserMetrics',
+        titleKey: 'activeWithCourse',
+        shortKey: 'withCourse',
+        color: 'var(--g-color-base-positive-heavy)',
+    },
+    {
+        dataKey: 'activeCourselessUserMetrics',
+        titleKey: 'activeWithoutCourse',
+        shortKey: 'withoutCourse',
+        color: 'var(--g-color-base-warning-heavy)',
+    },
+];
+
+const ACTIVITY_ICONS = {dau: Activity, wau: CalendarDays, mau: CalendarRange};
+
+function ActivityMetricChart({metric, data, title, color = metric.color, height = 240}) {
     return (
         <div style={{minWidth: 0}}>
-            <div style={{fontSize: 14, fontWeight: 600, marginBottom: 8}}>{t(`dashboard.${metric.key}`)}</div>
-            <div style={{height: 240}}>
+            <div style={{fontSize: 14, fontWeight: 600, marginBottom: 8}}>{title}</div>
+            <div style={{height}}>
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={data ?? []} margin={{top: 8, right: 8, bottom: 0, left: -24}}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--g-color-line-generic)"/>
@@ -104,7 +125,7 @@ function ActivityMetricChart({metric, data, t}) {
                         <YAxis allowDecimals={false} stroke="var(--g-color-text-secondary)" fontSize={11}/>
                         <Tooltip
                             labelFormatter={metric.labelFormatter}
-                            formatter={(value) => [value, t(`dashboard.${metric.key}`)]}
+                            formatter={(value) => [value, title]}
                             contentStyle={{
                                 background: 'var(--g-color-base-float)',
                                 border: '1px solid var(--g-color-line-generic)',
@@ -115,8 +136,8 @@ function ActivityMetricChart({metric, data, t}) {
                         <Line
                             type="monotone"
                             dataKey="count"
-                            name={t(`dashboard.${metric.key}`)}
-                            stroke={metric.color}
+                            name={title}
+                            stroke={color}
                             strokeWidth={2}
                             dot={false}
                         />
@@ -195,19 +216,21 @@ function AdminHome() {
                         marginBottom: 20,
                     }}
                 >
-                    <StatCard label={t('dashboard.dau')} value={summary.data?.dau} icon={Activity} loading={summary.isPending}/>
-                    <StatCard
-                        label={t('dashboard.wau')}
-                        value={summary.data?.wau}
-                        icon={CalendarDays}
-                        loading={summary.isPending}
-                    />
-                    <StatCard
-                        label={t('dashboard.mau')}
-                        value={summary.data?.mau}
-                        icon={CalendarRange}
-                        loading={summary.isPending}
-                    />
+                    {ACTIVITY_CHARTS.map((metric) => (
+                        <StatCard
+                            key={metric.key}
+                            label={t(`dashboard.${metric.key}`)}
+                            value={summary.data?.[metric.key]}
+                            icon={ACTIVITY_ICONS[metric.key]}
+                            loading={summary.isPending}
+                            breakdown={ACTIVITY_SEGMENTS.map((segment) => ({
+                                key: segment.dataKey,
+                                label: t(`dashboard.${segment.shortKey}`),
+                                value: summary.data?.[segment.dataKey]?.[metric.key],
+                                color: segment.color,
+                            }))}
+                        />
+                    ))}
                 </div>
                 {activityTimeseries.isPending && <LoadingState rows={6}/>}
                 {activityTimeseries.isError && (
@@ -217,8 +240,29 @@ function AdminHome() {
                     <ActivityMetricChart
                         metric={activityMetric}
                         data={activityTimeseries.data.activeUserMetrics[activityMetric.key]}
-                        t={t}
+                        title={t(`dashboard.${activityMetric.key}`)}
                     />
+                )}
+                {activityTimeseries.data && activityMetric && (
+                    <div
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                            gap: 16,
+                            marginTop: 20,
+                        }}
+                    >
+                        {ACTIVITY_SEGMENTS.map((segment) => (
+                            <ActivityMetricChart
+                                key={segment.dataKey}
+                                metric={activityMetric}
+                                data={activityTimeseries.data[segment.dataKey]?.[activityMetric.key]}
+                                title={t(`dashboard.${segment.titleKey}`, {metric: activityMetric.key.toUpperCase()})}
+                                color={segment.color}
+                                height={220}
+                            />
+                        ))}
+                    </div>
                 )}
             </PageSection>
 
