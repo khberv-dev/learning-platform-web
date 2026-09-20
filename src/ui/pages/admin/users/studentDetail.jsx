@@ -25,7 +25,7 @@ function AdminStudentDetail() {
     if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch}/>;
 
     const student = query.data;
-    const name = fullName(student.user);
+    const name = fullName(student);
 
     const enrollmentColumns = [
         {
@@ -82,12 +82,12 @@ function AdminStudentDetail() {
 
             <PageSection style={{marginBottom: 16}}>
                 <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
-                    <UserAvatar avatar={student.user?.avatar} name={name} size="xl"/>
+                    <UserAvatar avatar={student.avatar} name={name} size="xl"/>
                     <div>
                         <div style={{fontSize: 16, fontWeight: 600}}>{name}</div>
                         <div style={{fontSize: 13, color: 'var(--g-color-text-secondary)'}}>
-                            {formatPhone(student.user?.phoneNumber)}
-                            {student.user?.email ? ` · ${student.user.email}` : ''}
+                            {formatPhone(student.phoneNumber)}
+                            {student.email ? ` · ${student.email}` : ''}
                         </div>
                     </div>
                 </div>
@@ -131,7 +131,8 @@ function AdminStudentDetail() {
             />
             <SetUserPasswordDialog
                 open={passwordOpen}
-                userId={student.user.id}
+                kind="student"
+                accountId={student.id}
                 userName={name}
                 onClose={() => setPasswordOpen(false)}
             />

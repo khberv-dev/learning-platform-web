@@ -65,7 +65,7 @@ function AcceptPendingEnrollmentDialog({open, pending, onClose}) {
                     <Alert theme="info" message={t('pendingEnrollment.acceptNote')}/>
 
                     <FormField label={t('pendingEnrollment.student')}>
-                        <TextInput size="l" value={fullName(pending?.user)} disabled/>
+                        <TextInput size="l" value={fullName(pending?.student)} disabled/>
                     </FormField>
 
                     <FormField label={t('pendingEnrollment.course')}>

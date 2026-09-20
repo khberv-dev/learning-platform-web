@@ -7,7 +7,7 @@ import {homePathFor} from '@/shared/auth/roles.js';
 function NotFound() {
     const {t} = useI18n();
     const navigate = useNavigate();
-    const {roles, isAuthenticated} = useAuth();
+    const {role, isAuthenticated} = useAuth();
 
     return (
         <div
@@ -24,7 +24,7 @@ function NotFound() {
             <div style={{color: 'var(--g-color-text-secondary)'}}>{t('common.notFound')}</div>
             <Button
                 view="action"
-                onClick={() => navigate(isAuthenticated ? homePathFor(roles) : '/login')}
+                onClick={() => navigate(isAuthenticated ? homePathFor(role) : '/login')}
             >
                 {t('common.back')}
             </Button>

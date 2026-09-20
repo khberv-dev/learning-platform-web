@@ -70,7 +70,7 @@ function AdminPendingEnrollments() {
             name: t('pendingEnrollment.student'),
             // The request points at the user account, not the Student row, so
             // there is no student page to link to from here.
-            template: (row) => <UserCell user={row.user}/>,
+            template: (row) => <UserCell user={row.student}/>,
         },
         {
             id: 'course',

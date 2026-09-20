@@ -1,8 +1,8 @@
 import {Avatar} from '@gravity-ui/uikit';
-import {cdnUrl, initials} from '@/shared/utils/format.js';
+import {initials} from '@/shared/utils/format.js';
 
 function UserAvatar({avatar, name, size = 'm'}) {
-    const src = cdnUrl(avatar);
+    const src = avatar || null;
 
     if (src) {
         return <Avatar imgUrl={src} size={size} alt={name ?? ''}/>;

@@ -9,7 +9,7 @@ import {
     useMentor,
     useUploadMentorIntroVideo,
 } from '@/services/mentor/query.js';
-import {cdnUrl, formatDateTime, formatPhone, fullName} from '@/shared/utils/format.js';
+import {formatDateTime, formatPhone, fullName} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
@@ -43,7 +43,7 @@ function AdminMentorDetail() {
     if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch}/>;
 
     const mentor = query.data;
-    const name = fullName(mentor.user);
+    const name = fullName(mentor);
     const currentStatus = status ?? mentor.status;
 
     const handleStatusChange = (value) => {
@@ -106,7 +106,7 @@ function AdminMentorDetail() {
         {
             id: 'changedBy',
             name: t('assignment.mentor'),
-            template: (row) => fullName(row.changedBy?.user) || '—',
+            template: (row) => fullName(row.changedBy) || '—',
         },
         {
             id: 'createdAt',
@@ -146,7 +146,7 @@ function AdminMentorDetail() {
             <div style={{display: 'grid', gap: 16, gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)'}}>
                 <PageSection title={t('settings.profile')}>
                     <div style={{display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20}}>
-                        <UserAvatar avatar={mentor.user?.avatar} name={name} size="xl"/>
+                        <UserAvatar avatar={mentor.avatar} name={name} size="xl"/>
                         <div>
                             <div style={{fontSize: 16, fontWeight: 600}}>{name}</div>
                             <StatusLabel status={mentor.status} i18nPrefix="mentor"/>
@@ -159,8 +159,7 @@ function AdminMentorDetail() {
                             gap: 16,
                         }}
                     >
-                        <Field label={t('mentor.phone')} value={formatPhone(mentor.user?.phoneNumber)}/>
-                        <Field label={t('mentor.email')} value={mentor.user?.email}/>
+                        <Field label={t('mentor.phone')} value={formatPhone(mentor.phoneNumber)}/>
                         <Field label={t('mentor.profession')} value={mentor.profession}/>
                         <Field label={t('common.createdAt')} value={formatDateTime(mentor.createdAt)}/>
                     </div>
@@ -212,7 +211,7 @@ function AdminMentorDetail() {
                         />
                         {mentor.introVideo ? (
                             <video
-                                src={cdnUrl(mentor.introVideo)}
+                                src={mentor.introVideo}
                                 controls
                                 style={{width: '100%', borderRadius: 8}}
                             />
@@ -239,7 +238,8 @@ function AdminMentorDetail() {
             </PageSection>
             <SetUserPasswordDialog
                 open={passwordOpen}
-                userId={mentor.user.id}
+                kind="mentor"
+                accountId={mentor.id}
                 userName={name}
                 onClose={() => setPasswordOpen(false)}
             />

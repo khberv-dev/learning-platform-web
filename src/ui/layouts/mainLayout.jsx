@@ -26,7 +26,7 @@ function MainLayout({role}) {
                 items={items}
                 activeItemPath={activePath(items, location.pathname)}
                 roleLabel={
-                    role === ROLE.ADMIN ? 'Admin' : role === ROLE.MENTOR ? 'Mentor' : t('assignment.student')
+                    role === ROLE.ADMIN ? 'Admin' : 'Mentor'
                 }
                 user={me}
                 userName={name}

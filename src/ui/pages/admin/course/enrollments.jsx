@@ -46,7 +46,7 @@ function AdminEnrollments() {
         {
             id: 'student',
             name: t('enrollment.student'),
-            template: (row) => fullName(row.student?.user) || '—',
+            template: (row) => fullName(row.student) || '—',
         },
         {
             id: 'course',

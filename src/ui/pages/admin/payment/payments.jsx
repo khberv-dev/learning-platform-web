@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {Alert, Select} from '@gravity-ui/uikit';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {PAYMENT_STATUS, usePayments} from '@/services/payment/query.js';
-import {cdnUrl, formatDateTime, formatMoney, fullName} from '@/shared/utils/format.js';
+import {formatDateTime, formatMoney, fullName} from '@/shared/utils/format.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import DataTable from '@/ui/components/dataTable.jsx';
@@ -16,7 +16,7 @@ import FormField from '@/ui/components/formField.jsx';
 function PaymentTypeCell({paymentType}) {
     if (!paymentType) return '—';
 
-    const icon = cdnUrl(paymentType.icon);
+    const icon = paymentType.icon || null;
 
     return (
         <div style={{display: 'flex', alignItems: 'center', gap: 8, minWidth: 0}}>
@@ -52,7 +52,7 @@ function AdminPayments() {
         {
             id: 'user',
             name: t('payment.user'),
-            template: (row) => fullName(row.user) || '—',
+            template: (row) => fullName(row.student) || '—',
         },
         {
             id: 'course',

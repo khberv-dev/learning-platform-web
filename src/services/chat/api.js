@@ -1,4 +1,9 @@
 import {apiClient} from '@/services/api.js';
+import {currentRole} from '@/shared/auth/roles.js';
+
+// The controller is mounted once per role (`student|mentor|admin/chat`), so the
+// caller's role picks the prefix.
+const chatPath = (path) => `${currentRole()}/chat/${path}`;
 
 // REST covers history and sending; the socket (see socket.js) covers live
 // delivery. The POST endpoints also broadcast over the socket server-side, so
@@ -6,28 +11,28 @@ import {apiClient} from '@/services/api.js';
 // by id.
 
 export async function getChatRooms({page = 1, limit = 20} = {}) {
-    const res = await apiClient.get('chat/rooms', {params: {page, limit}});
+    const res = await apiClient.get(chatPath('rooms'), {params: {page, limit}});
     return res.data;
 }
 
 export async function getChatRoom(id) {
-    const res = await apiClient.get(`chat/rooms/${id}`);
+    const res = await apiClient.get(chatPath(`rooms/${id}`));
     return res.data;
 }
 
 export async function getChatMessages({roomId, page = 1, limit = 30}) {
-    const res = await apiClient.get(`chat/rooms/${roomId}/messages`, {params: {page, limit}});
+    const res = await apiClient.get(chatPath(`rooms/${roomId}/messages`), {params: {page, limit}});
     return res.data;
 }
 
 export async function sendChatMessage({roomId, text}) {
-    const res = await apiClient.post(`chat/rooms/${roomId}/messages`, {text});
+    const res = await apiClient.post(chatPath(`rooms/${roomId}/messages`), {text});
     return res.data;
 }
 
 export async function sendChatFile({roomId, file}) {
     const form = new FormData();
     form.append('file', file);
-    const res = await apiClient.post(`chat/rooms/${roomId}/messages/file`, form);
+    const res = await apiClient.post(chatPath(`rooms/${roomId}/messages/file`), form);
     return res.data;
 }

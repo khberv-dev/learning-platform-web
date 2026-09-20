@@ -20,12 +20,12 @@ function AdminAssignments() {
         {
             id: 'student',
             name: t('assignment.student'),
-            template: (row) => fullName(row.student?.user) || '—',
+            template: (row) => fullName(row.student) || '—',
         },
         {
             id: 'mentor',
             name: t('assignment.mentor'),
-            template: (row) => fullName(row.teacher?.user) || '—',
+            template: (row) => fullName(row.mentor) || '—',
         },
         {
             id: 'status',

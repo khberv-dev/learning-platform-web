@@ -55,7 +55,7 @@ function AdminStudents() {
             id: 'firstName',
             name: t('student.title'),
             meta: {sort: true},
-            template: (row) => <UserCell user={row.user}/>,
+            template: (row) => <UserCell user={row}/>,
         },
         {
             id: 'level',
@@ -89,7 +89,7 @@ function AdminStudents() {
         {
             id: 'isActive',
             name: t('common.status'),
-            template: (row) => <ActiveLabel active={row.user?.isActive}/>,
+            template: (row) => <ActiveLabel active={row.isActive}/>,
         },
         {
             id: 'createdAt',

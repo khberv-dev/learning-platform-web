@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Admin + mentor web panel for the iTeach learning platform, plus a deliberately minimal student surface. Backed by the NestJS API at `../learning-platform-api` (its own CLAUDE.md documents the server side).
+Admin + mentor web panel for the iTeach learning platform. Backed by the NestJS API at `../learning-platform-api` (its own CLAUDE.md documents the server side).
 
 ## Commands
 
@@ -20,19 +20,20 @@ No test suite is configured.
 Copy `.env.example` to `.env`:
 
 ```
-VITE_BASE_API_URL=http://localhost:8000/api
-VITE_BASE_CDN_URL=http://localhost:8000/public
+VITE_BASE_API_URL=http://localhost:8000/api/v2
 ```
 
-Both are read only through `src/shared/config.js`, which normalises them to end with a slash. The one exception is the refresh call in `services/api.js`, which must bypass the shared axios instance.
+The API base carries a version segment (`/api/v{N}`, a hardcoded constant in the API's `main.ts`); bump it here when the API does. It is read only through `src/shared/config.js`, which normalises it to end with a slash. There is no CDN base URL: the API's `FileUrlInterceptor` rewrites every stored upload path in an HTTP response to an absolute `{FILES_BASE_URL}/public/…` URL, so file fields (`avatar`, `image`, `media`, `file`, `icon`, `introVideo`, `filePath`) are used as-is. The one exception is the refresh call in `services/api.js`, which must bypass the shared axios instance.
 
 ## Roles
 
-The API's `UserRole` enum is `student | teacher | admin`. **"Mentor" is this product's name for `teacher`** — the wire value stays `teacher` in every request and every `roles` array; only UI copy says "mentor". `src/shared/auth/roles.js` is the single place that mapping lives (`ROLE.MENTOR === 'teacher'`).
+The API's `UserRole` enum is `student | mentor | admin`, and **each account holds exactly one role, permanently** — `Student`, `Mentor` and `Admin` are three independent tables with their own credentials; there is no `User` entity and no way to add a second role. A person needing two roles has two accounts. `src/shared/auth/roles.js` holds `ROLE`, `homePathFor(role)`, `isPanelRole`, and `currentRole()` (reads the cached role from storage so the service layer needs no React context).
 
-All three roles are in `PANEL_ROLES`, and `primaryRole()` resolves a multi-role account by that array's order — admin, then mentor, then student — so a user who is both lands on the wider panel. `HOME_PATH_BY_ROLE` sends students to `/student/settings`, because the student panel has no index route.
+**Every authenticated route carries the caller's role as its first path segment**: `admin/...`, `mentor/...`, `student/...`. Handlers shared across roles are mounted once per role (chat is `{student,mentor,admin}/chat`, `{role}/me`), so `services/chat` and `services/user` build their paths from `currentRole()`. Sign-in returns a single `role`; the JWT carries `{sub, role}`, and `me` returns `{id, role, firstName, lastName, avatar, email, phoneNumber, isActive}` (email/phone are `null` where the role's table has no such column — mentors have phone only, admins email only).
 
-**The student surface is not a third panel — it is the shared settings page plus one read-only deep link** (`/student/tasks/:taskId`, a submitted task's result). There is no student dashboard, no index route and no list page, and the sidebar holds a single entry. The guards still reject an account with *no* panel role at sign-in rather than letting it bounce between them.
+Account fields are **flat on each row** — `student.firstName`, `mentor.isActive`, `enrollment.student.firstName`, `pending.student`, `payment.student` — there is no nested `.user`. Assignments expose `student` and `mentor` (not `teacher`), and chat messages carry `student`/`mentor`/`admin` (exactly one set) instead of `sender`. Ids are per-table: a student token's id *is* the `Student.id`.
+
+**This panel is for admins and mentors only.** `PANEL_ROLES` is `[admin, mentor]`; a `student` sign-in is rejected in `login.jsx` before any token is persisted (`auth.noRole`), and a leftover token with no panel role falls back to the login form. There is no student panel.
 
 ## Architecture
 
@@ -48,19 +49,19 @@ All three roles are in `PANEL_ROLES`, and `primaryRole()` resolves a multi-role 
 
 - `useI18n()` — `{locale, setLocale, t}`. Locales are plain objects in `src/shared/i18n/locales/{uz,ru}.js`; **`uz` is the default and the fallback** (a key missing from `ru` renders the Uzbek string, not the raw key). Gravity ships no `uz`, so it's mapped onto `en`. `t` takes a second argument of variables and fills `{{name}}` placeholders (`t('push.recipients', {count: 3})`) — don't hand-splice values into a translated string.
 - `useThemeMode()` — `{themeMode, setThemeMode, toggleThemeMode}`, seeded from `prefers-color-scheme`.
-- `useAuth()` — `{isAuthenticated, roles, role, isAdmin, isMentor, login, logout, syncRoles}` (there is no `isStudent` flag; the student panel gates on `RoleRoute` alone). Sign-in returns the role list inline, so it's cached in `localStorage` and the guards can pick a panel on the first render; `user/me` stays authoritative and `RoleRoute` re-syncs it.
+- `useAuth()` — `{isAuthenticated, role, isAdmin, isMentor, login, logout, syncRole}` . Sign-in returns the role inline, so it's cached in `localStorage` and the guards can pick a panel on the first render; `me` stays authoritative and `RoleRoute` re-syncs it.
 
 ### Auth flow
 
-`POST auth/sign-in` takes exactly one identity — `{phoneNumber, password}` or `{email, password}` — and returns `{accessToken, refreshToken, roles}`. The login form accepts either in one field, normalises email to lowercase and phone to bare digits, and sends only the matching identity key.
+Sign-in is per role: `POST auth/admin/sign-in` takes `{email, password}`, `POST auth/mentor/sign-in` takes `{phoneNumber, password}` (`998XXXXXXXXX`); both return `{accessToken, refreshToken, role}`. The login screen has an Admin / Mentor tab switch that picks the route, the identity field and its validation; email is lowercased and phone reduced to bare digits. There is no student sign-in.
 
 **`POST auth/refresh` takes no body — it is guarded by `JwtRefreshGuard`, which reads the *refresh* token out of the `Authorization: Bearer` header.** This differs from most refresh endpoints; `services/api.js` sends it through bare axios so the request interceptor can't overwrite the header with the stale access token. A 401 from any non-auth endpoint triggers one refresh-and-retry, queuing concurrent requests behind it; 403 (the role guard) rejects normally, since refreshing can't fix it.
 
 ### Routing and navigation
 
-`src/app.jsx`. `GuestRoute` → `/login`; `PrivateRoute` → `RoleRoute role={...}` → `MainLayout role={...}` → pages, under `/admin/*`, `/mentor/*` and `/student/*`. `/` forwards via `RootRedirect`.
+`src/app.jsx`. `GuestRoute` → `/login`; `PrivateRoute` → `RoleRoute role={...}` → `MainLayout role={...}` → pages, under `/admin/*` and `/mentor/*`. `/` forwards via `RootRedirect`.
 
-`src/ui/pages/settingsPage.jsx` (profile, theme, language) is rendered by all three panels. A panel that needs more passes it an `extra` node rather than forking the page — `mentor/settings.jsx` is the one that does, adding the intro-video card.
+`src/ui/pages/settingsPage.jsx` (profile, theme, language) is rendered by both panels. A panel that needs more passes it an `extra` node rather than forking the page — `mentor/settings.jsx` is the one that does, adding the intro-video card.
 
 **`src/ui/layouts/navConfig.js` is the source of truth for both the sidebar tree and the URL layout.** A group's `id` is also its path segment, and the page files mirror it:
 
@@ -72,7 +73,6 @@ All three roles are in `PANEL_ROLES`, and `primaryRole()` resolves a multi-role 
 | `payment` | `/admin/payment/{payments,payment-types}` | `pages/admin/payment/` |
 | `marketing` | `/admin/marketing/push-notifications` | `pages/admin/marketing/` |
 | — | `/admin/settings` | `pages/admin/settings.jsx` |
-| — | `/student/{settings,tasks/:taskId}` | `pages/settingsPage.jsx`, `pages/student/` |
 
 A nav node with `children` renders as a collapsible group; one with `path` renders as a link. Groups are never navigable themselves. Adding a page means editing `app.jsx`, `navConfig.js`, and every locale file (the `titleKey`), and putting the file in the matching folder.
 
@@ -94,13 +94,11 @@ Multipart is required wherever a file rides along (course image, lesson media, t
 
 Lesson video replacement uses `PATCH .../lessons/:lessonId/media`; deletion uses `DELETE` on the same path and leaves the lesson intact. Task content supports uploaded `audio`/`picture` files plus plain `text`: uploads derive `contentType` from MIME, while sending a string in the task's `file` field marks it as text.
 
-The admin dashboard keeps growth and activity metrics visually separate. `stats/summary` exposes current totals, and splits the `dau`/`wau`/`mau` totals into `activeCourseUserMetrics` and `activeCourselessUserMetrics` objects keyed the same way; each activity stat card shows that split under its total, colour-keyed to the matching chart. `stats/timeseries` returns `{businessMetrics, activeUserMetrics, activeCourseUserMetrics, activeCourselessUserMetrics}`: business metrics are daily rows, while each of the three activity objects is split into daily `dau`, weekly range-based `wau`, and month-based `mau` arrays whose values live in `count`. Growth has a 7/14/30 period control. Activity uses the 30-day response and renders one selected DAU/WAU/MAU metric at a time, preserving each metric's natural time axis: the overall chart on top, then two separate charts below it for active students with and without a course, both following the same toggle.
-
-CDN paths go through `cdnUrl()` (`src/shared/utils/format.js`), which passes `http(s):`, `blob:` and `data:` through untouched so local previews work.
+The admin dashboard keeps growth and activity metrics visually separate. `admin/stats/summary` exposes current totals, and splits the `dau`/`wau`/`mau` totals into `activeCourseUserMetrics` and `activeCourselessUserMetrics` objects keyed the same way; each activity stat card shows that split under its total, colour-keyed to the matching chart. `users` is now the **student** count (mentors and admins are excluded, as are their activity rows), and `mentors`/`assignments`/`enrollments` stay current totals. `admin/stats/timeseries` returns `{businessMetrics, activeUserMetrics, activeCourseUserMetrics, activeCourselessUserMetrics}`: business metrics are daily `{date, users, enrollments}` rows only (no `mentors`/`assignments` series, so the growth chart plots new students and new enrollments), while each of the three activity objects is split into daily `dau`, weekly range-based `wau`, and month-based `mau` arrays whose values live in `count`. Growth has a 7/14/30 period control. Activity uses the 30-day response and renders one selected DAU/WAU/MAU metric at a time, preserving each metric's natural time axis: the overall chart on top, then two separate charts below it for active students with and without a course, both following the same toggle.
 
 ### Chat
 
-`src/services/chat/socket.js` owns a module-level singleton connection to the `/chat` namespace (origin = API base minus `/api`, auth via `access_token`). `subscribeChatSocket(listener)` returns a cleanup function; the socket connects on the first subscriber and disconnects when the last one leaves. Emits queue until `connect`. REST history comes from `chat/{api,query}.js`; the page dedupes socket arrivals against history by id.
+`src/services/chat/socket.js` owns a module-level singleton connection to the `/chat` namespace (origin = API base minus `/api/v{N}`, auth via `access_token`). `subscribeChatSocket(listener)` returns a cleanup function; the socket connects on the first subscriber and disconnects when the last one leaves. Emits queue until `connect`. REST history comes from `chat/{api,query}.js`; the page dedupes socket arrivals against history by id.
 
 ### Known API shapes
 
@@ -139,7 +137,7 @@ Pages inside a hierarchy pass a `breadcrumbs` trail to `PageHeader` (`[{title, t
 
 Admin access to payments is **read-only** by design; status changes only through the Click webhooks. Cash and transfer sales are recorded via `POST admin/enrollments` instead — reachable from the **student detail page** (`EnrollStudentDialog`), where the student is already fixed by the route, rather than from the enrollments list, which stays read-only. `dto.studentId` is the **Student entity id**, which is what `/admin/users/students/:id` carries.
 
-`GET students` and `GET admin/teachers` share a shape: a case-insensitive `search`, an `isActive` filter on the *account*, a whitelisted `sortBy` and `sortOrder`. They differ in what's searchable and sortable — students add `level` (`A1`–`C2`), `hasCourse`, an `activeCoursesCount` response field, and sort on `points`/`coins`/`balance`; mentors add `profession` (searchable *and* sortable) and filter on `TeacherStatus`. A mentor's employment `status` and whether their account can sign in (`user.isActive`) are separate filters and separate columns.
+`GET admin/students` and `GET admin/mentors` share a shape: a case-insensitive `search`, an `isActive` filter on the *account*, a whitelisted `sortBy` and `sortOrder`. They differ in what's searchable and sortable — students add `level` (`A1`–`C2`), `hasCourse`, an `activeCoursesCount` response field, and sort on `points`/`coins`/`balance`; mentors add `profession` (searchable *and* sortable) and filter on `TeacherStatus`. A mentor's employment `status` and whether their account can sign in (`user.isActive`) are separate filters and separate columns.
 
 Both search boxes are debounced through `useDebouncedValue`, but `page` resets on the keystroke itself, not on the debounced value — otherwise a search could land on a page number the narrowed results don't have.
 
@@ -157,11 +155,7 @@ Only a `created` request can be decided, so the action buttons render on those r
 
 ### Task submissions
 
-`GET task-submissions/:taskId` (`services/task-submission/`) returns the *authenticated student's* own answers for one task, which is why it is the student panel's only data route and takes no student id. The response merges the task itself (`name`, `file`, `contentType`, `questions`) with what was submitted: `isCorrect`, `submittedAt`, and an `answer` on each question. **The API deliberately omits the correct-answer keys**, so the page can only mark which option the student picked — never which one was right. Matching the picked option is case-insensitive and trims, mirroring the grading rule in `task-submission.service.ts`.
-
-The page is read-only; there is no submit path here (the mobile app owns answering). `contentType` picks the renderer for `file` exactly as the admin task pages do — `picture`, `audio`, or plain text.
-
-**The admin counterpart is a different route with a different contract.** `GET task-submissions/students/:studentId/lessons/:lessonId` (`useStudentLessonResults`) returns a whole lesson's tasks with the answers one student gave — and, unlike every student-facing route, it **includes the answer key** (`question.answer`) plus a per-question `isCorrect`, because an admin reviewing a wrong answer needs to see what was expected. It hangs off the same `task-submissions` controller but carries a method-level `@Roles(ADMIN)` that overrides the class's `@Roles(STUDENT)`, and it takes the **Student entity id** (what `/admin/users/students/:id` carries), not the user id. It skips the enrollment check the student routes run, so an expired or cancelled enrollment's results still open.
+The panel's only task-submission route: `GET admin/task-submissions/students/:studentId/lessons/:lessonId` (`useStudentLessonResults`) returns a whole lesson's tasks with the answers one student gave — and, unlike every student-facing route, it **includes the answer key** (`question.answer`) plus a per-question `isCorrect`, because an admin reviewing a wrong answer needs to see what was expected. It hangs off the same `task-submissions` controller but carries a method-level `@Roles(ADMIN)` that overrides the class's `@Roles(STUDENT)`, and it takes the **Student entity id** (what `/admin/users/students/:id` carries), not the user id. It skips the enrollment check the student routes run, so an expired or cancelled enrollment's results still open.
 
 `isCorrect` is `null`, not `false`, on a task the student never submitted — "no result" and "failed" are different things, and the page's counters exclude question-less tasks entirely, since the server can never mark one passed. The option-matching in `studentLessonResults.jsx` mirrors `taskAnswersMatch` server-side (lowercase, strip everything non-letter), so `A.` and `a` are the same option; an option can be both picked and correct, and `.submission-option`'s `data-correct` rule is declared after `data-picked` so that case reads green rather than red.
 
@@ -169,7 +163,7 @@ The page is read-only; there is no submit path here (the mobile app owns answeri
 
 Almost every push the platform sends is event-driven and lives entirely in the API (enrollment opened, lesson added, mentor assigned). The panel owns the **one manual path**: `POST admin/notifications/push` in `services/notification/{api,query}.js`, taking `{title (≤100), body (≤1000), audience, phoneNumbers?}`.
 
-`audience` (`all` / `students` / `teachers` / `phones`) is required by the DTO so a blast to everyone can never be a forgotten field, and there is no separate single-recipient route — one user is a `phones` list of one. The page mirrors that intent: it defaults to `phones`, shows a warning instead of a recipient field on the three mass audiences, and routes every send through `ConfirmDialog` naming who is about to get it. Nothing is invalidated afterwards, because a push leaves no row behind to read back.
+`audience` (`all` / `students` / `mentors` / `phones`) is required by the DTO so a blast to everyone can never be a forgotten field, and there is no separate single-recipient route — one user is a `phones` list of one. The page mirrors that intent: it defaults to `phones`, shows a warning instead of a recipient field on the three mass audiences, and routes every send through `ConfirmDialog` naming who is about to get it. Nothing is invalidated afterwards, because a push leaves no row behind to read back.
 
 The response **is** the deliverable: `{devices, sent, failed, removedTokens}`, plus `notFound` (no such user) and `withoutDevice` (user exists, never opened the app) for a `phones` send — a distinction the report renders separately, since a wrong number and an uninstalled app call for different follow-ups. It is held in page state until the next send, as it can't be refetched. Delivery happens *inside* the request in chunks of 500, so a large audience simply means a slow response. A **503** means `GOOGLE_SERVICES_JSON` is unset on the server; its message is surfaced as-is rather than reported as a zero-device success.
 

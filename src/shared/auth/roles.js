@@ -1,29 +1,37 @@
-// The API's UserRole enum. "Mentor" is this product's name for what the API
-// still calls `teacher` on the wire (the chat and stats services already
-// surface it as `mentor`), so the wire value stays `teacher` everywhere a
-// request or a `roles` array is involved - only UI copy says "mentor".
+// The API's UserRole enum. This panel serves admins and mentors only; a
+// `student` account is rejected at sign-in. "Mentor" is spelled `mentor` on
+// the wire too now; each account holds exactly one role, permanently (Student, Mentor and Admin
+// are three independent tables), so a person who needs two roles has two
+// accounts.
 export const ROLE = {
     ADMIN: 'admin',
-    MENTOR: 'teacher',
+    MENTOR: 'mentor',
     STUDENT: 'student',
 };
 
-export const PANEL_ROLES = [ROLE.ADMIN, ROLE.MENTOR, ROLE.STUDENT];
+export const PANEL_ROLES = [ROLE.ADMIN, ROLE.MENTOR];
 
 export const HOME_PATH_BY_ROLE = {
     [ROLE.ADMIN]: '/admin',
     [ROLE.MENTOR]: '/mentor',
-    [ROLE.STUDENT]: '/student/settings',
 };
 
-// An account can hold several profiles; admin wins so a user who is both
-// lands on the wider panel.
-export function primaryRole(roles) {
-    if (!Array.isArray(roles)) return null;
-    return PANEL_ROLES.find((role) => roles.includes(role)) ?? null;
+export function isPanelRole(role) {
+    return PANEL_ROLES.includes(role);
 }
 
-export function homePathFor(roles) {
-    const role = primaryRole(roles);
-    return role ? HOME_PATH_BY_ROLE[role] : '/login';
+export function homePathFor(role) {
+    return isPanelRole(role) ? HOME_PATH_BY_ROLE[role] : '/login';
+}
+
+// Every authenticated route carries the caller's role as its first path
+// segment (`admin/me`, `mentor/chat/rooms`, ...). Read straight from storage
+// so the service layer needs no React context.
+export function currentRole() {
+    try {
+        const stored = localStorage.getItem('role');
+        return isPanelRole(stored) ? stored : null;
+    } catch {
+        return null;
+    }
 }

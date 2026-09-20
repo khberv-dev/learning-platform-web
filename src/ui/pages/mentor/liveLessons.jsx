@@ -131,7 +131,7 @@ function MentorLiveLessons() {
         {
             id: 'student',
             name: t('assignment.student'),
-            template: (row) => fullName(row.assignment?.student?.user) || '—',
+            template: (row) => fullName(row.assignment?.student) || '—',
         },
         {
             id: 'startTime',
@@ -254,7 +254,7 @@ function MentorLiveLessons() {
                                 >
                                     {activeAssignments.map((assignment) => (
                                         <Select.Option key={assignment.id} value={assignment.id}>
-                                            {fullName(assignment.student?.user) || assignment.id}
+                                            {fullName(assignment.student) || assignment.id}
                                         </Select.Option>
                                     ))}
                                 </Select>

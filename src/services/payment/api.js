@@ -3,9 +3,9 @@ import {apiClient} from '@/services/api.js';
 // Read-only for admins by design: payment status changes only through the Click
 // webhooks. There is deliberately no approve/reject/delete endpoint - a cash or
 // transfer sale is recorded by opening an enrollment directly instead.
-export async function getPayments({page = 1, limit = 15, status, userId} = {}) {
+export async function getPayments({page = 1, limit = 15, status, studentId} = {}) {
     const res = await apiClient.get('admin/payments', {
-        params: {page, limit, status: status || undefined, userId: userId || undefined},
+        params: {page, limit, status: status || undefined, studentId: studentId || undefined},
     });
     return res.data;
 }

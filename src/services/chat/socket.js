@@ -7,9 +7,9 @@ import config from '@/shared/config.js';
 // delivered copies of each message.
 //
 // The gateway lives on the `/chat` namespace of the API origin - which is the
-// API base URL minus its `/api` prefix.
+// API base URL minus its `/api/v{N}` prefix.
 function socketOrigin() {
-    return config.apiBaseUrl.replace(/\/api\/?$/, '');
+    return config.apiBaseUrl.replace(/\/api(\/v\d+)?\/?$/, '');
 }
 
 let socket = null;

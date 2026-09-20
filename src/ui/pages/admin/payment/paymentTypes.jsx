@@ -8,7 +8,6 @@ import {
     usePaymentTypes,
     useUpdatePaymentType,
 } from '@/services/payment-type/query.js';
-import {cdnUrl} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
@@ -71,7 +70,7 @@ function AdminPaymentTypes() {
             template: (row) =>
                 row.icon ? (
                     <img
-                        src={cdnUrl(row.icon)}
+                        src={row.icon}
                         alt={row.title}
                         style={{width: 32, height: 32, objectFit: 'contain', borderRadius: 4}}
                     />

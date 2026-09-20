@@ -10,13 +10,13 @@ import PageSection from '@/ui/components/pageSection.jsx';
 import StatCard from '@/ui/components/statCard.jsx';
 import {ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 
+// Growth rows carry only new students and new enrollments; mentors and
+// assignments are current totals on the summary cards, not daily series.
 // Recharts renders as SVG, so these can reference Gravity's CSS custom
 // properties directly and follow a theme switch with no JS involved.
 const GROWTH_SERIES = [
-    {key: 'users', labelKey: 'newUsers', color: 'var(--g-color-base-info-heavy)'},
-    {key: 'mentors', color: 'var(--g-color-base-positive-heavy)'},
+    {key: 'users', labelKey: 'newStudents', color: 'var(--g-color-base-info-heavy)'},
     {key: 'enrollments', color: 'var(--g-color-base-warning-heavy)'},
-    {key: 'assignments', color: 'var(--g-color-base-danger-heavy)'},
 ];
 
 function MetricsChart({data, series, t}) {
@@ -170,7 +170,7 @@ function AdminHome() {
                 }}
             >
                 <StatCard
-                    label={t('dashboard.users')}
+                    label={t('dashboard.students')}
                     value={summary.data?.users}
                     icon={Users}
                     loading={summary.isPending}

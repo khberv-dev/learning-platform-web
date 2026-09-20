@@ -1,10 +1,12 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {getMe, setUserPassword, updateMyAvatar} from '@/services/user/api.js';
+import {currentRole} from '@/shared/auth/roles.js';
+import {getMe, setStudentPassword, updateMyAvatar} from '@/services/user/api.js';
 
 export const useMe = () => {
     return useQuery({
         queryKey: ['me'],
         queryFn: getMe,
+        enabled: Boolean(currentRole()),
     });
 };
 
@@ -19,6 +21,6 @@ export const useUpdateMyAvatar = () => {
     });
 };
 
-export const useSetUserPassword = () => {
-    return useMutation({mutationFn: setUserPassword});
+export const useSetStudentPassword = () => {
+    return useMutation({mutationFn: setStudentPassword});
 };

@@ -44,7 +44,7 @@ function MentorAssignments() {
     const studentColumn = {
         id: 'student',
         name: t('assignment.student'),
-        template: (row) => fullName(row.student?.user) || '—',
+        template: (row) => fullName(row.student) || '—',
     };
 
     const periodColumn = {

@@ -4,7 +4,7 @@ import {Button, Checkbox, Dialog, TextArea, TextInput} from '@gravity-ui/uikit';
 import {ImageIcon, Plus} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useCourses, useCreateCourse} from '@/services/course/query.js';
-import {cdnUrl, formatDate, toOptionalNumber} from '@/shared/utils/format.js';
+import {formatDate, toOptionalNumber} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
@@ -15,7 +15,7 @@ import {ActiveLabel} from '@/ui/components/statusLabel.jsx';
 
 // A small thumbnail keeps the visual cue the card grid gave, without the grid.
 function CourseThumb({course}) {
-    const image = cdnUrl(course.image);
+    const image = course.image || null;
 
     return (
         <div

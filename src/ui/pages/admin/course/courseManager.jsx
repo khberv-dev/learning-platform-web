@@ -4,7 +4,7 @@ import {Button, Checkbox, TabProvider, TabList, Tab, TabPanel, TextArea, TextInp
 import {Trash2} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useCourse, useDeleteCourse, useUpdateCourse} from '@/services/course/query.js';
-import {cdnUrl, toOptionalNumber} from '@/shared/utils/format.js';
+import {toOptionalNumber} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
@@ -68,7 +68,7 @@ function CourseSettings({course}) {
         return () => URL.revokeObjectURL(localPreview);
     }, [localPreview]);
 
-    const preview = localPreview ?? cdnUrl(course.image);
+    const preview = localPreview ?? course.image;
 
     return (
         <PageSection title={t('course.edit')}>

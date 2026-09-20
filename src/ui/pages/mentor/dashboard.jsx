@@ -81,7 +81,7 @@ function MentorDashboard() {
                             >
                                 <div>
                                     <div style={{fontWeight: 500}}>
-                                        {fullName(assignment.student?.user) || '—'}
+                                        {fullName(assignment.student) || '—'}
                                     </div>
                                     <div style={{fontSize: 12, color: 'var(--g-color-text-secondary)'}}>
                                         {formatDate(assignment.startDate)} — {formatDate(assignment.endDate)}

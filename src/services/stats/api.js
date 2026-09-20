@@ -1,7 +1,7 @@
 import {apiClient} from '@/services/api.js';
 
 export async function getStatsSummary() {
-    const res = await apiClient.get('stats/summary');
+    const res = await apiClient.get('admin/stats/summary');
     return res.data;
 }
 
@@ -9,6 +9,6 @@ export async function getStatsSummary() {
 // separates daily businessMetrics from naturally bucketed activity metrics:
 // daily DAU, weekly WAU ranges and monthly MAU.
 export async function getStatsTimeseries(period = 30) {
-    const res = await apiClient.get('stats/timeseries', {params: {period}});
+    const res = await apiClient.get('admin/stats/timeseries', {params: {period}});
     return res.data;
 }

@@ -49,7 +49,7 @@ function AdminMentors() {
             id: 'firstName',
             name: t('mentor.title'),
             meta: {sort: true},
-            template: (row) => <UserCell user={row.user}/>,
+            template: (row) => <UserCell user={row}/>,
         },
         {
             id: 'profession',
@@ -68,7 +68,7 @@ function AdminMentors() {
             // in are separate things, and both are filterable.
             id: 'isActive',
             name: t('mentor.accountStatus'),
-            template: (row) => <ActiveLabel active={row.user?.isActive}/>,
+            template: (row) => <ActiveLabel active={row.isActive}/>,
         },
         {
             id: 'createdAt',

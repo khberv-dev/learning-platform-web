@@ -14,7 +14,7 @@ import {
     useUpdateLesson,
     useUploadLessonMedia,
 } from '@/services/course/query.js';
-import {cdnUrl, toOptionalNumber} from '@/shared/utils/format.js';
+import {toOptionalNumber} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
@@ -256,7 +256,7 @@ function AdminLesson() {
                     />
                     {lesson.media ? (
                         <video
-                            src={cdnUrl(lesson.media)}
+                            src={lesson.media}
                             controls
                             style={{width: '100%', maxWidth: 480, borderRadius: 8}}
                         />

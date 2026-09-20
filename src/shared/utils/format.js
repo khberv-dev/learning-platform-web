@@ -1,5 +1,4 @@
 import dayjs from 'dayjs';
-import config from '@/shared/config.js';
 
 // Number inputs hand back a string, and '' / a partial entry would become NaN
 // and serialise to null - which a NOT NULL column rejects. Returning undefined
@@ -40,13 +39,4 @@ export function formatPhone(phoneNumber) {
     const digits = String(phoneNumber ?? '').replace(/\D/g, '');
     if (digits.length !== 12) return phoneNumber ?? '—';
     return `+${digits.slice(0, 3)} ${digits.slice(3, 5)} ${digits.slice(5, 8)} ${digits.slice(8, 10)} ${digits.slice(10)}`;
-}
-
-// Stored asset paths are server-relative ("/public/avatars/x.png", or just
-// "/avatar/x.png" for some modules). Absolute URLs and local preview URLs
-// (blob:/data: from a file input) must pass through untouched.
-export function cdnUrl(path) {
-    if (!path) return null;
-    if (/^(https?:|blob:|data:)/.test(path)) return path;
-    return `${config.cdnBaseUrl}${path.replace(/^\/?(public\/)?/, '')}`;
 }

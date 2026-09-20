@@ -13,7 +13,6 @@ import {
     useUpdateTask,
     useUploadTaskFile,
 } from '@/services/course/query.js';
-import {cdnUrl} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
@@ -255,13 +254,13 @@ function AdminTask() {
                     />
                     {task.file && task.contentType === 'picture' && (
                         <img
-                            src={cdnUrl(task.file)}
+                            src={task.file}
                             alt=""
                             style={{maxWidth: 320, borderRadius: 8, display: 'block'}}
                         />
                     )}
                     {task.file && task.contentType === 'audio' && (
-                        <audio src={cdnUrl(task.file)} controls style={{width: '100%', maxWidth: 320}}/>
+                        <audio src={task.file} controls style={{width: '100%', maxWidth: 320}}/>
                     )}
                     {task.file && task.contentType === 'text' && (
                         <div style={{fontSize: 14, whiteSpace: 'pre-wrap'}}>{task.file}</div>

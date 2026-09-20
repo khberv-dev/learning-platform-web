@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components -- context module intentionally exports both the provider and its hook */
 import {createContext, useCallback, useContext, useMemo, useState} from 'react';
-import {primaryRole, ROLE} from '@/shared/auth/roles.js';
+import {isPanelRole, ROLE} from '@/shared/auth/roles.js';
 
 const ACCESS_TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
-const ROLES_KEY = 'roles';
+const ROLE_KEY = 'role';
 
 const AuthContext = createContext(undefined);
 
@@ -12,64 +12,56 @@ function getInitialAccessToken() {
     return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
-// sign-in returns the role list alongside the tokens, so it's cached here to
-// let the route guards pick a panel on the very first render instead of
-// flashing a redirect while `user/me` is still in flight. `user/me` remains
-// authoritative - see syncRoles below.
-function getInitialRoles() {
-    try {
-        const stored = JSON.parse(localStorage.getItem(ROLES_KEY));
-        return Array.isArray(stored) ? stored : [];
-    } catch {
-        return [];
-    }
+// sign-in returns the role alongside the tokens, so it's cached here to let
+// the route guards pick a panel on the very first render instead of flashing a
+// redirect while `me` is still in flight. `me` remains authoritative - see
+// syncRole below.
+function getInitialRole() {
+    const stored = localStorage.getItem(ROLE_KEY);
+    return isPanelRole(stored) ? stored : null;
 }
 
 export function AuthProvider({children}) {
     const [accessToken, setAccessToken] = useState(getInitialAccessToken);
-    const [roles, setRoles] = useState(getInitialRoles);
+    const [role, setRole] = useState(getInitialRole);
 
-    const login = useCallback(({accessToken: nextAccessToken, refreshToken, roles: nextRoles = []}) => {
+    const login = useCallback(({accessToken: nextAccessToken, refreshToken, role: nextRole}) => {
         localStorage.setItem(ACCESS_TOKEN_KEY, nextAccessToken);
         localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-        localStorage.setItem(ROLES_KEY, JSON.stringify(nextRoles));
+        localStorage.setItem(ROLE_KEY, nextRole);
         setAccessToken(nextAccessToken);
-        setRoles(nextRoles);
+        setRole(nextRole);
     }, []);
 
     const logout = useCallback(() => {
         localStorage.removeItem(ACCESS_TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
-        localStorage.removeItem(ROLES_KEY);
+        localStorage.removeItem(ROLE_KEY);
         setAccessToken(null);
-        setRoles([]);
+        setRole(null);
     }, []);
 
-    // Reconciles the cached list with what `user/me` reports, so a role granted
-    // or revoked server-side takes effect without forcing a re-login. Compared
-    // as sorted JSON to avoid an update loop on an equal-but-new array.
-    const syncRoles = useCallback((nextRoles) => {
-        if (!Array.isArray(nextRoles)) return;
-        setRoles((current) => {
-            const same = JSON.stringify([...current].sort()) === JSON.stringify([...nextRoles].sort());
-            if (same) return current;
-            localStorage.setItem(ROLES_KEY, JSON.stringify(nextRoles));
-            return nextRoles;
+    // Reconciles the cached role with what `me` reports.
+    const syncRole = useCallback((nextRole) => {
+        if (!isPanelRole(nextRole)) return;
+        setRole((current) => {
+            if (current === nextRole) return current;
+            localStorage.setItem(ROLE_KEY, nextRole);
+            return nextRole;
         });
     }, []);
 
     const value = useMemo(
         () => ({
             isAuthenticated: Boolean(accessToken),
-            roles,
-            role: primaryRole(roles),
-            isAdmin: roles.includes(ROLE.ADMIN),
-            isMentor: roles.includes(ROLE.MENTOR),
+            role,
+            isAdmin: role === ROLE.ADMIN,
+            isMentor: role === ROLE.MENTOR,
             login,
             logout,
-            syncRoles,
+            syncRole,
         }),
-        [accessToken, roles, login, logout, syncRoles]
+        [accessToken, role, login, logout, syncRole]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -30,6 +30,7 @@ function onTokenRefreshed(accessToken) {
 function redirectToLogin() {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('role');
     localStorage.removeItem('roles');
     window.location.href = '/login';
 }
@@ -37,7 +38,7 @@ function redirectToLogin() {
 // Sign-in and the refresh call itself report their own 401s to their own
 // callers ("wrong credentials" / "refresh failed"); only a 401 from a normal
 // endpoint means "this access token went stale" and is worth retrying.
-const AUTH_ENDPOINTS = ['auth/sign-in', 'auth/refresh'];
+const AUTH_ENDPOINTS = ['/sign-in', 'auth/refresh'];
 
 function isAuthRequest(requestConfig) {
     return AUTH_ENDPOINTS.some((path) => requestConfig?.url?.includes(path));

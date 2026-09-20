@@ -16,7 +16,7 @@ export async function getStudents({
     sortBy,
     sortOrder,
 } = {}) {
-    const res = await apiClient.get('students', {
+    const res = await apiClient.get('admin/students', {
         params: {
             page,
             limit,
@@ -33,6 +33,6 @@ export async function getStudents({
 
 // Returns the profile plus its enrollments.
 export async function getStudent(id) {
-    const res = await apiClient.get(`students/${id}`);
+    const res = await apiClient.get(`admin/students/${id}`);
     return res.data;
 }

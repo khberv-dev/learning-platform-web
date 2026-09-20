@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {Dialog, TextInput} from '@gravity-ui/uikit';
-import {useSetUserPassword} from '@/services/user/query.js';
+import {useUpdateMentor} from '@/services/mentor/query.js';
+import {useSetStudentPassword} from '@/services/user/query.js';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
@@ -8,9 +9,13 @@ import FormField from '@/ui/components/formField.jsx';
 
 const PASSWORD_MIN_LENGTH = 6;
 
-function SetUserPasswordDialog({open, userId, userName, onClose}) {
+// Students have a dedicated admin password route; a mentor's password goes
+// through the regular mentor update.
+function SetUserPasswordDialog({open, kind, accountId, userName, onClose}) {
     const {t} = useI18n();
-    const mutation = useSetUserPassword();
+    const studentPassword = useSetStudentPassword();
+    const mentorUpdate = useUpdateMentor();
+    const mutation = kind === 'mentor' ? mentorUpdate : studentPassword;
     const [password, setPassword] = useState('');
     const [confirmation, setConfirmation] = useState('');
     const [errors, setErrors] = useState({});
@@ -34,7 +39,7 @@ function SetUserPasswordDialog({open, userId, userName, onClose}) {
         if (Object.keys(next).length > 0) return;
 
         mutation.mutate(
-            {id: userId, password},
+            {id: accountId, password},
             {
                 onSuccess: () => {
                     toaster.add({name: 'user-password', theme: 'success', title: t('user.passwordChanged')});

@@ -1,10 +1,10 @@
 import {apiClient} from '@/services/api.js';
 
-// Admin-side CRUD lives under `admin/teachers`; a mentor's own self-service
-// routes live under `teachers/me`. Both are the same domain from the UI's
+// Admin-side CRUD lives under `admin/mentors`; a mentor's own self-service
+// routes live under `mentor/me`. Both are the same domain from the UI's
 // point of view, so they share this module.
 
-// `search` matches first name, last name, phone, email and profession,
+// `search` matches first name, last name, phone and profession,
 // case-insensitively. Sorting is whitelisted server-side and maps onto real
 // columns, so only the documented field names are accepted.
 export async function getMentors({
@@ -16,7 +16,7 @@ export async function getMentors({
     sortBy,
     sortOrder,
 } = {}) {
-    const res = await apiClient.get('admin/teachers', {
+    const res = await apiClient.get('admin/mentors', {
         params: {
             page,
             limit,
@@ -31,54 +31,54 @@ export async function getMentors({
 }
 
 export async function getMentor(id) {
-    const res = await apiClient.get(`admin/teachers/${id}`);
+    const res = await apiClient.get(`admin/mentors/${id}`);
     return res.data;
 }
 
 export async function createMentor(payload) {
-    const res = await apiClient.post('admin/teachers', payload);
+    const res = await apiClient.post('admin/mentors', payload);
     return res.data;
 }
 
 export async function updateMentor({id, ...payload}) {
-    const res = await apiClient.patch(`admin/teachers/${id}`, payload);
+    const res = await apiClient.patch(`admin/mentors/${id}`, payload);
     return res.data;
 }
 
 export async function changeMentorStatus({id, status}) {
-    const res = await apiClient.patch(`admin/teachers/${id}/status`, {status});
+    const res = await apiClient.patch(`admin/mentors/${id}/status`, {status});
     return res.data;
 }
 
 export async function uploadMentorIntroVideo({id, file}) {
     const form = new FormData();
     form.append('video', file);
-    const res = await apiClient.patch(`admin/teachers/${id}/intro-video`, form);
+    const res = await apiClient.patch(`admin/mentors/${id}/intro-video`, form);
     return res.data;
 }
 
 // ── Mentor self-service ──────────────────────────────────────────────────────
 
 export async function getMySummary() {
-    const res = await apiClient.get('teachers/me/summary');
+    const res = await apiClient.get('mentor/me/summary');
     return res.data;
 }
 
 export async function getMySchedule() {
-    const res = await apiClient.get('teachers/me/schedule');
+    const res = await apiClient.get('mentor/me/schedule');
     return res.data;
 }
 
 // Keys are Mon..Sun, values are HH:00 / HH:30 strings - the API rejects any
 // other day name or minute value.
 export async function setMySchedule(schedule) {
-    const res = await apiClient.patch('teachers/me/schedule', {schedule});
+    const res = await apiClient.patch('mentor/me/schedule', {schedule});
     return res.data;
 }
 
 export async function uploadMyIntroVideo(file) {
     const form = new FormData();
     form.append('video', file);
-    const res = await apiClient.patch('teachers/me', form);
+    const res = await apiClient.patch('mentor/me/intro-video', form);
     return res.data;
 }

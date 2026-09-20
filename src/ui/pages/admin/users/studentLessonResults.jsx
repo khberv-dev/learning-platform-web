@@ -3,7 +3,7 @@ import {CheckCircle2, ListChecks} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 import {useStudentLessonResults} from '@/services/task-submission/query.js';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
-import {cdnUrl, formatDateTime} from '@/shared/utils/format.js';
+import {formatDateTime} from '@/shared/utils/format.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import StatCard from '@/ui/components/statCard.jsx';
@@ -17,7 +17,7 @@ function TaskContent({task}) {
     if (task.contentType === 'picture') {
         return (
             <img
-                src={cdnUrl(task.file)}
+                src={task.file}
                 alt=""
                 style={{display: 'block', maxWidth: '100%', maxHeight: 320, borderRadius: 8, marginBottom: 16}}
             />
@@ -25,7 +25,7 @@ function TaskContent({task}) {
     }
 
     if (task.contentType === 'audio') {
-        return <audio src={cdnUrl(task.file)} controls style={{width: '100%', maxWidth: 520, marginBottom: 16}}/>;
+        return <audio src={task.file} controls style={{width: '100%', maxWidth: 520, marginBottom: 16}}/>;
     }
 
     return (

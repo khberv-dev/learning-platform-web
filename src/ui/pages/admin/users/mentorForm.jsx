@@ -13,17 +13,16 @@ import {ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 const PHONE_PATTERN = /^998\d{9}$/;
 const PASSWORD_MIN_LENGTH = 6;
 
-const EMPTY = {firstName: '', lastName: '', email: '', phoneNumber: '', profession: '', password: ''};
+const EMPTY = {firstName: '', lastName: '', phoneNumber: '', profession: '', password: ''};
 
 // The detail payload nests the account fields under `user`; the create and
 // update DTOs take them flat.
 function toFormValues(mentor) {
     if (!mentor) return EMPTY;
     return {
-        firstName: mentor.user?.firstName ?? '',
-        lastName: mentor.user?.lastName ?? '',
-        email: mentor.user?.email ?? '',
-        phoneNumber: mentor.user?.phoneNumber ?? '',
+        firstName: mentor.firstName ?? '',
+        lastName: mentor.lastName ?? '',
+        phoneNumber: mentor.phoneNumber ?? '',
         profession: mentor.profession ?? '',
         password: '',
     };
@@ -60,7 +59,6 @@ function MentorFormFields({id, isEdit, initialValues}) {
         const payload = {
             firstName: form.firstName.trim(),
             lastName: form.lastName.trim() || undefined,
-            email: form.email.trim() || undefined,
             phoneNumber: form.phoneNumber.replace(/\D/g, ''),
             profession: form.profession.trim() || undefined,
         };
@@ -115,9 +113,6 @@ function MentorFormFields({id, isEdit, initialValues}) {
                             placeholder="998901234567"
                             inputMode="numeric"
                         />
-                    </FormField>
-                    <FormField label={t('mentor.email')}>
-                        <TextInput size="l" type="email" value={form.email} onUpdate={setField('email')}/>
                     </FormField>
                     <FormField label={t('mentor.profession')}>
                         <TextInput size="l" value={form.profession} onUpdate={setField('profession')}/>

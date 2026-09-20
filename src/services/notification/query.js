@@ -4,7 +4,7 @@ import {sendPush} from '@/services/notification/api.js';
 export const PUSH_AUDIENCE = {
     ALL: 'all',
     STUDENTS: 'students',
-    TEACHERS: 'teachers',
+    MENTORS: 'mentors',
     PHONES: 'phones',
 };
 

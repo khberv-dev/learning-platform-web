@@ -193,8 +193,8 @@ function AdminPushNotifications() {
                                 <Select.Option value={PUSH_AUDIENCE.STUDENTS}>
                                     {t('push.audienceStudents')}
                                 </Select.Option>
-                                <Select.Option value={PUSH_AUDIENCE.TEACHERS}>
-                                    {t('push.audienceTeachers')}
+                                <Select.Option value={PUSH_AUDIENCE.MENTORS}>
+                                    {t('push.audienceMentors')}
                                 </Select.Option>
                                 <Select.Option value={PUSH_AUDIENCE.ALL}>
                                     {t('push.audienceAll')}

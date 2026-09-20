@@ -6,7 +6,7 @@ import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useChatMessages, useChatRooms, useSendChatFile, useSendChatMessage} from '@/services/chat/query.js';
 import {joinChatRoom, leaveChatRoom, subscribeChatSocket} from '@/services/chat/socket.js';
 import {useMe} from '@/services/user/query.js';
-import {cdnUrl, fullName} from '@/shared/utils/format.js';
+import {fullName} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
@@ -14,7 +14,7 @@ import UserAvatar from '@/ui/components/userAvatar.jsx';
 import {EmptyState, LoadingState} from '@/ui/components/stateViews.jsx';
 
 function MessageBubble({message, own}) {
-    const file = message.filePath ? cdnUrl(message.filePath) : null;
+    const file = message.filePath || null;
 
     return (
         <div style={{display: 'flex', justifyContent: own ? 'flex-end' : 'flex-start'}}>
@@ -47,6 +47,12 @@ function MessageBubble({message, own}) {
             </div>
         </div>
     );
+}
+
+// Rooms list members, each owned by exactly one of student/mentor/admin; the
+// mentor's counterpart is the member carrying a student.
+function roomStudent(room) {
+    return room?.members?.find((member) => member.student)?.student ?? null;
 }
 
 function MentorChat() {
@@ -170,7 +176,7 @@ function MentorChat() {
                     {rooms.isPending && <LoadingState rows={5}/>}
                     {!rooms.isPending && roomList.length === 0 && <EmptyState/>}
                     {roomList.map((room) => {
-                        const student = room.student;
+                        const student = roomStudent(room);
                         const active = room.id === roomId;
                         return (
                             <button
@@ -228,7 +234,7 @@ function MentorChat() {
                                     fontWeight: 600,
                                 }}
                             >
-                                {fullName(activeRoom?.student) || t('chat.title')}
+                                {fullName(roomStudent(activeRoom)) || t('chat.title')}
                             </div>
 
                             <div
@@ -249,7 +255,7 @@ function MentorChat() {
                                     <MessageBubble
                                         key={message.id}
                                         message={message}
-                                        own={message.sender?.id === me?.id}
+                                        own={message.mentor?.id === me?.id}
                                     />
                                 ))}
                                 <div ref={bottomRef}/>
