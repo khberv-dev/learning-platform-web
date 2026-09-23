@@ -112,7 +112,7 @@ function AdminEnrollments() {
                                 loading={courses.isPending}
                             >
                                 <Select.Option value="">{t('common.all')}</Select.Option>
-                                {(courses.data ?? []).map((course) => (
+                                {(courses.data?.data ?? []).map((course) => (
                                     <Select.Option key={course.id} value={course.id}>
                                         {course.title}
                                     </Select.Option>

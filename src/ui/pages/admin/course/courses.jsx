@@ -62,7 +62,7 @@ function AdminCourses() {
     // New courses land at the end by default - one past the highest in use.
     // Courses left at 0 keep the old newest-first order, since the API breaks
     // ties on createdAt DESC here (units and lessons tie on ASC instead).
-    const nextIndex = () => Math.max(0, ...(query.data ?? []).map((course) => course.index ?? 0)) + 1;
+    const nextIndex = () => Math.max(0, ...(query.data?.data ?? []).map((course) => course.index ?? 0)) + 1;
 
     const handleCreate = () => {
         if (!form.title.trim()) return;
@@ -178,10 +178,8 @@ function AdminCourses() {
             />
 
             <PageSection>
-                {/* admin/courses returns a bare array, not a paginated envelope. */}
                 <DataTable
                     query={query}
-                    rows={query.data ?? []}
                     columns={columns}
                     onRowClick={(row) => navigate(`/admin/course/courses/${row.id}`)}
                 />

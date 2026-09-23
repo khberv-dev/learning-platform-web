@@ -9,7 +9,7 @@ import {
 export const usePaymentTypes = () => {
     return useQuery({
         queryKey: ['payment-type', 'list'],
-        queryFn: getPaymentTypes,
+        queryFn: () => getPaymentTypes(),
     });
 };
 

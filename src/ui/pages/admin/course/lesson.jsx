@@ -287,7 +287,7 @@ function AdminLesson() {
                 >
                     <DataTable
                         query={tasksQuery}
-                        rows={tasksQuery.data ?? []}
+                        rows={tasksQuery.data?.data ?? []}
                         columns={columns}
                         onRowClick={(row) =>
                             navigate(

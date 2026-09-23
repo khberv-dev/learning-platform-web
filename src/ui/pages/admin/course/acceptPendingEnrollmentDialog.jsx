@@ -23,7 +23,7 @@ function AcceptPendingEnrollmentDialog({open, pending, onClose}) {
 
     const courseId = pending?.course?.id;
     const plans = usePlans(courseId);
-    const planOptions = useMemo(() => plans.data ?? [], [plans.data]);
+    const planOptions = useMemo(() => plans.data?.data ?? [], [plans.data]);
 
     const selectedPlan = useMemo(
         () => planOptions.find((plan) => plan.id === planId),

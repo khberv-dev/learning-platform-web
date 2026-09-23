@@ -146,7 +146,7 @@ function CoursePlans({courseId}) {
                 </Button>
             }
         >
-            <DataTable query={query} rows={query.data ?? []} columns={columns}/>
+            <DataTable query={query} columns={columns}/>
 
             <Dialog open={Boolean(dialog)} onClose={() => setDialog(null)} size="s">
                 <Dialog.Header caption={dialog?.mode === 'edit' ? t('plan.edit') : t('plan.create')}/>

@@ -3,8 +3,11 @@ import {apiClient} from '@/services/api.js';
 // Plans hang off a course - a course has no price of its own, the plan carries
 // `price`, `month` (duration) and `hasMentor`.
 
-export async function getPlans(courseId) {
-    const res = await apiClient.get(`admin/courses/${courseId}/plans`);
+// Paginated; 100 is the API's own cap on `limit` and comfortably covers every
+// plan a course has in one request - there is no pagination UI here, and the
+// course/plan pickers elsewhere need the full list to choose from.
+export async function getPlans(courseId, {page = 1, limit = 100} = {}) {
+    const res = await apiClient.get(`admin/courses/${courseId}/plans`, {params: {page, limit}});
     return res.data;
 }
 

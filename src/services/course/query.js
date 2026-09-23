@@ -33,7 +33,7 @@ export const TASK_CONTENT_TYPE = {
 export const useCourses = () => {
     return useQuery({
         queryKey: ['course', 'list'],
-        queryFn: getCourses,
+        queryFn: () => getCourses(),
     });
 };
 
@@ -83,7 +83,7 @@ export const useLesson = ({courseId, unitId, lessonId}) => {
         queryKey: ['course', 'lessons', courseId, unitId],
         queryFn: () => getLessons({courseId, unitId}),
         enabled: Boolean(courseId && unitId && lessonId),
-        select: (lessons) => lessons.find((lesson) => lesson.id === lessonId) ?? null,
+        select: (response) => response.data.find((lesson) => lesson.id === lessonId) ?? null,
     });
 };
 
@@ -92,7 +92,7 @@ export const useTask = ({courseId, unitId, lessonId, taskId}) => {
         queryKey: ['course', 'tasks', courseId, unitId, lessonId],
         queryFn: () => getTasks({courseId, unitId, lessonId}),
         enabled: Boolean(courseId && unitId && lessonId && taskId),
-        select: (tasks) => tasks.find((task) => task.id === taskId) ?? null,
+        select: (response) => response.data.find((task) => task.id === taskId) ?? null,
     });
 };
 

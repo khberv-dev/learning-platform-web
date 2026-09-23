@@ -13,8 +13,10 @@ function asForm(payload, icon) {
     return form;
 }
 
-export async function getPaymentTypes() {
-    const res = await apiClient.get('admin/payment-types');
+// Paginated; 100 is the API's own cap on `limit` and comfortably covers every
+// payment type in one request - the list page has no pagination UI.
+export async function getPaymentTypes({page = 1, limit = 100} = {}) {
+    const res = await apiClient.get('admin/payment-types', {params: {page, limit}});
     return res.data;
 }
 

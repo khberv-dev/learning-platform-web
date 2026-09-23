@@ -165,7 +165,7 @@ function AdminPaymentTypes() {
                 }
             />
             <PageSection>
-                <DataTable query={query} rows={query.data ?? []} columns={columns}/>
+                <DataTable query={query} columns={columns}/>
             </PageSection>
 
             <Dialog open={Boolean(dialog)} onClose={() => setDialog(null)} size="m">

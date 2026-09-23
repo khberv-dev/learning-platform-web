@@ -97,7 +97,7 @@ function AdminUnit() {
 
     // New lessons land at the end by default - one past the highest in use.
     const nextIndex = () =>
-        Math.max(0, ...(lessonsQuery.data ?? []).map((lesson) => lesson.index ?? 0)) + 1;
+        Math.max(0, ...(lessonsQuery.data?.data ?? []).map((lesson) => lesson.index ?? 0)) + 1;
 
     const submitLesson = () => {
         const title = form.title.trim();
@@ -214,7 +214,7 @@ function AdminUnit() {
                 >
                     <DataTable
                         query={lessonsQuery}
-                        rows={lessonsQuery.data ?? []}
+                        rows={lessonsQuery.data?.data ?? []}
                         columns={columns}
                         onRowClick={(row) =>
                             navigate(

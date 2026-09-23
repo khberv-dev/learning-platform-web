@@ -107,7 +107,7 @@ The admin dashboard keeps growth and activity metrics visually separate. `admin/
 
 ### Known API shapes
 
-Most list endpoints return `{data, total, page, limit, totalPages}`, but **`GET admin/courses`, `GET admin/payment-types` and `GET admin/courses/:id/plans` return bare arrays** — `DataTable` takes `rows` instead of reading the envelope for those.
+Every list endpoint returns `{data, total, page, limit, totalPages}` now — `GET admin/courses`, `GET admin/payment-types` and `GET admin/courses/:id/plans` were the last bare-array holdouts and are paginated too, so `DataTable` never needs an explicit `rows` for them any more (it already falls back to `query.data.data` on its own). None of their pages built pagination controls, though: `getCourses`/`getPaymentTypes`/`getPlans` all default to `limit: 100` (the API's own cap) rather than the usual 15, since a course/plan/payment-type picker elsewhere needs the whole list to choose from, not one page of it.
 
 **The course tree is paged out across three levels, not one nested payload.** The API deliberately stopped embedding children so a list request wouldn't drag the whole tree along:
 
@@ -132,7 +132,7 @@ Courses, units and lessons all carry an admin-set **`index`** (int, default 0) a
   .../tasks/:taskId/questions/:index                              question: text, options, answer
 ```
 
-The API has no "get one unit/lesson/task" route, so `useUnit`/`useLesson`/`useTask` are `select`-based hooks over the *parent list's* query key — opening a detail page reuses the list's cached data instead of firing its own request.
+The API has no "get one unit/lesson/task" route, so `useUnit`/`useLesson`/`useTask` are `select`-based hooks over the *parent list's* query key — opening a detail page reuses the list's cached data instead of firing its own request. The lessons and tasks lists (`GET .../lessons`, `GET .../lessons/:lessonId/tasks`) are paginated like everything else — `getLessons`/`getTasks` default to `limit: 100` since neither page has pagination UI, and `useLesson`/`useTask`'s `select` reads `response.data.find(...)`, not the raw result.
 
 `Task.questions` is a **jsonb array with no per-entry ids**, so a question is addressed by array index and every edit, add or delete PATCHes the whole rebuilt `questions` array back onto the task.
 

@@ -25,8 +25,8 @@ function EnrollStudentDialog({open, studentId, studentName, onClose}) {
     const courses = useCourses();
     const plans = usePlans(courseId);
 
-    const courseOptions = courses.data ?? [];
-    const planOptions = useMemo(() => plans.data ?? [], [plans.data]);
+    const courseOptions = courses.data?.data ?? [];
+    const planOptions = useMemo(() => plans.data?.data ?? [], [plans.data]);
 
     // With a plan the API derives course, duration and price; without one it
     // needs an explicit end date, since there's nothing to compute a term from.
