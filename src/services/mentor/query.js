@@ -4,15 +4,14 @@ import {
     createMentor,
     getMentor,
     getMentors,
-    getMySchedule,
     getMySummary,
-    setMySchedule,
     updateMentor,
+    uploadMentorAvatar,
     uploadMentorIntroVideo,
     uploadMyIntroVideo,
 } from '@/services/mentor/api.js';
 
-// Mentor status values come from the API's TeacherStatus enum (lowercase on
+// Mentor status values come from the API's MentorStatus enum (lowercase on
 // the wire, despite the uppercase Swagger examples).
 export const MENTOR_STATUS = {
     ACTIVE: 'active',
@@ -21,13 +20,14 @@ export const MENTOR_STATUS = {
 };
 
 // Whitelisted server-side; anything else is rejected rather than reaching SQL.
-// Narrower than the student list - no points/coins/balance - but adds
-// `profession`, which is a mentor-only column.
+// Narrower than the student list - no points/coins/balance - but adds `role`,
+// a mentor-only column (their own primary/support classification, distinct
+// from GroupMentor.role which is per-group).
 export const MENTOR_SORT_FIELDS = [
     'createdAt',
     'updatedAt',
     'status',
-    'profession',
+    'role',
     'firstName',
     'lastName',
 ];
@@ -63,6 +63,7 @@ export const useCreateMentor = () => useMentorMutation(createMentor);
 export const useUpdateMentor = () => useMentorMutation(updateMentor);
 export const useChangeMentorStatus = () => useMentorMutation(changeMentorStatus);
 export const useUploadMentorIntroVideo = () => useMentorMutation(uploadMentorIntroVideo);
+export const useUploadMentorAvatar = () => useMentorMutation(uploadMentorAvatar);
 
 // ── Mentor self-service ──────────────────────────────────────────────────────
 
@@ -73,12 +74,4 @@ export const useMySummary = () => {
     });
 };
 
-export const useMySchedule = () => {
-    return useQuery({
-        queryKey: ['mentor', 'me', 'schedule'],
-        queryFn: getMySchedule,
-    });
-};
-
-export const useSetMySchedule = () => useMentorMutation(setMySchedule);
 export const useUploadMyIntroVideo = () => useMentorMutation(uploadMyIntroVideo);

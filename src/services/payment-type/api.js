@@ -18,13 +18,13 @@ export async function getPaymentTypes() {
     return res.data;
 }
 
-export async function createPaymentType({icon, ...payload}) {
-    const res = await apiClient.post('admin/payment-types', asForm(payload, icon));
+export async function createPaymentType({icon, onUploadProgress, ...payload}) {
+    const res = await apiClient.post('admin/payment-types', asForm(payload, icon), {onUploadProgress});
     return res.data;
 }
 
-export async function updatePaymentType({id, icon, ...payload}) {
-    const res = await apiClient.patch(`admin/payment-types/${id}`, asForm(payload, icon));
+export async function updatePaymentType({id, icon, onUploadProgress, ...payload}) {
+    const res = await apiClient.patch(`admin/payment-types/${id}`, asForm(payload, icon), {onUploadProgress});
     return res.data;
 }
 

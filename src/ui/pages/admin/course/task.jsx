@@ -1,7 +1,7 @@
-import {useRef, useState} from 'react';
+import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {Button, Dialog, Label, TextArea, TextInput} from '@gravity-ui/uikit';
-import {ChevronRight, FileText, Plus, Trash2, Upload} from 'lucide-react';
+import {ChevronRight, FileText, Plus, Trash2} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {
     useCourse,
@@ -15,11 +15,14 @@ import {
 } from '@/services/course/query.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
+import {IMAGE_RULES, validateFile} from '@/shared/utils/fileValidation.js';
+import {useUploadProgress} from '@/shared/hooks/useUploadProgress.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import FormField from '@/ui/components/formField.jsx';
 import DataTable from '@/ui/components/dataTable.jsx';
 import ConfirmDialog from '@/ui/components/confirmDialog.jsx';
+import FileDropCard from '@/ui/components/fileDropCard.jsx';
 import {ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 
 function TaskNameForm({base, initialName}) {
@@ -69,8 +72,9 @@ function AdminTask() {
     const deleteQuestion = useDeleteTaskQuestion();
     const uploadFile = useUploadTaskFile();
 
-    const fileInputRef = useRef(null);
     const [confirmDeleteTask, setConfirmDeleteTask] = useState(false);
+    const fileProgress = useUploadProgress();
+    const [taskFile, setTaskFile] = useState(null);
     const [confirmDeleteQuestion, setConfirmDeleteQuestion] = useState(null);
     const [textDialogOpen, setTextDialogOpen] = useState(false);
     const [textContent, setTextContent] = useState('');
@@ -85,22 +89,41 @@ function AdminTask() {
     const lessonPath = `${unitPath}/lessons/${lessonId}`;
     const taskPath = `${lessonPath}/tasks/${taskId}`;
 
-    const handleFilePicked = (event) => {
-        const file = event.target.files?.[0];
-        event.target.value = '';
-        if (!file) return;
+    const handleFilePicked = (file) => {
+        if (!file) {
+            setTaskFile(null);
+            return;
+        }
+
+        // The field takes either an audio clip or a picture; only the picture
+        // side has a stated size/type rule (FileDropCard has no single `rules`
+        // that fits a mixed-type field, so this stays a manual check).
+        if (file.type.startsWith('image/')) {
+            const invalid = validateFile(file, IMAGE_RULES);
+            if (invalid) {
+                toaster.add({name: 'task-file-invalid', theme: 'danger', title: t(invalid.key, invalid.vars)});
+                return;
+            }
+        }
+        setTaskFile(file);
 
         uploadFile.mutate(
-            {...base, file},
+            {...base, file, onUploadProgress: fileProgress.onUploadProgress},
             {
-                onSuccess: () =>
-                    toaster.add({name: 'task-file', theme: 'success', title: t('common.saved')}),
-                onError: (error) =>
+                onSuccess: () => {
+                    toaster.add({name: 'task-file', theme: 'success', title: t('common.saved')});
+                    setTaskFile(null);
+                    fileProgress.reset();
+                },
+                onError: (error) => {
                     toaster.add({
                         name: 'task-file-failed',
                         theme: 'danger',
                         title: extractApiErrorMessage(error, t('common.error')),
-                    }),
+                    });
+                    setTaskFile(null);
+                    fileProgress.reset();
+                },
             }
         );
     };
@@ -229,47 +252,41 @@ function AdminTask() {
                     title={t('course.file')}
                     description={t('course.contentType') + ': ' + (task.contentType ?? '—')}
                     actions={
-                        <div style={{display: 'flex', gap: 8}}>
-                            <Button onClick={openTextDialog} loading={updateTask.isPending}>
-                                <Button.Icon>
-                                    <FileText size={16}/>
-                                </Button.Icon>
-                                {task.contentType === 'text' ? t('course.editText') : t('course.addText')}
-                            </Button>
-                            <Button onClick={() => fileInputRef.current?.click()} loading={uploadFile.isPending}>
-                                <Button.Icon>
-                                    <Upload size={16}/>
-                                </Button.Icon>
-                                {t('course.uploadFile')}
-                            </Button>
-                        </div>
+                        <Button onClick={openTextDialog} loading={updateTask.isPending}>
+                            <Button.Icon>
+                                <FileText size={16}/>
+                            </Button.Icon>
+                            {task.contentType === 'text' ? t('course.editText') : t('course.addText')}
+                        </Button>
                     }
                 >
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="audio/*,image/*"
-                        style={{display: 'none'}}
-                        onChange={handleFilePicked}
-                    />
-                    {task.file && task.contentType === 'picture' && (
-                        <img
-                            src={task.file}
-                            alt=""
-                            style={{maxWidth: 320, borderRadius: 8, display: 'block'}}
+                    <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                        {task.file && task.contentType === 'picture' && (
+                            <img
+                                src={task.file}
+                                alt=""
+                                style={{maxWidth: 320, borderRadius: 8, display: 'block'}}
+                            />
+                        )}
+                        {task.file && task.contentType === 'audio' && (
+                            <audio src={task.file} controls style={{width: '100%', maxWidth: 320}}/>
+                        )}
+                        {task.file && task.contentType === 'text' && (
+                            <div style={{fontSize: 14, whiteSpace: 'pre-wrap'}}>{task.file}</div>
+                        )}
+                        {!task.file && (
+                            <div style={{fontSize: 13, color: 'var(--g-color-text-secondary)'}}>
+                                {t('common.empty')}
+                            </div>
+                        )}
+                        <FileDropCard
+                            value={taskFile}
+                            onChange={handleFilePicked}
+                            accept="audio/*,image/png,image/jpeg"
+                            progress={fileProgress.progress}
+                            disabled={uploadFile.isPending}
                         />
-                    )}
-                    {task.file && task.contentType === 'audio' && (
-                        <audio src={task.file} controls style={{width: '100%', maxWidth: 320}}/>
-                    )}
-                    {task.file && task.contentType === 'text' && (
-                        <div style={{fontSize: 14, whiteSpace: 'pre-wrap'}}>{task.file}</div>
-                    )}
-                    {!task.file && (
-                        <div style={{fontSize: 13, color: 'var(--g-color-text-secondary)'}}>
-                            {t('common.empty')}
-                        </div>
-                    )}
+                    </div>
                 </PageSection>
 
                 {/* "Add question" opens an empty form; the question is only

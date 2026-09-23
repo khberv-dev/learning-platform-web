@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {SegmentedRadioGroup} from '@gravity-ui/uikit';
-import {Activity, CalendarClock, CalendarDays, CalendarRange, UserCheck, UserCog, Users} from 'lucide-react';
+import {Activity, CalendarClock, CalendarDays, CalendarRange, UserCog, Users} from 'lucide-react';
 import {CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import dayjs from 'dayjs';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
@@ -10,8 +10,8 @@ import PageSection from '@/ui/components/pageSection.jsx';
 import StatCard from '@/ui/components/statCard.jsx';
 import {ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 
-// Growth rows carry only new students and new enrollments; mentors and
-// assignments are current totals on the summary cards, not daily series.
+// Growth rows carry only new students and new enrollments; mentors is a
+// current total on the summary cards, not a daily series.
 // Recharts renders as SVG, so these can reference Gravity's CSS custom
 // properties directly and follow a theme switch with no JS involved.
 const GROWTH_SERIES = [
@@ -185,12 +185,6 @@ function AdminHome() {
                     label={t('dashboard.enrollments')}
                     value={summary.data?.enrollments}
                     icon={CalendarClock}
-                    loading={summary.isPending}
-                />
-                <StatCard
-                    label={t('dashboard.assignments')}
-                    value={summary.data?.assignments}
-                    icon={UserCheck}
                     loading={summary.isPending}
                 />
             </div>

@@ -1,20 +1,25 @@
-import {useRef, useState} from 'react';
+import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {Button, Select, Table} from '@gravity-ui/uikit';
-import {KeyRound, Pencil, Upload} from 'lucide-react';
+import {KeyRound, Pencil} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {
     MENTOR_STATUS,
     useChangeMentorStatus,
     useMentor,
+    useUploadMentorAvatar,
     useUploadMentorIntroVideo,
 } from '@/services/mentor/query.js';
+import {GROUP_MENTOR_ROLE} from '@/services/group/query.js';
+import {IMAGE_RULES, VIDEO_RULES} from '@/shared/utils/fileValidation.js';
+import {useUploadProgress} from '@/shared/hooks/useUploadProgress.js';
 import {formatDateTime, formatPhone, fullName} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import UserAvatar from '@/ui/components/userAvatar.jsx';
+import FileDropCard from '@/ui/components/fileDropCard.jsx';
 import StatusLabel from '@/ui/components/statusLabel.jsx';
 import {EmptyState, ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 import SetUserPasswordDialog from '@/ui/pages/admin/users/setUserPasswordDialog.jsx';
@@ -35,7 +40,11 @@ function AdminMentorDetail() {
     const query = useMentor(id);
     const changeStatus = useChangeMentorStatus();
     const uploadVideo = useUploadMentorIntroVideo();
-    const fileInputRef = useRef(null);
+    const uploadAvatar = useUploadMentorAvatar();
+    const videoProgress = useUploadProgress();
+    const avatarProgress = useUploadProgress();
+    const [videoFile, setVideoFile] = useState(null);
+    const [avatarFile, setAvatarFile] = useState(null);
     const [status, setStatus] = useState(null);
     const [passwordOpen, setPasswordOpen] = useState(false);
 
@@ -70,23 +79,58 @@ function AdminMentorDetail() {
         );
     };
 
-    const handleVideoChange = (event) => {
-        const file = event.target.files?.[0];
-        // Reset so picking the same file twice still fires a change event.
-        event.target.value = '';
-        if (!file) return;
+    const handleVideoChange = (file) => {
+        if (!file) {
+            setVideoFile(null);
+            return;
+        }
+        setVideoFile(file);
 
         uploadVideo.mutate(
-            {id, file},
+            {id, file, onUploadProgress: videoProgress.onUploadProgress},
             {
-                onSuccess: () =>
-                    toaster.add({name: 'intro-video', theme: 'success', title: t('common.saved')}),
-                onError: (error) =>
+                onSuccess: () => {
+                    toaster.add({name: 'intro-video', theme: 'success', title: t('common.saved')});
+                    setVideoFile(null);
+                    videoProgress.reset();
+                },
+                onError: (error) => {
                     toaster.add({
                         name: 'intro-video-failed',
                         theme: 'danger',
                         title: extractApiErrorMessage(error, t('common.error')),
-                    }),
+                    });
+                    setVideoFile(null);
+                    videoProgress.reset();
+                },
+            }
+        );
+    };
+
+    const handleAvatarChange = (file) => {
+        if (!file) {
+            setAvatarFile(null);
+            return;
+        }
+        setAvatarFile(file);
+
+        uploadAvatar.mutate(
+            {id, file, onUploadProgress: avatarProgress.onUploadProgress},
+            {
+                onSuccess: () => {
+                    toaster.add({name: 'avatar', theme: 'success', title: t('common.saved')});
+                    setAvatarFile(null);
+                    avatarProgress.reset();
+                },
+                onError: (error) => {
+                    toaster.add({
+                        name: 'avatar-failed',
+                        theme: 'danger',
+                        title: extractApiErrorMessage(error, t('common.error')),
+                    });
+                    setAvatarFile(null);
+                    avatarProgress.reset();
+                },
             }
         );
     };
@@ -105,7 +149,7 @@ function AdminMentorDetail() {
         },
         {
             id: 'changedBy',
-            name: t('assignment.mentor'),
+            name: t('mentor.changedBy'),
             template: (row) => fullName(row.changedBy) || '—',
         },
         {
@@ -119,7 +163,7 @@ function AdminMentorDetail() {
         <>
             <PageHeader
                 title={name}
-                description={mentor.profession}
+                description={t(mentor.role === GROUP_MENTOR_ROLE.PRIMARY ? 'group.rolePrimary' : 'group.roleSupport')}
                 backTo="/admin/users/mentors"
                 breadcrumbs={[
                     {title: t('mentor.title'), to: '/admin/users/mentors'},
@@ -145,22 +189,34 @@ function AdminMentorDetail() {
 
             <div style={{display: 'grid', gap: 16, gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)'}}>
                 <PageSection title={t('settings.profile')}>
-                    <div style={{display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20}}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16}}>
                         <UserAvatar avatar={mentor.avatar} name={name} size="xl"/>
-                        <div>
+                        <div style={{flex: 1, minWidth: 0}}>
                             <div style={{fontSize: 16, fontWeight: 600}}>{name}</div>
                             <StatusLabel status={mentor.status} i18nPrefix="mentor"/>
                         </div>
                     </div>
+                    <FileDropCard
+                        value={avatarFile}
+                        onChange={handleAvatarChange}
+                        accept="image/png,image/jpeg"
+                        rules={IMAGE_RULES}
+                        progress={avatarProgress.progress}
+                        disabled={uploadAvatar.isPending}
+                    />
                     <div
                         style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
                             gap: 16,
+                            marginTop: 20,
                         }}
                     >
                         <Field label={t('mentor.phone')} value={formatPhone(mentor.phoneNumber)}/>
-                        <Field label={t('mentor.profession')} value={mentor.profession}/>
+                        <Field
+                            label={t('mentor.role')}
+                            value={t(mentor.role === GROUP_MENTOR_ROLE.PRIMARY ? 'group.rolePrimary' : 'group.roleSupport')}
+                        />
                         <Field label={t('common.createdAt')} value={formatDateTime(mentor.createdAt)}/>
                     </div>
                 </PageSection>
@@ -186,40 +242,28 @@ function AdminMentorDetail() {
                         </Select>
                     </PageSection>
 
-                    <PageSection
-                        title={t('mentor.introVideo')}
-                        actions={
-                            <Button
-                                onClick={() => fileInputRef.current?.click()}
-                                loading={uploadVideo.isPending}
-                            >
-                                <Button.Icon>
-                                    <Upload size={16}/>
-                                </Button.Icon>
-                                {t('mentor.uploadVideo')}
-                            </Button>
-                        }
-                    >
-                        {/* The picker opens only from the button above - never
-                            automatically on mount. */}
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="video/*"
-                            onChange={handleVideoChange}
-                            style={{display: 'none'}}
-                        />
-                        {mentor.introVideo ? (
-                            <video
-                                src={mentor.introVideo}
-                                controls
-                                style={{width: '100%', borderRadius: 8}}
+                    <PageSection title={t('mentor.introVideo')}>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                            {mentor.introVideo ? (
+                                <video
+                                    src={mentor.introVideo}
+                                    controls
+                                    style={{width: '100%', borderRadius: 8}}
+                                />
+                            ) : (
+                                <div style={{fontSize: 13, color: 'var(--g-color-text-secondary)'}}>
+                                    {t('common.empty')}
+                                </div>
+                            )}
+                            <FileDropCard
+                                value={videoFile}
+                                onChange={handleVideoChange}
+                                accept="video/mp4"
+                                rules={VIDEO_RULES}
+                                progress={videoProgress.progress}
+                                disabled={uploadVideo.isPending}
                             />
-                        ) : (
-                            <div style={{fontSize: 13, color: 'var(--g-color-text-secondary)'}}>
-                                {t('common.empty')}
-                            </div>
-                        )}
+                        </div>
                     </PageSection>
                 </div>
             </div>

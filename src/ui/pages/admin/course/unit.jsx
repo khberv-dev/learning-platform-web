@@ -14,11 +14,14 @@ import {
 import {toOptionalNumber} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
+import {VIDEO_RULES} from '@/shared/utils/fileValidation.js';
+import {useUploadProgress} from '@/shared/hooks/useUploadProgress.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import FormField from '@/ui/components/formField.jsx';
 import DataTable from '@/ui/components/dataTable.jsx';
 import ConfirmDialog from '@/ui/components/confirmDialog.jsx';
+import FileDropCard from '@/ui/components/fileDropCard.jsx';
 import {ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 
 function UnitTitleForm({courseId, unitId, initialValues}) {
@@ -84,6 +87,7 @@ function AdminUnit() {
     const lessonsQuery = useLessons({courseId, unitId});
     const createLesson = useCreateLesson();
     const deleteUnit = useDeleteUnit();
+    const {progress, onUploadProgress, reset} = useUploadProgress();
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [form, setForm] = useState({title: '', description: '', index: '', media: null});
@@ -107,19 +111,23 @@ function AdminUnit() {
                 description: form.description.trim() || undefined,
                 index: toOptionalNumber(form.index),
                 media: form.media,
+                onUploadProgress,
             },
             {
                 onSuccess: () => {
                     toaster.add({name: 'lesson-saved', theme: 'success', title: t('common.saved')});
                     setDialogOpen(false);
                     setForm({title: '', description: '', index: '', media: null});
+                    reset();
                 },
-                onError: (error) =>
+                onError: (error) => {
                     toaster.add({
                         name: 'lesson-failed',
                         theme: 'danger',
                         title: extractApiErrorMessage(error, t('common.error')),
-                    }),
+                    });
+                    reset();
+                },
             }
         );
     };
@@ -242,10 +250,13 @@ function AdminUnit() {
                             />
                         </FormField>
                         <FormField label={t('course.media')} hint={t('common.optional')}>
-                            <input
-                                type="file"
-                                accept="video/*"
-                                onChange={(event) => setField('media')(event.target.files?.[0] ?? null)}
+                            <FileDropCard
+                                value={form.media}
+                                onChange={setField('media')}
+                                accept="video/mp4"
+                                rules={VIDEO_RULES}
+                                progress={progress}
+                                disabled={createLesson.isPending}
                             />
                         </FormField>
                     </div>

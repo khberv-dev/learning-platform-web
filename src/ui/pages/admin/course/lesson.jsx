@@ -1,7 +1,7 @@
-import {useRef, useState} from 'react';
+import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {Button, Dialog, Label, TextArea, TextInput} from '@gravity-ui/uikit';
-import {ChevronRight, Plus, Trash2, Upload} from 'lucide-react';
+import {ChevronRight, Plus, Trash2} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {
     useCourse,
@@ -17,11 +17,14 @@ import {
 import {toOptionalNumber} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
+import {VIDEO_RULES} from '@/shared/utils/fileValidation.js';
+import {useUploadProgress} from '@/shared/hooks/useUploadProgress.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import FormField from '@/ui/components/formField.jsx';
 import DataTable from '@/ui/components/dataTable.jsx';
 import ConfirmDialog from '@/ui/components/confirmDialog.jsx';
+import FileDropCard from '@/ui/components/fileDropCard.jsx';
 import {ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 
 function LessonForm({courseId, unitId, lessonId, initialValues}) {
@@ -101,28 +104,37 @@ function AdminLesson() {
     const deleteMedia = useDeleteLessonMedia();
     const uploadMedia = useUploadLessonMedia();
 
-    const mediaInputRef = useRef(null);
+    const mediaProgress = useUploadProgress();
+    const [mediaFile, setMediaFile] = useState(null);
     const [taskName, setTaskName] = useState('');
     const [dialogOpen, setDialogOpen] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [confirmMediaDelete, setConfirmMediaDelete] = useState(false);
 
-    const handleMediaPicked = (event) => {
-        const file = event.target.files?.[0];
-        event.target.value = '';
-        if (!file) return;
+    const handleMediaPicked = (file) => {
+        if (!file) {
+            setMediaFile(null);
+            return;
+        }
+        setMediaFile(file);
 
         uploadMedia.mutate(
-            {courseId, unitId, lessonId, media: file},
+            {courseId, unitId, lessonId, media: file, onUploadProgress: mediaProgress.onUploadProgress},
             {
-                onSuccess: () =>
-                    toaster.add({name: 'media-uploaded', theme: 'success', title: t('common.saved')}),
-                onError: (error) =>
+                onSuccess: () => {
+                    toaster.add({name: 'media-uploaded', theme: 'success', title: t('common.saved')});
+                    setMediaFile(null);
+                    mediaProgress.reset();
+                },
+                onError: (error) => {
                     toaster.add({
                         name: 'media-failed',
                         theme: 'danger',
                         title: extractApiErrorMessage(error, t('common.error')),
-                    }),
+                    });
+                    setMediaFile(null);
+                    mediaProgress.reset();
+                },
             }
         );
     };
@@ -229,42 +241,37 @@ function AdminLesson() {
                 <PageSection
                     title={t('course.media')}
                     actions={
-                        <div style={{display: 'flex', gap: 8}}>
-                            <Button onClick={() => mediaInputRef.current?.click()} loading={uploadMedia.isPending}>
+                        lesson.media && (
+                            <Button view="outlined-danger" onClick={() => setConfirmMediaDelete(true)}>
                                 <Button.Icon>
-                                    <Upload size={16}/>
+                                    <Trash2 size={16}/>
                                 </Button.Icon>
-                                {lesson.media ? t('course.replaceVideo') : t('course.uploadVideo')}
+                                {t('course.deleteVideo')}
                             </Button>
-                            {lesson.media && (
-                                <Button view="outlined-danger" onClick={() => setConfirmMediaDelete(true)}>
-                                    <Button.Icon>
-                                        <Trash2 size={16}/>
-                                    </Button.Icon>
-                                    {t('course.deleteVideo')}
-                                </Button>
-                            )}
-                        </div>
+                        )
                     }
                 >
-                    <input
-                        ref={mediaInputRef}
-                        type="file"
-                        accept="video/*"
-                        style={{display: 'none'}}
-                        onChange={handleMediaPicked}
-                    />
-                    {lesson.media ? (
-                        <video
-                            src={lesson.media}
-                            controls
-                            style={{width: '100%', maxWidth: 480, borderRadius: 8}}
+                    <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                        {lesson.media ? (
+                            <video
+                                src={lesson.media}
+                                controls
+                                style={{width: '100%', maxWidth: 480, borderRadius: 8}}
+                            />
+                        ) : (
+                            <div style={{fontSize: 13, color: 'var(--g-color-text-secondary)'}}>
+                                {t('common.empty')}
+                            </div>
+                        )}
+                        <FileDropCard
+                            value={mediaFile}
+                            onChange={handleMediaPicked}
+                            accept="video/mp4"
+                            rules={VIDEO_RULES}
+                            progress={mediaProgress.progress}
+                            disabled={uploadMedia.isPending}
                         />
-                    ) : (
-                        <div style={{fontSize: 13, color: 'var(--g-color-text-secondary)'}}>
-                            {t('common.empty')}
-                        </div>
-                    )}
+                    </div>
                 </PageSection>
 
                 <PageSection

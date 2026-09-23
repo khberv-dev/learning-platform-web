@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {Button, Checkbox, TabProvider, TabList, Tab, TabPanel, TextArea, TextInput} from '@gravity-ui/uikit';
 import {Trash2} from 'lucide-react';
@@ -7,10 +7,13 @@ import {useCourse, useDeleteCourse, useUpdateCourse} from '@/services/course/que
 import {toOptionalNumber} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
+import {IMAGE_RULES} from '@/shared/utils/fileValidation.js';
+import {useUploadProgress} from '@/shared/hooks/useUploadProgress.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import FormField from '@/ui/components/formField.jsx';
 import ConfirmDialog from '@/ui/components/confirmDialog.jsx';
+import FileDropCard from '@/ui/components/fileDropCard.jsx';
 import {ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 import CourseContent from '@/ui/pages/admin/course/courseContent.jsx';
 import CoursePlans from '@/ui/pages/admin/course/coursePlans.jsx';
@@ -18,7 +21,7 @@ import CoursePlans from '@/ui/pages/admin/course/coursePlans.jsx';
 function CourseSettings({course}) {
     const {t} = useI18n();
     const updateCourse = useUpdateCourse();
-    const fileInputRef = useRef(null);
+    const {progress, onUploadProgress, reset} = useUploadProgress();
     const [form, setForm] = useState({
         title: course.title ?? '',
         description: course.description ?? '',
@@ -39,18 +42,22 @@ function CourseSettings({course}) {
                 index: toOptionalNumber(form.index),
                 isActive: form.isActive,
                 image: form.image,
+                onUploadProgress,
             },
             {
                 onSuccess: () => {
                     toaster.add({name: 'course-updated', theme: 'success', title: t('course.updated')});
                     setField('image')(null);
+                    reset();
                 },
-                onError: (error) =>
+                onError: (error) => {
                     toaster.add({
                         name: 'course-update-failed',
                         theme: 'danger',
                         title: extractApiErrorMessage(error, t('common.error')),
-                    }),
+                    });
+                    reset();
+                },
             }
         );
     };
@@ -96,21 +103,19 @@ function CourseSettings({course}) {
                             <img
                                 src={preview}
                                 alt=""
-                                style={{width: 96, height: 64, objectFit: 'cover', borderRadius: 6}}
+                                style={{width: 96, height: 64, objectFit: 'cover', borderRadius: 6, flexShrink: 0}}
                             />
                         )}
-                        <Button onClick={() => fileInputRef.current?.click()}>{t('course.image')}</Button>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            style={{display: 'none'}}
-                            onChange={(event) => {
-                                const file = event.target.files?.[0] ?? null;
-                                event.target.value = '';
-                                setField('image')(file);
-                            }}
-                        />
+                        <div style={{flex: 1}}>
+                            <FileDropCard
+                                value={form.image}
+                                onChange={setField('image')}
+                                accept="image/png,image/jpeg"
+                                rules={IMAGE_RULES}
+                                progress={progress}
+                                disabled={updateCourse.isPending}
+                            />
+                        </div>
                     </div>
                 </FormField>
                 <Checkbox checked={form.isActive} onUpdate={setField('isActive')}>

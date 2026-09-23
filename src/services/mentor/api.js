@@ -4,14 +4,15 @@ import {apiClient} from '@/services/api.js';
 // routes live under `mentor/me`. Both are the same domain from the UI's
 // point of view, so they share this module.
 
-// `search` matches first name, last name, phone and profession,
-// case-insensitively. Sorting is whitelisted server-side and maps onto real
-// columns, so only the documented field names are accepted.
+// `search` matches first name, last name and phone, case-insensitively.
+// Sorting is whitelisted server-side and maps onto real columns, so only the
+// documented field names are accepted.
 export async function getMentors({
     page = 1,
     limit = 15,
     search,
     status,
+    role,
     isActive,
     sortBy,
     sortOrder,
@@ -22,6 +23,7 @@ export async function getMentors({
             limit,
             search: search?.trim() || undefined,
             status: status || undefined,
+            role: role || undefined,
             isActive: isActive === undefined || isActive === '' ? undefined : isActive,
             sortBy: sortBy || undefined,
             sortOrder: sortOrder || undefined,
@@ -50,10 +52,17 @@ export async function changeMentorStatus({id, status}) {
     return res.data;
 }
 
-export async function uploadMentorIntroVideo({id, file}) {
+export async function uploadMentorIntroVideo({id, file, onUploadProgress}) {
     const form = new FormData();
     form.append('video', file);
-    const res = await apiClient.patch(`admin/mentors/${id}/intro-video`, form);
+    const res = await apiClient.patch(`admin/mentors/${id}/intro-video`, form, {onUploadProgress});
+    return res.data;
+}
+
+export async function uploadMentorAvatar({id, file, onUploadProgress}) {
+    const form = new FormData();
+    form.append('avatar', file);
+    const res = await apiClient.patch(`admin/mentors/${id}/avatar`, form, {onUploadProgress});
     return res.data;
 }
 
@@ -64,21 +73,9 @@ export async function getMySummary() {
     return res.data;
 }
 
-export async function getMySchedule() {
-    const res = await apiClient.get('mentor/me/schedule');
-    return res.data;
-}
-
-// Keys are Mon..Sun, values are HH:00 / HH:30 strings - the API rejects any
-// other day name or minute value.
-export async function setMySchedule(schedule) {
-    const res = await apiClient.patch('mentor/me/schedule', {schedule});
-    return res.data;
-}
-
-export async function uploadMyIntroVideo(file) {
+export async function uploadMyIntroVideo({file, onUploadProgress}) {
     const form = new FormData();
     form.append('video', file);
-    const res = await apiClient.patch('mentor/me/intro-video', form);
+    const res = await apiClient.patch('mentor/me/intro-video', form, {onUploadProgress});
     return res.data;
 }

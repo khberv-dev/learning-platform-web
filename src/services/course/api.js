@@ -33,13 +33,13 @@ export async function getCourse(id) {
     return res.data;
 }
 
-export async function createCourse({image, ...payload}) {
-    const res = await apiClient.post('admin/courses', asForm(payload, 'image', image));
+export async function createCourse({image, onUploadProgress, ...payload}) {
+    const res = await apiClient.post('admin/courses', asForm(payload, 'image', image), {onUploadProgress});
     return res.data;
 }
 
-export async function updateCourse({id, image, ...payload}) {
-    const res = await apiClient.patch(`admin/courses/${id}`, asForm(payload, 'image', image));
+export async function updateCourse({id, image, onUploadProgress, ...payload}) {
+    const res = await apiClient.patch(`admin/courses/${id}`, asForm(payload, 'image', image), {onUploadProgress});
     return res.data;
 }
 
@@ -75,10 +75,11 @@ export async function getLessons({courseId, unitId}) {
     return res.data;
 }
 
-export async function createLesson({courseId, unitId, media, ...payload}) {
+export async function createLesson({courseId, unitId, media, onUploadProgress, ...payload}) {
     const res = await apiClient.post(
         `admin/courses/${courseId}/units/${unitId}/lessons`,
-        asForm(payload, 'media', media)
+        asForm(payload, 'media', media),
+        {onUploadProgress}
     );
     return res.data;
 }
@@ -92,10 +93,11 @@ export async function updateLesson({courseId, unitId, lessonId, ...payload}) {
     return res.data;
 }
 
-export async function uploadLessonMedia({courseId, unitId, lessonId, media}) {
+export async function uploadLessonMedia({courseId, unitId, lessonId, media, onUploadProgress}) {
     const res = await apiClient.patch(
         `admin/courses/${courseId}/units/${unitId}/lessons/${lessonId}/media`,
-        asForm({}, 'media', media)
+        asForm({}, 'media', media),
+        {onUploadProgress}
     );
     return res.data;
 }
@@ -164,10 +166,11 @@ export async function updateTask({courseId, unitId, lessonId, taskId, ...payload
 
 // Audio or image. The API derives `contentType` from the uploaded file's mime
 // type - passing a plain string as the task's `file` instead marks it "text".
-export async function uploadTaskFile({courseId, unitId, lessonId, taskId, file}) {
+export async function uploadTaskFile({courseId, unitId, lessonId, taskId, file, onUploadProgress}) {
     const res = await apiClient.patch(
         `admin/courses/${courseId}/units/${unitId}/lessons/${lessonId}/tasks/${taskId}/file`,
-        asForm({}, 'file', file)
+        asForm({}, 'file', file),
+        {onUploadProgress}
     );
     return res.data;
 }

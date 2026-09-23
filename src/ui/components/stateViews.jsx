@@ -54,10 +54,12 @@ export function ErrorState({error, onRetry}) {
 }
 
 // The list-page trio in one place: skeleton while loading, error alert on
-// failure, empty state when the response has no rows.
+// failure, empty state when the response has no rows. `query` is optional -
+// rows drawn from data a parent page already loaded (and already guarded)
+// carry no query of their own, so there is nothing to be pending or fail.
 export function QueryState({query, isEmpty, emptyTitle, children, rows}) {
-    if (query.isPending) return <LoadingState rows={rows}/>;
-    if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch}/>;
+    if (query?.isPending) return <LoadingState rows={rows}/>;
+    if (query?.isError) return <ErrorState error={query.error} onRetry={query.refetch}/>;
     if (isEmpty) return <EmptyState title={emptyTitle}/>;
     return children;
 }

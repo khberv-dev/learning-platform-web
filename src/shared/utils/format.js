@@ -30,6 +30,13 @@ export function formatDate(value) {
     return value ? dayjs(value).format('DD.MM.YYYY') : '—';
 }
 
+export function formatBytes(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
 export function formatDateTime(value) {
     return value ? dayjs(value).format('DD.MM.YYYY HH:mm') : '—';
 }

@@ -4,7 +4,7 @@ import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 // Every status enum in the API maps to one of Gravity's label themes. Grouped
 // here so a status renders the same way on a list row and a detail page.
 const THEMES = {
-    // TeacherStatus
+    // MentorStatus
     active: 'success',
     fired: 'danger',
     suspended: 'warning',
@@ -12,7 +12,7 @@ const THEMES = {
     created: 'info',
     paid: 'success',
     cancelled: 'danger',
-    // AssignmentStatus / PendingEnrollmentStatus
+    // PendingEnrollmentStatus
     pending: 'warning',
     rejected: 'danger',
     accepted: 'success',

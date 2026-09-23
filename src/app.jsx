@@ -24,14 +24,14 @@ import AdminQuestion from '@/ui/pages/admin/course/question.jsx';
 import AdminPayments from '@/ui/pages/admin/payment/payments.jsx';
 import AdminPaymentTypes from '@/ui/pages/admin/payment/paymentTypes.jsx';
 import AdminPushNotifications from '@/ui/pages/admin/marketing/pushNotifications.jsx';
-import AdminAssignments from '@/ui/pages/admin/assignments.jsx';
+import AdminGroups from '@/ui/pages/admin/groups/groups.jsx';
+import AdminGroupDetail from '@/ui/pages/admin/groups/groupDetail.jsx';
 import AdminSettings from '@/ui/pages/admin/settings.jsx';
 
 import MentorDashboard from '@/ui/pages/mentor/dashboard.jsx';
-import MentorAssignments from '@/ui/pages/mentor/assignments.jsx';
-import MentorLiveLessons from '@/ui/pages/mentor/liveLessons.jsx';
-import MentorSchedule from '@/ui/pages/mentor/schedule.jsx';
-import MentorChat from '@/ui/pages/mentor/chat.jsx';
+import MentorGroups from '@/ui/pages/mentor/groups.jsx';
+import MentorGroupDetail from '@/ui/pages/mentor/groupDetail.jsx';
+import GroupChatPage from '@/ui/pages/groupChat.jsx';
 import MentorSettings from '@/ui/pages/mentor/settings.jsx';
 import SettingsPage from '@/ui/pages/settingsPage.jsx';
 
@@ -98,9 +98,9 @@ function App() {
                             element={<AdminPushNotifications/>}
                         />
 
-                        {/* Reachable by URL but deliberately absent from the
-                            sidebar tree, which has no assignments entry. */}
-                        <Route path="assignments" element={<AdminAssignments/>}/>
+                        <Route path="groups" element={<AdminGroups/>}/>
+                        <Route path="groups/:id" element={<AdminGroupDetail/>}/>
+                        <Route path="groups/:id/chat" element={<GroupChatPage/>}/>
 
                         <Route path="settings" element={<AdminSettings/>}/>
                     </Route>
@@ -109,10 +109,9 @@ function App() {
                 <Route element={<RoleRoute role={ROLE.MENTOR}/> }>
                     <Route path="/mentor" element={<MainLayout role={ROLE.MENTOR}/>}>
                         <Route index element={<MentorDashboard/>}/>
-                        <Route path="assignments" element={<MentorAssignments/>}/>
-                        <Route path="live-lessons" element={<MentorLiveLessons/>}/>
-                        <Route path="schedule" element={<MentorSchedule/>}/>
-                        <Route path="chat" element={<MentorChat/>}/>
+                        <Route path="groups" element={<MentorGroups/>}/>
+                        <Route path="groups/:id" element={<MentorGroupDetail/>}/>
+                        <Route path="groups/:id/chat" element={<GroupChatPage/>}/>
                         <Route path="settings" element={<MentorSettings/>}/>
                     </Route>
                 </Route>

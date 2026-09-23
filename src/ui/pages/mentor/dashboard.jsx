@@ -3,20 +3,24 @@ import {Button} from '@gravity-ui/uikit';
 import {CalendarClock, Star, UserCheck, Users} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useMySummary} from '@/services/mentor/query.js';
-import {usePendingAssignments} from '@/services/assignment/query.js';
-import {formatDate, fullName} from '@/shared/utils/format.js';
+import {GROUP_MENTOR_ROLE, useMyGroups} from '@/services/group/query.js';
+import {countSlots} from '@/shared/utils/schedule.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import StatCard from '@/ui/components/statCard.jsx';
+import {ActiveLabel} from '@/ui/components/statusLabel.jsx';
 import {EmptyState} from '@/ui/components/stateViews.jsx';
 
 function MentorDashboard() {
     const {t} = useI18n();
     const navigate = useNavigate();
     const summary = useMySummary();
-    const pending = usePendingAssignments();
+    const groups = useMyGroups();
 
-    const pendingItems = pending.data ?? [];
+    // Mirrors the groups page itself, which drops support-role groups
+    // entirely - a support mentor has no actions there, so a preview of one
+    // here would only dead-end at "See all".
+    const groupItems = (groups.data?.data ?? []).filter((group) => group.role === GROUP_MENTOR_ROLE.PRIMARY);
 
     return (
         <>
@@ -57,18 +61,17 @@ function MentorDashboard() {
             </div>
 
             <PageSection
-                title={t('assignment.pending')}
-                actions={
-                    <Button onClick={() => navigate('/mentor/assignments')}>{t('common.all')}</Button>
-                }
+                title={t('group.myGroups')}
+                actions={<Button onClick={() => navigate('/mentor/groups')}>{t('common.all')}</Button>}
             >
-                {pendingItems.length === 0 ? (
-                    <EmptyState title={t('assignment.noPending')}/>
+                {groupItems.length === 0 ? (
+                    <EmptyState title={t('group.noMyGroups')}/>
                 ) : (
                     <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
-                        {pendingItems.slice(0, 5).map((assignment) => (
+                        {groupItems.slice(0, 5).map((group) => (
                             <div
-                                key={assignment.id}
+                                key={group.id}
+                                onClick={() => navigate(`/mentor/groups/${group.id}`)}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -77,19 +80,18 @@ function MentorDashboard() {
                                     padding: '10px 12px',
                                     border: '1px solid var(--g-color-line-generic)',
                                     borderRadius: 8,
+                                    cursor: 'pointer',
                                 }}
                             >
                                 <div>
-                                    <div style={{fontWeight: 500}}>
-                                        {fullName(assignment.student) || '—'}
-                                    </div>
-                                    <div style={{fontSize: 12, color: 'var(--g-color-text-secondary)'}}>
-                                        {formatDate(assignment.startDate)} — {formatDate(assignment.endDate)}
-                                    </div>
+                                    <div style={{fontWeight: 500}}>{group.title}</div>
+                                    {countSlots(group.schedule) > 0 && (
+                                        <div style={{fontSize: 12, color: 'var(--g-color-text-secondary)'}}>
+                                            {t('group.schedule')}: {countSlots(group.schedule)}
+                                        </div>
+                                    )}
                                 </div>
-                                <Button size="s" onClick={() => navigate('/mentor/assignments')}>
-                                    {t('common.actions')}
-                                </Button>
+                                <ActiveLabel active={group.isActive}/>
                             </div>
                         ))}
                     </div>

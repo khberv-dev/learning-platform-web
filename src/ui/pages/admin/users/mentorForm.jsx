@@ -1,8 +1,9 @@
 import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
-import {Button, TextInput} from '@gravity-ui/uikit';
+import {Button, Select, TextInput} from '@gravity-ui/uikit';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useCreateMentor, useMentor, useUpdateMentor} from '@/services/mentor/query.js';
+import {GROUP_MENTOR_ROLE} from '@/services/group/query.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
@@ -13,17 +14,15 @@ import {ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 const PHONE_PATTERN = /^998\d{9}$/;
 const PASSWORD_MIN_LENGTH = 6;
 
-const EMPTY = {firstName: '', lastName: '', phoneNumber: '', profession: '', password: ''};
+const EMPTY = {firstName: '', lastName: '', phoneNumber: '', role: '', password: ''};
 
-// The detail payload nests the account fields under `user`; the create and
-// update DTOs take them flat.
 function toFormValues(mentor) {
     if (!mentor) return EMPTY;
     return {
         firstName: mentor.firstName ?? '',
         lastName: mentor.lastName ?? '',
         phoneNumber: mentor.phoneNumber ?? '',
-        profession: mentor.profession ?? '',
+        role: mentor.role ?? '',
         password: '',
     };
 }
@@ -42,6 +41,8 @@ function MentorFormFields({id, isEdit, initialValues}) {
         const next = {};
         if (!form.firstName.trim()) next.firstName = t('common.error');
         if (!PHONE_PATTERN.test(form.phoneNumber.replace(/\D/g, ''))) next.phoneNumber = t('auth.formatError');
+        // Required on create - the API has no default role to fall back to.
+        if (!isEdit && !form.role) next.role = t('common.error');
         // On edit the password field is a deliberate no-op unless filled in -
         // an empty string would otherwise be sent and reset the account.
         if (!isEdit && form.password.length < PASSWORD_MIN_LENGTH) next.password = t('auth.formatError');
@@ -60,8 +61,8 @@ function MentorFormFields({id, isEdit, initialValues}) {
             firstName: form.firstName.trim(),
             lastName: form.lastName.trim() || undefined,
             phoneNumber: form.phoneNumber.replace(/\D/g, ''),
-            profession: form.profession.trim() || undefined,
         };
+        if (form.role) payload.role = form.role;
         if (form.password) payload.password = form.password;
 
         const mutation = isEdit ? updateMentor : createMentor;
@@ -114,8 +115,20 @@ function MentorFormFields({id, isEdit, initialValues}) {
                             inputMode="numeric"
                         />
                     </FormField>
-                    <FormField label={t('mentor.profession')}>
-                        <TextInput size="l" value={form.profession} onUpdate={setField('profession')}/>
+                    <FormField label={t('mentor.role')} required={!isEdit} error={errors.role}>
+                        <Select
+                            size="l"
+                            width="max"
+                            value={form.role ? [form.role] : []}
+                            onUpdate={([value]) => setField('role')(value)}
+                        >
+                            <Select.Option value={GROUP_MENTOR_ROLE.PRIMARY}>
+                                {t('group.rolePrimary')}
+                            </Select.Option>
+                            <Select.Option value={GROUP_MENTOR_ROLE.SUPPORT}>
+                                {t('group.roleSupport')}
+                            </Select.Option>
+                        </Select>
                     </FormField>
                     <FormField
                         label={t('mentor.password')}

@@ -8,12 +8,10 @@ import {
     Home,
     LayoutDashboard,
     Megaphone,
-    MessageSquare,
     Settings,
-    UserCheck,
     UserCog,
+    UsersRound,
     Users,
-    Video,
     Wallet,
 } from 'lucide-react';
 import {ROLE} from '@/shared/auth/roles.js';
@@ -37,6 +35,7 @@ export const NAV_BY_ROLE = {
                 {id: 'mentors', titleKey: 'nav.mentors', icon: UserCog, path: '/admin/users/mentors'},
             ],
         },
+        {id: 'groups', titleKey: 'nav.groups', icon: UsersRound, path: '/admin/groups'},
         {
             id: 'course',
             titleKey: 'nav.course',
@@ -88,10 +87,7 @@ export const NAV_BY_ROLE = {
     ],
     [ROLE.MENTOR]: [
         {id: 'home', titleKey: 'nav.home', icon: LayoutDashboard, path: '/mentor'},
-        {id: 'assignments', titleKey: 'nav.assignments', icon: UserCheck, path: '/mentor/assignments'},
-        {id: 'liveLessons', titleKey: 'nav.liveLessons', icon: Video, path: '/mentor/live-lessons'},
-        {id: 'schedule', titleKey: 'nav.schedule', icon: CalendarClock, path: '/mentor/schedule'},
-        {id: 'chat', titleKey: 'nav.chat', icon: MessageSquare, path: '/mentor/chat'},
+        {id: 'groups', titleKey: 'nav.groups', icon: UsersRound, path: '/mentor/groups'},
         {id: 'settings', titleKey: 'nav.settings', icon: Settings, path: '/mentor/settings'},
     ],
 };

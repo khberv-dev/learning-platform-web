@@ -3,45 +3,41 @@ import {useNavigate} from 'react-router-dom';
 import {Button, Select, TextInput} from '@gravity-ui/uikit';
 import {Plus, Search} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
-import {MENTOR_STATUS, useMentors} from '@/services/mentor/query.js';
-import {GROUP_MENTOR_ROLE} from '@/services/group/query.js';
+import {useGroups} from '@/services/group/query.js';
 import {useDebouncedValue} from '@/shared/hooks/useDebouncedValue.js';
 import {formatDate} from '@/shared/utils/format.js';
+import {DEFAULT_PAGE_SIZE} from '@/shared/pagination.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import DataTable from '@/ui/components/dataTable.jsx';
-import UserCell from '@/ui/components/userCell.jsx';
-import StatusLabel, {ActiveLabel} from '@/ui/components/statusLabel.jsx';
-import {DEFAULT_PAGE_SIZE} from '@/shared/pagination.js';
 import FormField from '@/ui/components/formField.jsx';
+import {ActiveLabel} from '@/ui/components/statusLabel.jsx';
+import UserCell from '@/ui/components/userCell.jsx';
+import {GroupScheduleDays} from '@/ui/components/groupSchedule.jsx';
+import GroupFormDialog from '@/ui/pages/admin/groups/groupFormDialog.jsx';
 
-function AdminMentors() {
+function AdminGroups() {
     const {t} = useI18n();
     const navigate = useNavigate();
 
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
     const [search, setSearch] = useState('');
-    const [status, setStatus] = useState('');
-    const [role, setRole] = useState('');
     const [active, setActive] = useState('');
     const [sort, setSort] = useState({sortBy: 'createdAt', sortOrder: 'DESC'});
+    const [createOpen, setCreateOpen] = useState(false);
 
-    // Only the request is delayed - `page` resets on the keystroke itself
-    // (below), so a search never lands on a page number the results don't have.
+    // Only the request is delayed - `page` resets on the keystroke itself.
     const debouncedSearch = useDebouncedValue(search, 400);
 
-    const query = useMentors({
+    const query = useGroups({
         page,
         limit,
         search: debouncedSearch,
-        status,
-        role: role || undefined,
         isActive: active === '' ? undefined : active === 'active',
         ...sort,
     });
 
-    // Any filter change invalidates the current page number.
     const withReset = (setter) => (value) => {
         setter(value);
         setPage(1);
@@ -49,30 +45,24 @@ function AdminMentors() {
 
     const columns = [
         {
-            id: 'firstName',
-            name: t('mentor.title'),
+            id: 'title',
+            name: t('group.name'),
             meta: {sort: true},
-            template: (row) => <UserCell user={row}/>,
+            template: (row) => <span style={{fontWeight: 500}}>{row.title}</span>,
         },
         {
-            id: 'role',
-            name: t('mentor.role'),
-            meta: {sort: true},
-            template: (row) => (
-                <span>{t(row.role === GROUP_MENTOR_ROLE.PRIMARY ? 'group.rolePrimary' : 'group.roleSupport')}</span>
-            ),
+            id: 'primaryMentor',
+            name: t('group.mentor'),
+            template: (row) => <UserCell user={row.primaryMentor}/>,
         },
         {
-            id: 'status',
-            name: t('common.status'),
-            meta: {sort: true},
-            template: (row) => <StatusLabel status={row.status} i18nPrefix="mentor"/>,
+            id: 'schedule',
+            name: t('group.schedule'),
+            template: (row) => <GroupScheduleDays value={row.schedule}/>,
         },
         {
-            // The mentor's employment status and whether their account can sign
-            // in are separate things, and both are filterable.
             id: 'isActive',
-            name: t('mentor.accountStatus'),
+            name: t('common.status'),
             template: (row) => <ActiveLabel active={row.isActive}/>,
         },
         {
@@ -86,13 +76,13 @@ function AdminMentors() {
     return (
         <div className="page-fill">
             <PageHeader
-                title={t('mentor.title')}
+                title={t('group.title')}
                 actions={
-                    <Button view="action" onClick={() => navigate('/admin/users/mentors/new')}>
+                    <Button view="action" onClick={() => setCreateOpen(true)}>
                         <Button.Icon>
                             <Plus size={16}/>
                         </Button.Icon>
-                        {t('mentor.create')}
+                        {t('group.create')}
                     </Button>
                 }
             />
@@ -104,7 +94,7 @@ function AdminMentors() {
                             <TextInput
                                 value={search}
                                 onUpdate={withReset(setSearch)}
-                                placeholder={t('mentor.searchPlaceholder')}
+                                placeholder={t('group.searchPlaceholder')}
                                 hasClear
                                 startContent={
                                     <Search
@@ -116,42 +106,7 @@ function AdminMentors() {
                             />
                         </FormField>
 
-                        <FormField label={t('mentor.role')}>
-                            <Select
-                                value={[role]}
-                                onUpdate={([value]) => withReset(setRole)(value)}
-                                width={150}
-                            >
-                                <Select.Option value="">{t('common.all')}</Select.Option>
-                                <Select.Option value={GROUP_MENTOR_ROLE.PRIMARY}>
-                                    {t('group.rolePrimary')}
-                                </Select.Option>
-                                <Select.Option value={GROUP_MENTOR_ROLE.SUPPORT}>
-                                    {t('group.roleSupport')}
-                                </Select.Option>
-                            </Select>
-                        </FormField>
-
-                        <FormField label={t('mentor.status')}>
-                            <Select
-                                value={[status]}
-                                onUpdate={([value]) => withReset(setStatus)(value)}
-                                width={180}
-                            >
-                                <Select.Option value="">{t('mentor.allStatuses')}</Select.Option>
-                                <Select.Option value={MENTOR_STATUS.ACTIVE}>
-                                    {t('mentor.statusActive')}
-                                </Select.Option>
-                                <Select.Option value={MENTOR_STATUS.SUSPENDED}>
-                                    {t('mentor.statusSuspended')}
-                                </Select.Option>
-                                <Select.Option value={MENTOR_STATUS.FIRED}>
-                                    {t('mentor.statusFired')}
-                                </Select.Option>
-                            </Select>
-                        </FormField>
-
-                        <FormField label={t('common.accountStatus')}>
+                        <FormField label={t('common.status')}>
                             <Select
                                 value={[active]}
                                 onUpdate={([value]) => withReset(setActive)(value)}
@@ -180,11 +135,17 @@ function AdminMentors() {
                         setSort({sortBy, sortOrder});
                         setPage(1);
                     }}
-                    onRowClick={(row) => navigate(`/admin/users/mentors/${row.id}`)}
+                    onRowClick={(row) => navigate(`/admin/groups/${row.id}`)}
                 />
             </PageSection>
+
+            <GroupFormDialog
+                open={createOpen}
+                onClose={() => setCreateOpen(false)}
+                onSaved={(group) => navigate(`/admin/groups/${group.id}`)}
+            />
         </div>
     );
 }
 
-export default AdminMentors;
+export default AdminGroups;

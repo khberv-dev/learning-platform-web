@@ -1,15 +1,17 @@
-import {useRef} from 'react';
-import {Button, Select, SegmentedRadioGroup} from '@gravity-ui/uikit';
-import {Upload} from 'lucide-react';
+import {useState} from 'react';
+import {Select, SegmentedRadioGroup} from '@gravity-ui/uikit';
 import {LOCALE_OPTIONS, useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useThemeMode} from '@/shared/theme/themeModeContext.jsx';
 import {useMe, useUpdateMyAvatar} from '@/services/user/query.js';
 import {formatPhone, fullName} from '@/shared/utils/format.js';
 import {toaster} from '@/shared/toaster.js';
+import {IMAGE_RULES} from '@/shared/utils/fileValidation.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
+import {useUploadProgress} from '@/shared/hooks/useUploadProgress.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import UserAvatar from '@/ui/components/userAvatar.jsx';
+import FileDropCard from '@/ui/components/fileDropCard.jsx';
 
 // Profile, theme and language are shared by every role-specific panel.
 function SettingsPage({extra}) {
@@ -17,24 +19,37 @@ function SettingsPage({extra}) {
     const {themeMode, setThemeMode} = useThemeMode();
     const {data: me} = useMe();
     const updateAvatar = useUpdateMyAvatar();
-    const fileInputRef = useRef(null);
+    const {progress, onUploadProgress, reset} = useUploadProgress();
+    const [avatarFile, setAvatarFile] = useState(null);
 
     const name = fullName(me);
 
-    const handleAvatarPicked = (event) => {
-        const file = event.target.files?.[0];
-        event.target.value = '';
-        if (!file) return;
+    const handleAvatarChange = (file) => {
+        if (!file) {
+            setAvatarFile(null);
+            return;
+        }
+        setAvatarFile(file);
 
-        updateAvatar.mutate(file, {
-            onSuccess: () => toaster.add({name: 'avatar', theme: 'success', title: t('common.saved')}),
-            onError: (error) =>
-                toaster.add({
-                    name: 'avatar-failed',
-                    theme: 'danger',
-                    title: extractApiErrorMessage(error, t('common.error')),
-                }),
-        });
+        updateAvatar.mutate(
+            {file, onUploadProgress},
+            {
+                onSuccess: () => {
+                    toaster.add({name: 'avatar', theme: 'success', title: t('common.saved')});
+                    setAvatarFile(null);
+                    reset();
+                },
+                onError: (error) => {
+                    toaster.add({
+                        name: 'avatar-failed',
+                        theme: 'danger',
+                        title: extractApiErrorMessage(error, t('common.error')),
+                    });
+                    setAvatarFile(null);
+                    reset();
+                },
+            }
+        );
     };
 
     return (
@@ -43,7 +58,7 @@ function SettingsPage({extra}) {
 
             <div style={{display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 560}}>
                 <PageSection title={t('settings.profile')}>
-                    <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16}}>
                         <UserAvatar avatar={me?.avatar} name={name} size="xl"/>
                         <div style={{minWidth: 0}}>
                             <div style={{fontSize: 15, fontWeight: 600}}>{name || '—'}</div>
@@ -56,25 +71,15 @@ function SettingsPage({extra}) {
                                 </div>
                             )}
                         </div>
-                        <div style={{marginLeft: 'auto'}}>
-                            <Button
-                                onClick={() => fileInputRef.current?.click()}
-                                loading={updateAvatar.isPending}
-                            >
-                                <Button.Icon>
-                                    <Upload size={16}/>
-                                </Button.Icon>
-                                {t('settings.uploadAvatar')}
-                            </Button>
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                style={{display: 'none'}}
-                                onChange={handleAvatarPicked}
-                            />
-                        </div>
                     </div>
+                    <FileDropCard
+                        value={avatarFile}
+                        onChange={handleAvatarChange}
+                        accept="image/png,image/jpeg"
+                        rules={IMAGE_RULES}
+                        progress={progress}
+                        disabled={updateAvatar.isPending}
+                    />
                 </PageSection>
 
                 {extra}

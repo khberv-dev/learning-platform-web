@@ -6,10 +6,10 @@ export async function getMe() {
     return res.data;
 }
 
-export async function updateMyAvatar(file) {
+export async function updateMyAvatar({file, onUploadProgress}) {
     const form = new FormData();
     form.append('avatar', file);
-    const res = await apiClient.patch(`${currentRole()}/me/avatar`, form);
+    const res = await apiClient.patch(`${currentRole()}/me/avatar`, form, {onUploadProgress});
     return res.data;
 }
 
