@@ -139,11 +139,11 @@ function AdminMentors() {
                                 width={180}
                             >
                                 <Select.Option value="">{t('mentor.allStatuses')}</Select.Option>
-                                <Select.Option value={MENTOR_STATUS.ACTIVE}>
-                                    {t('mentor.statusActive')}
+                                <Select.Option value={MENTOR_STATUS.WORKING}>
+                                    {t('mentor.statusWorking')}
                                 </Select.Option>
-                                <Select.Option value={MENTOR_STATUS.SUSPENDED}>
-                                    {t('mentor.statusSuspended')}
+                                <Select.Option value={MENTOR_STATUS.VACATION}>
+                                    {t('mentor.statusVacation')}
                                 </Select.Option>
                                 <Select.Option value={MENTOR_STATUS.FIRED}>
                                     {t('mentor.statusFired')}

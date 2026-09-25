@@ -19,18 +19,12 @@ function EnrollStudentDialog({open, studentId, studentName, onClose}) {
     const [courseId, setCourseId] = useState('');
     const [planId, setPlanId] = useState('');
     const [start, setStart] = useState('');
-    const [end, setEnd] = useState('');
-    const [purchaseAmount, setPurchaseAmount] = useState('');
 
     const courses = useCourses();
     const plans = usePlans(courseId);
 
     const courseOptions = courses.data?.data ?? [];
     const planOptions = useMemo(() => plans.data?.data ?? [], [plans.data]);
-
-    // With a plan the API derives course, duration and price; without one it
-    // needs an explicit end date, since there's nothing to compute a term from.
-    const endRequired = !planId;
 
     const selectedPlan = useMemo(
         () => planOptions.find((plan) => plan.id === planId),
@@ -41,25 +35,16 @@ function EnrollStudentDialog({open, studentId, studentName, onClose}) {
         setCourseId('');
         setPlanId('');
         setStart('');
-        setEnd('');
-        setPurchaseAmount('');
     };
 
     const submit = () => {
-        if (!courseId || (endRequired && !end)) {
-            toaster.add({name: 'enrollment-invalid', theme: 'danger', title: t('common.error')});
+        if (!courseId || !planId) {
+            toaster.add({name: 'enrollment-invalid', theme: 'danger', title: t('enrollment.planRequired')});
             return;
         }
 
-        const payload = {studentId};
-        if (planId) {
-            payload.planId = planId;
-        } else {
-            payload.courseId = courseId;
-        }
+        const payload = {studentId, courseId, planId};
         if (start) payload.start = new Date(start).toISOString();
-        if (end) payload.end = new Date(end).toISOString();
-        if (purchaseAmount !== '') payload.purchaseAmount = Number(purchaseAmount);
 
         createEnrollment.mutate(payload, {
             onSuccess: () => {
@@ -111,11 +96,8 @@ function EnrollStudentDialog({open, studentId, studentName, onClose}) {
 
                     <FormField
                         label={t('enrollment.plan')}
-                        hint={
-                            selectedPlan
-                                ? `${formatMoney(selectedPlan.price)} · ${selectedPlan.month}`
-                                : t('enrollment.planOrCourse')
-                        }
+                        required
+                        hint={selectedPlan ? `${formatMoney(selectedPlan.price)} · ${selectedPlan.month}` : undefined}
                     >
                         <Select
                             size="l"
@@ -135,19 +117,6 @@ function EnrollStudentDialog({open, studentId, studentName, onClose}) {
 
                     <FormField label={t('enrollment.start')} hint={t('common.optional')}>
                         <TextInput size="l" type="date" value={start} onUpdate={setStart}/>
-                    </FormField>
-
-                    <FormField label={t('enrollment.end')} required={endRequired}>
-                        <TextInput size="l" type="date" value={end} onUpdate={setEnd}/>
-                    </FormField>
-
-                    <FormField label={t('enrollment.purchaseAmount')} hint={t('common.optional')}>
-                        <TextInput
-                            size="l"
-                            type="number"
-                            value={purchaseAmount}
-                            onUpdate={setPurchaseAmount}
-                        />
                     </FormField>
                 </div>
             </Dialog.Body>

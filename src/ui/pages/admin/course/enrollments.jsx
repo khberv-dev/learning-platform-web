@@ -1,8 +1,8 @@
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {Label, Select} from '@gravity-ui/uikit';
+import {Select} from '@gravity-ui/uikit';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
-import {ENROLLMENT_STATUS, isEnrollmentExpired, useEnrollments} from '@/services/enrollment/query.js';
+import {ENROLLMENT_STATUS, useEnrollments} from '@/services/enrollment/query.js';
 import {useCourses} from '@/services/course/query.js';
 import {formatDate, fullName} from '@/shared/utils/format.js';
 import {DEFAULT_PAGE_SIZE} from '@/shared/pagination.js';
@@ -22,19 +22,10 @@ function AdminEnrollments() {
     const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
     const [courseId, setCourseId] = useState('');
     const [status, setStatus] = useState('');
-    const [expiry, setExpiry] = useState('');
     const [sort, setSort] = useState({sortBy: 'createdAt', sortOrder: 'DESC'});
 
     const courses = useCourses();
-    const query = useEnrollments({
-        page,
-        limit,
-        courseId,
-        status,
-        // The API takes a boolean; '' means "don't filter on the term at all".
-        isExpired: expiry === '' ? undefined : expiry === 'expired',
-        ...sort,
-    });
+    const query = useEnrollments({page, limit, courseId, status, ...sort});
 
     // Any filter change invalidates the current page number.
     const withReset = (setter) => (value) => {
@@ -60,32 +51,10 @@ function AdminEnrollments() {
             template: (row) => <StatusLabel status={row.status} i18nPrefix="enrollment"/>,
         },
         {
-            id: 'term',
-            name: t('enrollment.expiryFilter'),
-            // The response no longer carries a computed `isExpired`, so it is
-            // derived from `end` here - the same rule the server filters on
-            // (`end < now`, active rows only). Only active rows have a term.
-            template: (row) => {
-                if (row.status !== ENROLLMENT_STATUS.ACTIVE) return '—';
-                const expired = isEnrollmentExpired(row);
-                return (
-                    <Label theme={expired ? 'danger' : 'success'}>
-                        {expired ? t('enrollment.expired') : t('enrollment.notExpired')}
-                    </Label>
-                );
-            },
-        },
-        {
             id: 'start',
             name: t('enrollment.start'),
             meta: {sort: true, defaultSortOrder: 'desc'},
             template: (row) => formatDate(row.start),
-        },
-        {
-            id: 'end',
-            name: t('enrollment.end'),
-            meta: {sort: true, defaultSortOrder: 'desc'},
-            template: (row) => formatDate(row.end),
         },
         {
             id: 'createdAt',
@@ -97,7 +66,7 @@ function AdminEnrollments() {
 
     return (
         <div className="page-fill">
-            <PageHeader title={t('enrollment.title')} description={t('enrollment.expiredNote')}/>
+            <PageHeader title={t('enrollment.title')}/>
 
             <PageSection
                 className="page-fill__section"
@@ -136,18 +105,6 @@ function AdminEnrollments() {
                                 <Select.Option value={ENROLLMENT_STATUS.CANCELLED}>
                                     {t('enrollment.statusCancelled')}
                                 </Select.Option>
-                            </Select>
-                        </FormField>
-
-                        <FormField label={t('enrollment.expiryFilter')}>
-                            <Select
-                                value={[expiry]}
-                                onUpdate={([value]) => withReset(setExpiry)(value)}
-                                width={190}
-                            >
-                                <Select.Option value="">{t('enrollment.allTerms')}</Select.Option>
-                                <Select.Option value="active">{t('enrollment.notExpired')}</Select.Option>
-                                <Select.Option value="expired">{t('enrollment.expired')}</Select.Option>
                             </Select>
                         </FormField>
                     </div>

@@ -90,12 +90,6 @@ function AdminPendingEnrollments() {
             template: (row) => formatDate(row.start),
         },
         {
-            id: 'end',
-            name: t('pendingEnrollment.end'),
-            meta: {sort: true, defaultSortOrder: 'desc'},
-            template: (row) => formatDate(row.end),
-        },
-        {
             id: 'createdAt',
             name: t('common.createdAt'),
             meta: {sort: true, defaultSortOrder: 'desc'},

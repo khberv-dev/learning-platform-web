@@ -12,11 +12,12 @@ import {
 } from '@/services/mentor/api.js';
 
 // Mentor status values come from the API's MentorStatus enum (lowercase on
-// the wire, despite the uppercase Swagger examples).
+// the wire, despite the uppercase Swagger examples). `isActive` (account
+// sign-in) is tied to `status === WORKING` server-side, not set independently.
 export const MENTOR_STATUS = {
-    ACTIVE: 'active',
+    WORKING: 'working',
+    VACATION: 'vacation',
     FIRED: 'fired',
-    SUSPENDED: 'suspended',
 };
 
 // Whitelisted server-side; anything else is rejected rather than reaching SQL.

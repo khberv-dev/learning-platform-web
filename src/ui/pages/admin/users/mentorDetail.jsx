@@ -217,6 +217,10 @@ function AdminMentorDetail() {
                             label={t('mentor.role')}
                             value={t(mentor.role === GROUP_MENTOR_ROLE.PRIMARY ? 'group.rolePrimary' : 'group.roleSupport')}
                         />
+                        <Field
+                            label={t('mentor.gender')}
+                            value={mentor.gender && t(mentor.gender === 'female' ? 'mentor.genderFemale' : 'mentor.genderMale')}
+                        />
                         <Field label={t('common.createdAt')} value={formatDateTime(mentor.createdAt)}/>
                     </div>
                 </PageSection>
@@ -230,11 +234,11 @@ function AdminMentorDetail() {
                             onUpdate={([value]) => handleStatusChange(value)}
                             disabled={changeStatus.isPending}
                         >
-                            <Select.Option value={MENTOR_STATUS.ACTIVE}>
-                                {t('mentor.statusActive')}
+                            <Select.Option value={MENTOR_STATUS.WORKING}>
+                                {t('mentor.statusWorking')}
                             </Select.Option>
-                            <Select.Option value={MENTOR_STATUS.SUSPENDED}>
-                                {t('mentor.statusSuspended')}
+                            <Select.Option value={MENTOR_STATUS.VACATION}>
+                                {t('mentor.statusVacation')}
                             </Select.Option>
                             <Select.Option value={MENTOR_STATUS.FIRED}>
                                 {t('mentor.statusFired')}

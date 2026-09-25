@@ -5,9 +5,9 @@ import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 // here so a status renders the same way on a list row and a detail page.
 const THEMES = {
     // MentorStatus
-    active: 'success',
+    working: 'success',
+    vacation: 'warning',
     fired: 'danger',
-    suspended: 'warning',
     // PaymentStatus / EnrollmentStatus
     created: 'info',
     paid: 'success',

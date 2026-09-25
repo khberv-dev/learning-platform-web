@@ -22,15 +22,7 @@ export const PENDING_ENROLLMENT_STATUS = {
     REJECTED: 'rejected',
 };
 
-export const ENROLLMENT_SORT_FIELDS = ['createdAt', 'updatedAt', 'start', 'end', 'status'];
-
-// The list response carries no computed expiry flag, so it is derived from the
-// term. Mirrors the server's own filter: an *active* enrollment whose `end` is
-// in the past. `created` and `cancelled` rows have no meaningful term.
-export function isEnrollmentExpired(enrollment, now = new Date()) {
-    if (enrollment?.status !== ENROLLMENT_STATUS.ACTIVE || !enrollment.end) return false;
-    return new Date(enrollment.end) < now;
-}
+export const ENROLLMENT_SORT_FIELDS = ['createdAt', 'updatedAt', 'start', 'status'];
 
 export const useEnrollments = (params) => {
     return useQuery({

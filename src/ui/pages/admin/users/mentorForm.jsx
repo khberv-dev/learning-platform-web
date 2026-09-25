@@ -14,7 +14,7 @@ import {ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 const PHONE_PATTERN = /^998\d{9}$/;
 const PASSWORD_MIN_LENGTH = 6;
 
-const EMPTY = {firstName: '', lastName: '', phoneNumber: '', role: '', password: ''};
+const EMPTY = {firstName: '', lastName: '', phoneNumber: '', role: '', gender: '', password: ''};
 
 function toFormValues(mentor) {
     if (!mentor) return EMPTY;
@@ -23,6 +23,7 @@ function toFormValues(mentor) {
         lastName: mentor.lastName ?? '',
         phoneNumber: mentor.phoneNumber ?? '',
         role: mentor.role ?? '',
+        gender: mentor.gender ?? '',
         password: '',
     };
 }
@@ -63,6 +64,7 @@ function MentorFormFields({id, isEdit, initialValues}) {
             phoneNumber: form.phoneNumber.replace(/\D/g, ''),
         };
         if (form.role) payload.role = form.role;
+        if (form.gender) payload.gender = form.gender;
         if (form.password) payload.password = form.password;
 
         const mutation = isEdit ? updateMentor : createMentor;
@@ -128,6 +130,17 @@ function MentorFormFields({id, isEdit, initialValues}) {
                             <Select.Option value={GROUP_MENTOR_ROLE.SUPPORT}>
                                 {t('group.roleSupport')}
                             </Select.Option>
+                        </Select>
+                    </FormField>
+                    <FormField label={t('mentor.gender')} hint={t('common.optional')}>
+                        <Select
+                            size="l"
+                            width="max"
+                            value={form.gender ? [form.gender] : []}
+                            onUpdate={([value]) => setField('gender')(value)}
+                        >
+                            <Select.Option value="male">{t('mentor.genderMale')}</Select.Option>
+                            <Select.Option value="female">{t('mentor.genderFemale')}</Select.Option>
                         </Select>
                     </FormField>
                     <FormField

@@ -1,18 +1,16 @@
 import {apiClient} from '@/services/api.js';
 
-// Sorting is whitelisted server-side to createdAt/updatedAt/start/end/status.
-//
-// `isExpired` filters on the term, not the status, and implies `status=active`
-// when no status is given — only an active enrollment has a meaningful end
-// date. Every row also carries its own `isExpired`, because an enrollment can
-// still read `active` while already past its end.
+// Sorting is whitelisted server-side to createdAt/updatedAt/start/status. An
+// enrollment carries no term of its own any more - `status` (created/active/
+// cancelled) is the whole story; the paid-for period lives on the student's
+// Subscription instead (reached only through a payment's `purchases`, not
+// exposed here).
 export async function getEnrollments({
     page = 1,
     limit = 15,
     studentId,
     courseId,
     status,
-    isExpired,
     sortBy,
     sortOrder,
 } = {}) {
@@ -23,7 +21,6 @@ export async function getEnrollments({
             studentId: studentId || undefined,
             courseId: courseId || undefined,
             status: status || undefined,
-            isExpired: isExpired === undefined || isExpired === '' ? undefined : isExpired,
             sortBy: sortBy || undefined,
             sortOrder: sortOrder || undefined,
         },
@@ -32,11 +29,10 @@ export async function getEnrollments({
 }
 
 // Manual, payment-free enrollment - the admin path for cash and bank transfer
-// sales. Opens the enrollment as `active` immediately.
-//
-// Pass `planId` to take the course, duration and price from the plan; pass
-// `courseId` instead and `end` becomes required, since there's no plan to
-// derive the term from.
+// sales. Opens the enrollment as `active` immediately, with no end date.
+// `courseId` and `planId` are both required (the plan must belong to the
+// course); there is no plan-less enrollment and no purchaseAmount override
+// any more - the price is always the plan's own.
 export async function createEnrollment(payload) {
     const res = await apiClient.post('admin/enrollments', payload);
     return res.data;

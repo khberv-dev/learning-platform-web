@@ -49,7 +49,6 @@ function AdminStudentDetail() {
             template: (row) => <StatusLabel status={row.status} i18nPrefix="enrollment"/>,
         },
         {id: 'start', name: t('enrollment.start'), template: (row) => formatDate(row.start)},
-        {id: 'end', name: t('enrollment.end'), template: (row) => formatDate(row.end)},
     ];
 
     return (
@@ -88,6 +87,9 @@ function AdminStudentDetail() {
                         <div style={{fontSize: 13, color: 'var(--g-color-text-secondary)'}}>
                             {formatPhone(student.phoneNumber)}
                             {student.email ? ` · ${student.email}` : ''}
+                            {student.gender
+                                ? ` · ${t(student.gender === 'female' ? 'mentor.genderFemale' : 'mentor.genderMale')}`
+                                : ''}
                         </div>
                     </div>
                 </div>
@@ -121,8 +123,8 @@ function AdminStudentDetail() {
             </PageSection>
 
             {/* The student is fixed by this page, so the dialog only asks for
-                the course/plan and term. useCreateEnrollment invalidates
-                ['student'], so the table above refetches on success. */}
+                the course/plan. useCreateEnrollment invalidates ['student'],
+                so the table above refetches on success. */}
             <EnrollStudentDialog
                 open={enrollOpen}
                 studentId={id}

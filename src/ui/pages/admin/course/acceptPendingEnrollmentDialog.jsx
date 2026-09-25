@@ -8,9 +8,9 @@ import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import FormField from '@/ui/components/formField.jsx';
 
-// The request fixes the student, the course and the term - the plan is the one
-// thing it deliberately leaves open, because price and duration are only
-// settled when the admin approves. Amount defaults to the plan's price.
+// The request fixes the student, the course and the start date - the plan is
+// the one thing it deliberately leaves open, because price and duration are
+// only settled when the admin approves. Amount defaults to the plan's price.
 //
 // Mounted with a `key` on the request id so a freshly opened dialog starts
 // empty instead of carrying the previous row's plan.
@@ -72,14 +72,10 @@ function AcceptPendingEnrollmentDialog({open, pending, onClose}) {
                         <TextInput size="l" value={pending?.course?.title ?? ''} disabled/>
                     </FormField>
 
-                    {/* Read-only: the term came with the request, and the API
-                        takes only a plan and an amount here. */}
-                    <FormField label={t('pendingEnrollment.term')} hint={t('pendingEnrollment.termHint')}>
-                        <TextInput
-                            size="l"
-                            value={`${formatDate(pending?.start)} — ${formatDate(pending?.end)}`}
-                            disabled
-                        />
+                    {/* Read-only: the start date came with the request, and the
+                        API takes only a plan and an amount here. */}
+                    <FormField label={t('pendingEnrollment.start')}>
+                        <TextInput size="l" value={formatDate(pending?.start)} disabled/>
                     </FormField>
 
                     <FormField

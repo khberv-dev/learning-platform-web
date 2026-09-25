@@ -77,7 +77,7 @@ function AdminStudentCourseProgress() {
                 <StatCard
                     icon={CalendarDays}
                     label={t('student.term')}
-                    value={`${formatDate(progress.start)} — ${formatDate(progress.end)}`}
+                    value={formatDate(progress.start)}
                 />
             </div>
 

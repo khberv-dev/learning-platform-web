@@ -57,7 +57,9 @@ function AdminPayments() {
         {
             id: 'course',
             name: t('payment.course'),
-            template: (row) => row.enrollment?.course?.title ?? '—',
+            // A payment funds a Purchase -> Subscription -> Plan -> Course; a
+            // payment carries no direct enrollment/plan FK any more.
+            template: (row) => row.purchases?.[0]?.subscription?.plan?.course?.title ?? '—',
         },
         {
             id: 'amount',
