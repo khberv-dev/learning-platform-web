@@ -10,8 +10,11 @@ body,
     height: 100%;
 }
 
-body {
-    background: var(--g-color-base-background);
+/* Gravity puts `.g-root` on <body> and paints it with the base background;
+   `body.g-root` outranks that so the page tint shows. */
+body,
+body.g-root {
+    background: var(--it-page-background);
     color: var(--g-color-text-primary);
 }
 
@@ -215,7 +218,7 @@ a {
     position: sticky;
     top: 0;
     z-index: 1;
-    background: var(--g-color-base-background);
+    background: var(--it-table-head-background);
 }
 
 /* ── Sidebar ───────────────────────────────────────────────────────────────
@@ -230,9 +233,23 @@ a {
     height: 100vh;
     position: sticky;
     top: 0;
-    border-right: 1px solid var(--g-color-line-generic);
-    background: var(--g-color-base-generic-ultralight);
+    /* The sidebar is always dark, in both app themes: sidebar.jsx scopes
+       Gravity's dark theme onto it, so every token inside (text, hover,
+       selection, lines, the flat buttons, avatars) already resolves to its
+       dark value. Only the surface itself is ours - a near-black carrying a
+       trace of the brand hue, darker than Gravity's own dark background so the
+       rail still separates from the content when the app is dark too. */
+    --g-color-base-background: #0f1813;
+    background: var(--g-color-base-background);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
     transition: width 0.15s ease;
+}
+
+/* The scoped theme's wrapper div would otherwise become the flex child and
+   break the sticky positioning - `contents` removes its box while its
+   custom properties still cascade to the <aside>. */
+.sidebar-theme {
+    display: contents;
 }
 
 .sidebar__item {
@@ -270,4 +287,39 @@ a {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* ── Tables ────────────────────────────────────────────────────────────────
+   Every Gravity table gets a dark header band and plain, square-cornered
+   rows separated by Gravity's own bottom rules. The header's dark surface
+   is fixed rather than theme-derived, so its text and sort arrows are pinned
+   light to match. The first and last columns are inset so text doesn't sit
+   against the band's edge, and the body follows so columns stay aligned. The
+   extra `.g-table` in each selector outranks Gravity's edge-padding rules. */
+
+.g-table .g-table__head .g-table__cell {
+    background: var(--it-table-head-background);
+    border-block-end: none;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 12px;
+    font-weight: 600;
+    padding-block: 9px;
+}
+
+.g-table .g-table__head .g-table__sort-indicator {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.g-table .g-table__head .g-table__sort_active .g-table__sort-indicator {
+    color: #fff;
+}
+
+.g-table .g-table__head .g-table__cell:first-child,
+.g-table .g-table__body .g-table__cell:first-child {
+    padding-inline-start: 12px;
+}
+
+.g-table .g-table__head .g-table__cell:last-child,
+.g-table .g-table__body .g-table__cell:last-child {
+    padding-inline-end: 12px;
 }

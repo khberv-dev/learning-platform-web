@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {Button} from '@gravity-ui/uikit';
+import {Button, ThemeProvider} from '@gravity-ui/uikit';
 import {ChevronDown, ChevronRight, LogOut, PanelLeftClose, PanelLeftOpen} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import UserAvatar from '@/ui/components/userAvatar.jsx';
@@ -107,136 +107,140 @@ function Sidebar({items, activeItemPath, roleLabel, user, userName, onLogout, on
         );
     };
 
+    // Always dark, whatever the app theme: a scoped provider re-themes every
+    // Gravity token inside the rail (see .sidebar in index.css).
     return (
-        <aside
-            className="sidebar"
-            style={{width: compact ? COMPACT_WIDTH : EXPANDED_WIDTH}}
-        >
-            <div
-                style={{
-                    display: 'flex',
-                    // The rail is too narrow for the mark and the toggle side
-                    // by side, so they stack instead of the mark disappearing.
-                    flexDirection: compact ? 'column' : 'row',
-                    alignItems: 'center',
-                    gap: compact ? 6 : 10,
-                    padding: compact ? '16px 0' : '16px 12px',
-                    justifyContent: compact ? 'center' : 'space-between',
-                }}
+        <ThemeProvider theme="dark" scoped rootClassName="sidebar-theme">
+            <aside
+                className="sidebar"
+                style={{width: compact ? COMPACT_WIDTH : EXPANDED_WIDTH}}
             >
-                <div style={{display: 'flex', alignItems: 'center', gap: 8, minWidth: 0}}>
-                    {/* Served from public/, so it's a root-absolute path
-                        rather than an import. */}
-                    <img
-                        src="/brand.png"
-                        alt=""
-                        width={26}
-                        height={26}
-                        style={{display: 'block', flexShrink: 0}}
-                    />
-                    {!compact && <span style={{fontWeight: 600, fontSize: 15}}>iTeach</span>}
-                </div>
-                <Button
-                    view="flat"
-                    size="s"
-                    onClick={() => setCompact((current) => !current)}
-                    aria-label={compact ? 'Expand' : 'Collapse'}
+                <div
+                    style={{
+                        display: 'flex',
+                        // The rail is too narrow for the mark and the toggle side
+                        // by side, so they stack instead of the mark disappearing.
+                        flexDirection: compact ? 'column' : 'row',
+                        alignItems: 'center',
+                        gap: compact ? 6 : 10,
+                        padding: compact ? '16px 0' : '16px 12px',
+                        justifyContent: compact ? 'center' : 'space-between',
+                    }}
                 >
-                    <Button.Icon>
-                        {compact ? <PanelLeftOpen size={16}/> : <PanelLeftClose size={16}/>}
-                    </Button.Icon>
-                </Button>
-            </div>
-
-            <nav
-                style={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    padding: compact ? '4px 8px' : '4px 8px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 2,
-                }}
-            >
-                {items.map((item) =>
-                    item.children ? (
-                        <NavGroup
-                            key={item.id}
-                            group={item}
-                            activeItemPath={activeItemPath}
-                            compact={compact}
-                            openIds={openIds}
-                            onToggle={toggleGroup}
-                            onNavigate={navigate}
-                            onExpandSidebar={() => setCompact(false)}
+                    <div style={{display: 'flex', alignItems: 'center', gap: 8, minWidth: 0}}>
+                        {/* Served from public/, so it's a root-absolute path
+                            rather than an import. */}
+                        <img
+                            src="/brand.png"
+                            alt=""
+                            width={26}
+                            height={26}
+                            style={{display: 'block', flexShrink: 0}}
                         />
-                    ) : (
-                        <NavLink
-                            key={item.id}
-                            item={item}
-                            active={item.path === activeItemPath}
-                            compact={compact}
-                            onClick={() => navigate(item.path)}
-                        />
-                    )
-                )}
-            </nav>
+                        {!compact && <span style={{fontWeight: 600, fontSize: 15}}>iTeach</span>}
+                    </div>
+                    <Button
+                        view="flat"
+                        size="s"
+                        onClick={() => setCompact((current) => !current)}
+                        aria-label={compact ? 'Expand' : 'Collapse'}
+                    >
+                        <Button.Icon>
+                            {compact ? <PanelLeftOpen size={16}/> : <PanelLeftClose size={16}/>}
+                        </Button.Icon>
+                    </Button>
+                </div>
 
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: compact ? '10px 0' : '10px 12px',
-                    borderTop: '1px solid var(--g-color-line-generic)',
-                    justifyContent: compact ? 'center' : 'space-between',
-                }}
-            >
-                <button
-                    type="button"
-                    onClick={onOpenSettings}
+                <nav
+                    style={{
+                        flex: 1,
+                        overflowY: 'auto',
+                        padding: compact ? '4px 8px' : '4px 8px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                    }}
+                >
+                    {items.map((item) =>
+                        item.children ? (
+                            <NavGroup
+                                key={item.id}
+                                group={item}
+                                activeItemPath={activeItemPath}
+                                compact={compact}
+                                openIds={openIds}
+                                onToggle={toggleGroup}
+                                onNavigate={navigate}
+                                onExpandSidebar={() => setCompact(false)}
+                            />
+                        ) : (
+                            <NavLink
+                                key={item.id}
+                                item={item}
+                                active={item.path === activeItemPath}
+                                compact={compact}
+                                onClick={() => navigate(item.path)}
+                            />
+                        )
+                    )}
+                </nav>
+
+                <div
                     style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 10,
-                        minWidth: 0,
-                        flex: compact ? '0 0 auto' : '1 1 auto',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: 'inherit',
-                        font: 'inherit',
-                        textAlign: 'left',
-                        padding: 0,
+                        gap: 8,
+                        padding: compact ? '10px 0' : '10px 12px',
+                        borderTop: '1px solid var(--g-color-line-generic)',
+                        justifyContent: compact ? 'center' : 'space-between',
                     }}
                 >
-                    <UserAvatar avatar={user?.avatar} name={userName} size="s"/>
+                    <button
+                        type="button"
+                        onClick={onOpenSettings}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            minWidth: 0,
+                            flex: compact ? '0 0 auto' : '1 1 auto',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'inherit',
+                            font: 'inherit',
+                            textAlign: 'left',
+                            padding: 0,
+                        }}
+                    >
+                        <UserAvatar avatar={user?.avatar} name={userName} size="s"/>
+                        {!compact && (
+                            <span style={{minWidth: 0}}>
+                                <span className="sidebar__label" style={{fontSize: 13, fontWeight: 600}}>
+                                    {userName}
+                                </span>
+                                <span
+                                    style={{
+                                        display: 'block',
+                                        fontSize: 12,
+                                        color: 'var(--g-color-text-secondary)',
+                                    }}
+                                >
+                                    {roleLabel}
+                                </span>
+                            </span>
+                        )}
+                    </button>
                     {!compact && (
-                        <span style={{minWidth: 0}}>
-                            <span className="sidebar__label" style={{fontSize: 13, fontWeight: 600}}>
-                                {userName}
-                            </span>
-                            <span
-                                style={{
-                                    display: 'block',
-                                    fontSize: 12,
-                                    color: 'var(--g-color-text-secondary)',
-                                }}
-                            >
-                                {roleLabel}
-                            </span>
-                        </span>
+                        <Button view="flat" size="s" onClick={onLogout} aria-label={t('auth.logout')}>
+                            <Button.Icon>
+                                <LogOut size={16}/>
+                            </Button.Icon>
+                        </Button>
                     )}
-                </button>
-                {!compact && (
-                    <Button view="flat" size="s" onClick={onLogout} aria-label={t('auth.logout')}>
-                        <Button.Icon>
-                            <LogOut size={16}/>
-                        </Button.Icon>
-                    </Button>
-                )}
-            </div>
-        </aside>
+                </div>
+            </aside>
+        </ThemeProvider>
     );
 }
 
