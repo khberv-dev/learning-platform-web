@@ -1,6 +1,6 @@
 import {useNavigate} from 'react-router-dom';
 import {Button} from '@gravity-ui/uikit';
-import {CalendarClock, Star, UserCheck, Users} from 'lucide-react';
+import {Star, UserCheck, Users} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useMySummary} from '@/services/mentor/query.js';
 import {GROUP_MENTOR_ROLE, useMyGroups} from '@/services/group/query.js';
@@ -44,12 +44,6 @@ function MentorDashboard() {
                     label={t('dashboard.newThisMonth')}
                     value={summary.data?.newStudentsThisMonth}
                     icon={UserCheck}
-                    loading={summary.isPending}
-                />
-                <StatCard
-                    label={t('dashboard.liveSessions')}
-                    value={summary.data?.liveSessionsScheduled}
-                    icon={CalendarClock}
                     loading={summary.isPending}
                 />
                 <StatCard

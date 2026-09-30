@@ -18,10 +18,10 @@ import FormField from '@/ui/components/formField.jsx';
 import ConfirmDialog from '@/ui/components/confirmDialog.jsx';
 import DataTable from '@/ui/components/dataTable.jsx';
 
-const EMPTY = {title: '', price: '', month: '', hasMentor: false, isActive: true};
+const EMPTY = {title: '', price: '', month: '', isActive: true};
 
 // A course carries no price of its own - every price/duration pair lives on a
-// plan, which is also what decides whether a mentor gets attached.
+// plan. Mentors come from the student's group, never from the plan.
 function CoursePlans({courseId}) {
     const {t} = useI18n();
     const query = usePlans(courseId);
@@ -47,7 +47,6 @@ function CoursePlans({courseId}) {
             title: plan.title ?? '',
             price: String(plan.price ?? ''),
             month: String(plan.month ?? ''),
-            hasMentor: Boolean(plan.hasMentor),
             isActive: Boolean(plan.isActive),
         });
         setDialog({mode: 'edit', planId: plan.id});
@@ -58,7 +57,6 @@ function CoursePlans({courseId}) {
             title: form.title.trim(),
             price: Number(form.price),
             month: Number(form.month),
-            hasMentor: form.hasMentor,
             isActive: form.isActive,
         };
 
@@ -96,11 +94,6 @@ function CoursePlans({courseId}) {
         {id: 'title', name: t('plan.name'), template: (row) => row.title},
         {id: 'price', name: t('plan.price'), template: (row) => formatMoney(row.price)},
         {id: 'month', name: t('plan.month'), template: (row) => row.month},
-        {
-            id: 'hasMentor',
-            name: t('plan.hasMentor'),
-            template: (row) => (row.hasMentor ? t('common.yes') : t('common.no')),
-        },
         {
             id: 'isActive',
             name: t('common.status'),
@@ -171,9 +164,6 @@ function CoursePlans({courseId}) {
                                 onUpdate={setField('month')}
                             />
                         </FormField>
-                        <Checkbox checked={form.hasMentor} onUpdate={setField('hasMentor')}>
-                            {t('plan.hasMentor')}
-                        </Checkbox>
                         <Checkbox checked={form.isActive} onUpdate={setField('isActive')}>
                             {t('course.isActive')}
                         </Checkbox>

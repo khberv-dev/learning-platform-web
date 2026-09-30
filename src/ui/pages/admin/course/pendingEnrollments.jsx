@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import {Link} from 'react-router-dom';
 import {Button, Select} from '@gravity-ui/uikit';
 import {Check, X} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
@@ -68,9 +69,20 @@ function AdminPendingEnrollments() {
         {
             id: 'student',
             name: t('pendingEnrollment.student'),
-            // The request points at the user account, not the Student row, so
-            // there is no student page to link to from here.
-            template: (row) => <UserCell user={row.student}/>,
+            // The request points at the Student row itself, so its id opens the
+            // student page. A link rather than a row click, since the row
+            // also carries the accept/reject buttons.
+            template: (row) =>
+                row.student?.id ? (
+                    <Link
+                        to={`/admin/users/students/${row.student.id}`}
+                        style={{color: 'inherit', textDecoration: 'none'}}
+                    >
+                        <UserCell user={row.student}/>
+                    </Link>
+                ) : (
+                    <UserCell user={row.student}/>
+                ),
         },
         {
             id: 'course',

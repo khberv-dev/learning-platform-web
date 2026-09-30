@@ -53,15 +53,21 @@ function MessageBubble({message, own}) {
                         {fullName(sender)}
                     </div>
                 )}
-                {message.type === 'file' && file ? (
-                    <a
-                        href={file}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{color: 'inherit', textDecoration: 'underline', fontSize: 14}}
-                    >
-                        {message.fileName ?? 'file'}
-                    </a>
+                {message.type === 'file' ? (
+                    // The API answers null in place of a URL it failed to sign,
+                    // so the name still renders, just without a link.
+                    file ? (
+                        <a
+                            href={file}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{color: 'inherit', textDecoration: 'underline', fontSize: 14}}
+                        >
+                            {message.fileName ?? 'file'}
+                        </a>
+                    ) : (
+                        <div style={{fontSize: 14, opacity: 0.7}}>{message.fileName ?? 'file'}</div>
+                    )
                 ) : (
                     <div style={{fontSize: 14, whiteSpace: 'pre-wrap', wordBreak: 'break-word'}}>
                         {message.text}

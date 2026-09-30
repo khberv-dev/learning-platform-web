@@ -21,7 +21,7 @@ export const MENTOR_STATUS = {
 };
 
 // Whitelisted server-side; anything else is rejected rather than reaching SQL.
-// Narrower than the student list - no points/coins/balance - but adds `role`,
+// Narrower than the student list - no points/coins/level - but adds `role`,
 // a mentor-only column (their own primary/support classification, distinct
 // from GroupMentor.role which is per-group).
 export const MENTOR_SORT_FIELDS = [

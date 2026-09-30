@@ -25,6 +25,7 @@ import FormField from '@/ui/components/formField.jsx';
 import DataTable from '@/ui/components/dataTable.jsx';
 import ConfirmDialog from '@/ui/components/confirmDialog.jsx';
 import FileDropCard from '@/ui/components/fileDropCard.jsx';
+import LessonMaterials from '@/ui/pages/admin/course/lessonMaterials.jsx';
 import {ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 
 function LessonForm({courseId, unitId, lessonId, initialValues}) {
@@ -273,6 +274,8 @@ function AdminLesson() {
                         />
                     </div>
                 </PageSection>
+
+                <LessonMaterials lessonId={lessonId}/>
 
                 <PageSection
                     title={t('course.tasks')}

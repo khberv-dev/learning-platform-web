@@ -4,7 +4,7 @@ import {Button, Table} from '@gravity-ui/uikit';
 import {KeyRound, Plus} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useStudent} from '@/services/student/query.js';
-import {formatDate, formatMoney, formatPhone, fullName} from '@/shared/utils/format.js';
+import {formatDate, formatPhone, fullName} from '@/shared/utils/format.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import StatCard from '@/ui/components/statCard.jsx';
@@ -106,7 +106,6 @@ function AdminStudentDetail() {
                 <StatCard label={t('student.level')} value={String(student.level ?? '—').toUpperCase()}/>
                 <StatCard label={t('student.points')} value={student.points ?? 0}/>
                 <StatCard label={t('student.coins')} value={student.coins ?? 0}/>
-                <StatCard label={t('student.balance')} value={formatMoney(student.balance)}/>
             </div>
 
             <PageSection title={t('student.enrollments')}>

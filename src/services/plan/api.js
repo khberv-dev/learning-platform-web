@@ -1,7 +1,7 @@
 import {apiClient} from '@/services/api.js';
 
 // Plans hang off a course - a course has no price of its own, the plan carries
-// `price`, `month` (duration) and `hasMentor`.
+// `price` and `month` (duration).
 
 // Paginated; 100 is the API's own cap on `limit` and comfortably covers every
 // plan a course has in one request - there is no pagination UI here, and the

@@ -5,7 +5,7 @@ import {Search} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {STUDENT_LEVELS, useStudents} from '@/services/student/query.js';
 import {useDebouncedValue} from '@/shared/hooks/useDebouncedValue.js';
-import {formatDate, formatMoney} from '@/shared/utils/format.js';
+import {formatDate} from '@/shared/utils/format.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import DataTable from '@/ui/components/dataTable.jsx';
@@ -74,12 +74,6 @@ function AdminStudents() {
             name: t('student.coins'),
             meta: {sort: true, defaultSortOrder: 'desc'},
             template: (row) => row.coins ?? 0,
-        },
-        {
-            id: 'balance',
-            name: t('student.balance'),
-            meta: {sort: true, defaultSortOrder: 'desc'},
-            template: (row) => formatMoney(row.balance),
         },
         {
             id: 'activeCoursesCount',

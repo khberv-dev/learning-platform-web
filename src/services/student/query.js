@@ -10,7 +10,6 @@ export const STUDENT_SORT_FIELDS = [
     'updatedAt',
     'points',
     'coins',
-    'balance',
     'level',
     'firstName',
     'lastName',

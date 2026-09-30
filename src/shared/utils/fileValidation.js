@@ -15,10 +15,27 @@ export const VIDEO_RULES = {
     label: 'MP4',
 };
 
+// Lesson materials. The API accepts exactly these (by MIME, falling back to
+// the extension) and caps nothing, so the size limit is ours. `extensions`
+// covers browsers that report an empty or generic MIME for Word files.
+export const DOCUMENT_RULES = {
+    mimeTypes: [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ],
+    extensions: ['.pdf', '.doc', '.docx'],
+    maxBytes: 50 * 1024 * 1024,
+    label: 'PDF, DOC, DOCX',
+};
+
 // Returns null when `file` satisfies `rules`, or {key, vars} for `t()`
 // describing why not.
 export function validateFile(file, rules) {
-    if (!rules.mimeTypes.includes(file.type)) {
+    const name = file.name.toLowerCase();
+    const typeAccepted =
+        rules.mimeTypes.includes(file.type) || Boolean(rules.extensions?.some((ext) => name.endsWith(ext)));
+    if (!typeAccepted) {
         return {key: 'upload.invalidType', vars: {types: rules.label}};
     }
     if (file.size > rules.maxBytes) {
