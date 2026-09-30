@@ -22,6 +22,7 @@ import {
     updateUnit,
     uploadLessonMedia,
     uploadTaskFile,
+    setCourseAuthors,
 } from '@/services/course/api.js';
 
 export const TASK_CONTENT_TYPE = {
@@ -112,6 +113,19 @@ function useCourseMutation(mutationFn) {
 export const useCreateCourse = () => useCourseMutation(createCourse);
 export const useUpdateCourse = () => useCourseMutation(updateCourse);
 export const useDeleteCourse = () => useCourseMutation(deleteCourse);
+
+// An author's detail lists its courses, so reassigning also refreshes authors.
+export const useSetCourseAuthors = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: setCourseAuthors,
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ['course']});
+            queryClient.invalidateQueries({queryKey: ['author']});
+        },
+    });
+};
 
 export const useCreateUnit = () => useCourseMutation(createUnit);
 export const useUpdateUnit = () => useCourseMutation(updateUnit);

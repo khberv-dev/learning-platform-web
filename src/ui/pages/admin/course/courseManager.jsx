@@ -17,6 +17,7 @@ import FileDropCard from '@/ui/components/fileDropCard.jsx';
 import {ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 import CourseContent from '@/ui/pages/admin/course/courseContent.jsx';
 import CoursePlans from '@/ui/pages/admin/course/coursePlans.jsx';
+import CourseAuthors from '@/ui/pages/admin/course/courseAuthors.jsx';
 
 function CourseSettings({course}) {
     const {t} = useI18n();
@@ -169,6 +170,7 @@ function AdminCourseManager() {
                 <TabList style={{marginBottom: 16}}>
                     <Tab value="content">{t('course.units')}</Tab>
                     <Tab value="plans">{t('plan.title')}</Tab>
+                    <Tab value="authors">{t('author.title')}</Tab>
                     <Tab value="settings">{t('settings.title')}</Tab>
                 </TabList>
                 <TabPanel value="content">
@@ -176,6 +178,9 @@ function AdminCourseManager() {
                 </TabPanel>
                 <TabPanel value="plans">
                     <CoursePlans courseId={course.id}/>
+                </TabPanel>
+                <TabPanel value="authors">
+                    <CourseAuthors course={course}/>
                 </TabPanel>
                 <TabPanel value="settings">
                     <CourseSettings course={course}/>

@@ -50,6 +50,14 @@ export async function deleteCourse(id) {
     await apiClient.delete(`admin/courses/${id}`);
 }
 
+// Replaces the course's whole author set in one idempotent call - `[]` clears
+// it, and any unknown id 400s without changing anything. Answers with the
+// full course detail (units + authors).
+export async function setCourseAuthors({id, authorIds}) {
+    const res = await apiClient.put(`admin/courses/${id}/authors`, {authorIds});
+    return res.data;
+}
+
 // ── Unit ─────────────────────────────────────────────────────────────────────
 
 // `index` is the admin-set display order (int, default 0). Lists come back

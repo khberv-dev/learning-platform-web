@@ -21,6 +21,8 @@ import AdminUnit from '@/ui/pages/admin/course/unit.jsx';
 import AdminLesson from '@/ui/pages/admin/course/lesson.jsx';
 import AdminTask from '@/ui/pages/admin/course/task.jsx';
 import AdminQuestion from '@/ui/pages/admin/course/question.jsx';
+import AdminAuthors from '@/ui/pages/admin/course/authors.jsx';
+import AdminAuthorDetail from '@/ui/pages/admin/course/authorDetail.jsx';
 import AdminPayments from '@/ui/pages/admin/payment/payments.jsx';
 import AdminPaymentTypes from '@/ui/pages/admin/payment/paymentTypes.jsx';
 import AdminPushNotifications from '@/ui/pages/admin/marketing/pushNotifications.jsx';
@@ -89,6 +91,8 @@ function App() {
 
                         <Route path="course/enrollments" element={<AdminEnrollments/>}/>
                         <Route path="course/pending-enrollments" element={<AdminPendingEnrollments/>}/>
+                        <Route path="course/authors" element={<AdminAuthors/>}/>
+                        <Route path="course/authors/:id" element={<AdminAuthorDetail/>}/>
 
                         <Route path="payment/payments" element={<AdminPayments/>}/>
                         <Route path="payment/payment-types" element={<AdminPaymentTypes/>}/>

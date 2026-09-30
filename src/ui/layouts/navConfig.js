@@ -8,6 +8,7 @@ import {
     Home,
     LayoutDashboard,
     Megaphone,
+    PenLine,
     Settings,
     UserCog,
     UsersRound,
@@ -42,6 +43,7 @@ export const NAV_BY_ROLE = {
             icon: BookOpen,
             children: [
                 {id: 'courses', titleKey: 'nav.courses', icon: BookOpen, path: '/admin/course/courses'},
+                {id: 'authors', titleKey: 'nav.authors', icon: PenLine, path: '/admin/course/authors'},
                 {
                     id: 'enrollments',
                     titleKey: 'nav.enrollments',

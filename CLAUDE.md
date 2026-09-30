@@ -70,7 +70,7 @@ Sign-in is per role: `POST auth/admin/sign-in` takes `{email, password}`, `POST 
 | — | `/admin` | `pages/admin/home.jsx` |
 | `users` | `/admin/users/{students,mentors}` | `pages/admin/users/` |
 | — | `/admin/groups`, `/admin/groups/:id` | `pages/admin/groups/` |
-| `course` | `/admin/course/{courses,enrollments,pending-enrollments}` | `pages/admin/course/` |
+| `course` | `/admin/course/{courses,authors,enrollments,pending-enrollments}` | `pages/admin/course/` |
 | `payment` | `/admin/payment/{payments,payment-types}` | `pages/admin/payment/` |
 | `marketing` | `/admin/marketing/push-notifications` | `pages/admin/marketing/` |
 | — | `/admin/settings` | `pages/admin/settings.jsx` |
@@ -165,6 +165,12 @@ List-page filter controls carry persistent labels through `FormField`; option te
 **Enrollment progress is the one place the course tree arrives whole.** `GET admin/enrollments/:enrollmentId/students/:studentId/progress` (`useEnrollmentProgress`, key `['enrollment', 'progress', …]`) returns the course with `units[].lessons[]` and a calculated `progress` percentage per level — the opposite of the paged-out tree everywhere else, so this page walks the nested payload directly and derives its "completed" count from `lesson.progress === 100`. Both ids are in the URL (`/admin/users/students/:studentId/enrollments/:enrollmentId/progress`, linked from the student detail page) and the API validates that the enrollment belongs to the student.
 
 Only a `created` request can be decided, so the action buttons render on those rows alone and the page's status filter **defaults to `created`** — it is a work queue, not an archive. A request carries no plan: `AcceptPendingEnrollmentDialog` picks one (`usePlans(row.course.id)`, and it must belong to the requested course), because price and duration are only settled at approval. `amount` is optional and falls back to the plan's price. Accepting opens the enrollment `active` **and** writes a `paid` payment in one server-side transaction — the money was collected outside Click/Payme, as with a manual enrollment — hence the `['payment']`/`['student']`/`['stats']` invalidations that rejecting doesn't need. The row points at the **`Student`** (the `userId` filter is really a student id despite its name), so the student cell links to `/admin/users/students/:id` — a link rather than a row click, since the row also holds the accept/reject buttons.
+
+### Course authors
+
+Authors are **display-only people credited on a course, not accounts** — no sign-in, no role, no link to `Mentor`. `services/author/{api,query}.js` covers admin CRUD at `admin/authors` (multipart, `avatar` file field, `IMAGE_RULES`; `gender` is **required** by the DTO, unlike a mentor's). The list is paginated newest-first with no search/filter/sort server-side; `GET admin/authors/:id` adds the author's `courses[]` (`{id, title, image, isActive}`). Pages: `/admin/course/authors` (list, create dialog) and `/admin/course/authors/:id` (profile, courses, edit dialog, delete), both sharing `authorFormDialog.jsx`, which is mounted only while open so it seeds from the author without an effect. Deleting an author just unlinks it from its courses.
+
+Crediting happens on the course, not the author: `PUT admin/courses/:id/authors {authorIds}` replaces the **whole** set in one idempotent call (`[]` clears it, an unknown id 400s and changes nothing) and answers with the full course detail. `GET admin/courses/:id` carries `authors[]` sorted by last/first name. The course page's "Authors" tab (`courseAuthors.jsx`) edits a draft id list in a multi-`Select` (every author, `limit: 100`) and saves it in one PUT; it's keyed on the current ids so a save re-seeds it. Author mutations invalidate `['course']` as well as `['author']`, and the course PUT invalidates both, since each side embeds the other.
 
 ### Groups
 
