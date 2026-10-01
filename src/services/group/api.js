@@ -1,15 +1,19 @@
 import {apiClient} from '@/services/api.js';
 
-// Admins manage groups under `admin/groups`; a mentor only reads their own
-// (`mentor/groups/me`). Mutations answer with the full group detail - the
-// group plus `mentors` (each with a `role`) and `students`.
+// Admins manage groups under `admin/groups`; a mentor only reads the ones
+// they lead (`mentor/groups/me`). A group belongs to a course and has at most
+// one mentor, `primaryMentor`, stored on the group itself - there is no mentor
+// team and no support mentors. Every row (list and detail) carries `course`
+// and `primaryMentor`; mutations answer with the detail, which adds
+// `students` (active members, each with its `joinedAt`).
 
-export async function getGroups({page = 1, limit = 15, search, isActive, sortBy, sortOrder} = {}) {
+export async function getGroups({page = 1, limit = 15, search, courseId, isActive, sortBy, sortOrder} = {}) {
     const res = await apiClient.get('admin/groups', {
         params: {
             page,
             limit,
             search: search?.trim() || undefined,
+            courseId: courseId || undefined,
             isActive: isActive === undefined || isActive === '' ? undefined : isActive,
             sortBy: sortBy || undefined,
             sortOrder: sortOrder || undefined,
@@ -38,7 +42,9 @@ export async function setGroupActive({id, isActive}) {
     return res.data;
 }
 
-// Only students with no group can be added; moving a placed student is a swap.
+// A student may be in several groups, but only one active group per course:
+// adding 400s (naming the conflict) if a student is already in this group or
+// another group of the same course. Moving one between groups is a swap.
 export async function addGroupStudents({id, studentIds}) {
     const res = await apiClient.post(`admin/groups/${id}/students`, {studentIds});
     return res.data;
@@ -49,40 +55,35 @@ export async function removeGroupStudent({id, studentId}) {
     return res.data;
 }
 
-// Moves the student out of `id` into `toGroupId`; answers with the target group.
+// Moves the student out of `id` into `toGroupId` in one transaction - the
+// target may be in another course. Answers with the target group.
 export async function swapGroupStudent({id, studentId, toGroupId}) {
     const res = await apiClient.patch(`admin/groups/${id}/students/${studentId}/swap`, {toGroupId});
     return res.data;
 }
 
-// Replaces whoever is primary; an existing support mentor is promoted.
+// Sets the group's mentor, replacing whoever held it. Only a mentor whose own
+// profile `role` is `primary` is accepted.
 export async function assignPrimaryMentor({id, mentorId}) {
     const res = await apiClient.patch(`admin/groups/${id}/primary-mentor`, {mentorId});
     return res.data;
 }
 
-export async function addSupportMentor({id, mentorId}) {
-    const res = await apiClient.post(`admin/groups/${id}/support-mentors`, {mentorId});
+// Leaves the group with no mentor; 404s if it already has none.
+export async function unassignPrimaryMentor(id) {
+    const res = await apiClient.delete(`admin/groups/${id}/primary-mentor`);
     return res.data;
 }
 
-export async function removeGroupMentor({id, mentorId}) {
-    const res = await apiClient.delete(`admin/groups/${id}/mentors/${mentorId}`);
-    return res.data;
-}
-
-// A paginated envelope: every group the mentor is primary or support for, each
-// row the same lightweight shape as `getGroups` (group fields + `primaryMentor`,
-// `null` if unassigned) plus the calling mentor's own `role` in it - no
-// `mentors[]`/`students[]`, unlike the single-group admin detail.
+// A paginated envelope of the groups whose `primaryMentor` is the caller - the
+// same row shape as `getGroups`, no `students[]`.
 export async function getMyGroups({page = 1, limit = 100} = {}) {
     const res = await apiClient.get('mentor/groups/me', {params: {page, limit}});
     return res.data;
 }
 
-// Unlike the list, this is the full detail shape (`mentors[]`, `students[]`) -
-// the same `findOneGroup` the admin route answers with. The server 403s if the
-// calling mentor isn't a member (primary or support) of the group at all.
+// The same detail shape the admin route answers with (`students[]` included).
+// The server 403s unless the caller is this group's `primaryMentor`.
 export async function getMyGroup(id) {
     const res = await apiClient.get(`mentor/groups/${id}`);
     return res.data;

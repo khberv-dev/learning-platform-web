@@ -1,19 +1,17 @@
 import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
-import {Button, Label} from '@gravity-ui/uikit';
-import {ArrowRightLeft, MessageSquare, Pencil, Plus, Trash2, UserCheck} from 'lucide-react';
+import {Alert, Button} from '@gravity-ui/uikit';
+import {ArrowRightLeft, MessageSquare, Pencil, Plus, Trash2, UserCog} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {
-    GROUP_MENTOR_ROLE,
-    useAssignPrimaryMentor,
     useGroup,
-    useRemoveGroupMentor,
     useRemoveGroupStudent,
+    useUnassignPrimaryMentor,
     useUpdateGroup,
 } from '@/services/group/query.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
-import {fullName} from '@/shared/utils/format.js';
+import {formatDate, fullName} from '@/shared/utils/format.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import DataTable from '@/ui/components/dataTable.jsx';
@@ -33,26 +31,23 @@ function AdminGroupDetail() {
     const query = useGroup(id);
     const updateGroup = useUpdateGroup();
     const removeStudent = useRemoveGroupStudent();
-    const removeMentor = useRemoveGroupMentor();
+    const unassignMentor = useUnassignPrimaryMentor();
 
     const [editOpen, setEditOpen] = useState(false);
     const [scheduleEditing, setScheduleEditing] = useState(false);
     const [scheduleDraft, setScheduleDraft] = useState({});
-    const [mentorMode, setMentorMode] = useState(null);
-    // Keeps the picker's title stable while its close animation plays.
-    const lastMode = mentorMode?.mode === 'primary' ? 'primary' : 'support';
+    const [mentorPickerOpen, setMentorPickerOpen] = useState(false);
     const [addStudentsOpen, setAddStudentsOpen] = useState(false);
     const [swapStudent, setSwapStudent] = useState(null);
     const [studentToRemove, setStudentToRemove] = useState(null);
-    const [mentorToRemove, setMentorToRemove] = useState(null);
+    const [confirmUnassign, setConfirmUnassign] = useState(false);
 
     if (query.isPending) return <LoadingState rows={8}/>;
     if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch}/>;
 
     const group = query.data;
-    const mentors = group.mentors ?? [];
+    const mentor = group.primaryMentor ?? null;
     const students = group.students ?? [];
-    const primary = mentors.find((row) => row.role === GROUP_MENTOR_ROLE.PRIMARY);
 
     const onError = (name) => (error) =>
         toaster.add({name, theme: 'danger', title: extractApiErrorMessage(error, t('common.error'))});
@@ -75,61 +70,6 @@ function AdminGroupDetail() {
             }
         );
 
-    const mentorColumns = [
-        {
-            id: 'mentor',
-            name: t('group.mentor'),
-            // No `secondary` override: the role column already says primary/
-            // support, so the phone number (UserCell's default) is more useful
-            // here than repeating it.
-            template: (row) => <UserCell user={row.mentor}/>,
-        },
-        {
-            id: 'role',
-            name: t('group.role'),
-            template: (row) => (
-                <Label theme={row.role === GROUP_MENTOR_ROLE.PRIMARY ? 'success' : 'info'}>
-                    {t(row.role === GROUP_MENTOR_ROLE.PRIMARY ? 'group.rolePrimary' : 'group.roleSupport')}
-                </Label>
-            ),
-        },
-        {
-            id: 'actions',
-            name: '',
-            width: 200,
-            template: (row) => (
-                <div style={{display: 'flex', gap: 4, justifyContent: 'flex-end'}}>
-                    {row.role === GROUP_MENTOR_ROLE.SUPPORT && (
-                        <Button
-                            view="flat"
-                            size="s"
-                            title={t('group.makePrimary')}
-                            onClick={() =>
-                                // Promotion goes through the same route as assigning.
-                                setMentorMode({mode: 'promote', mentor: row.mentor})
-                            }
-                        >
-                            <Button.Icon>
-                                <UserCheck size={15}/>
-                            </Button.Icon>
-                            {t('group.makePrimary')}
-                        </Button>
-                    )}
-                    <Button
-                        view="flat-danger"
-                        size="s"
-                        aria-label={t('common.delete')}
-                        onClick={() => setMentorToRemove(row.mentor)}
-                    >
-                        <Button.Icon>
-                            <Trash2 size={15}/>
-                        </Button.Icon>
-                    </Button>
-                </div>
-            ),
-        },
-    ];
-
     const studentColumns = [
         {
             id: 'student',
@@ -137,6 +77,7 @@ function AdminGroupDetail() {
             template: (row) => <UserCell user={row}/>,
         },
         {id: 'level', name: t('student.level'), template: (row) => row.level || '—'},
+        {id: 'joinedAt', name: t('group.joinedAt'), template: (row) => formatDate(row.joinedAt)},
         {
             id: 'actions',
             name: '',
@@ -168,7 +109,12 @@ function AdminGroupDetail() {
         <>
             <PageHeader
                 title={group.title}
-                description={<ActiveLabel active={group.isActive}/>}
+                description={
+                    <span style={{display: 'inline-flex', alignItems: 'center', gap: 8}}>
+                        <ActiveLabel active={group.isActive}/>
+                        {group.course && <span>{group.course.title}</span>}
+                    </span>
+                }
                 backTo="/admin/groups"
                 breadcrumbs={[{title: t('group.title'), to: '/admin/groups'}, {title: group.title}]}
                 actions={
@@ -190,28 +136,53 @@ function AdminGroupDetail() {
             />
 
             <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
+                {/* Groups that predate courses come back with none, and until
+                    one is set the one-group-per-course rule can't apply. */}
+                {!group.course && (
+                    <Alert
+                        theme="warning"
+                        title={t('group.noCourse')}
+                        message={t('group.noCourseHint')}
+                        actions={
+                            <Alert.Actions>
+                                <Alert.Action onClick={() => setEditOpen(true)}>{t('group.pickCourse')}</Alert.Action>
+                            </Alert.Actions>
+                        }
+                    />
+                )}
+
                 <PageSection
-                    title={t('group.mentors')}
+                    title={t('group.mentor')}
+                    description={t('group.primaryHint')}
                     actions={
                         <>
-                            <Button view="outlined" onClick={() => setMentorMode({mode: 'primary'})}>
-                                {t('group.assignPrimary')}
-                            </Button>
-                            <Button view="outlined" onClick={() => setMentorMode({mode: 'support'})}>
+                            <Button view="outlined" onClick={() => setMentorPickerOpen(true)}>
                                 <Button.Icon>
-                                    <Plus size={15}/>
+                                    <UserCog size={15}/>
                                 </Button.Icon>
-                                {t('group.addSupport')}
+                                {t(mentor ? 'group.changeMentor' : 'group.assignMentor')}
                             </Button>
+                            {mentor && (
+                                <Button
+                                    view="flat-danger"
+                                    aria-label={t('group.removeMentor')}
+                                    onClick={() => setConfirmUnassign(true)}
+                                >
+                                    <Button.Icon>
+                                        <Trash2 size={15}/>
+                                    </Button.Icon>
+                                </Button>
+                            )}
                         </>
                     }
                 >
-                    <DataTable
-                        rows={mentors}
-                        columns={mentorColumns}
-                        getRowId={(row) => row.id}
-                        emptyTitle={t('group.noMentors')}
-                    />
+                    {mentor ? (
+                        <UserCell user={mentor}/>
+                    ) : (
+                        <div style={{color: 'var(--g-color-text-secondary)', fontSize: 14}}>
+                            {t('group.noMentor')}
+                        </div>
+                    )}
                 </PageSection>
 
                 <PageSection
@@ -271,19 +242,10 @@ function AdminGroupDetail() {
             <GroupFormDialog open={editOpen} group={group} onClose={() => setEditOpen(false)}/>
 
             <MentorPickerDialog
-                open={Boolean(mentorMode) && mentorMode.mode !== 'promote'}
-                mode={mentorMode?.mode ?? lastMode}
+                open={mentorPickerOpen}
                 groupId={group.id}
-                // Support: hide everyone already on the group. Primary: only the
-                // current primary is pointless to pick.
-                excludeIds={
-                    mentorMode?.mode === 'support'
-                        ? mentors.map((row) => row.mentor.id)
-                        : primary
-                          ? [primary.mentor.id]
-                          : []
-                }
-                onClose={() => setMentorMode(null)}
+                currentMentorId={mentor?.id ?? null}
+                onClose={() => setMentorPickerOpen(false)}
             />
 
             <AddStudentsDialog
@@ -299,13 +261,6 @@ function AdminGroupDetail() {
                 student={swapStudent}
                 onClose={() => setSwapStudent(null)}
                 onMoved={(toGroupId) => navigate(`/admin/groups/${toGroupId}`)}
-            />
-
-            <PromoteMentorConfirm
-                mentor={mentorMode?.mode === 'promote' ? mentorMode.mentor : null}
-                groupId={group.id}
-                primaryName={primary ? fullName(primary.mentor) : null}
-                onClose={() => setMentorMode(null)}
             />
 
             <ConfirmDialog
@@ -330,70 +285,23 @@ function AdminGroupDetail() {
             />
 
             <ConfirmDialog
-                open={Boolean(mentorToRemove)}
+                open={confirmUnassign}
                 title={t('group.removeMentor')}
-                message={t(
-                    mentorToRemove && mentorToRemove.id === primary?.mentor.id
-                        ? 'group.removePrimaryConfirm'
-                        : 'group.removeMentorConfirm',
-                    {name: fullName(mentorToRemove)}
-                )}
+                message={t('group.removeMentorConfirm', {name: fullName(mentor)})}
                 confirmText={t('common.delete')}
-                loading={removeMentor.isPending}
-                onClose={() => setMentorToRemove(null)}
+                loading={unassignMentor.isPending}
+                onClose={() => setConfirmUnassign(false)}
                 onConfirm={() =>
-                    removeMentor.mutate(
-                        {id: group.id, mentorId: mentorToRemove.id},
-                        {
-                            onSuccess: () => {
-                                onDone('group-mentor-removed')();
-                                setMentorToRemove(null);
-                            },
-                            onError: onError('group-mentor-remove-failed'),
-                        }
-                    )
+                    unassignMentor.mutate(group.id, {
+                        onSuccess: () => {
+                            onDone('group-mentor-removed')();
+                            setConfirmUnassign(false);
+                        },
+                        onError: onError('group-mentor-remove-failed'),
+                    })
                 }
             />
         </>
-    );
-}
-
-// Promoting a support mentor replaces the current primary, so it is confirmed
-// rather than fired straight from the row button.
-function PromoteMentorConfirm({mentor, groupId, primaryName, onClose}) {
-    const {t} = useI18n();
-    const assign = useAssignPrimaryMentor();
-
-    return (
-        <ConfirmDialog
-            open={Boolean(mentor)}
-            title={t('group.makePrimary')}
-            message={t(primaryName ? 'group.promoteConfirmReplace' : 'group.promoteConfirm', {
-                name: fullName(mentor),
-                current: primaryName,
-            })}
-            confirmText={t('common.confirm')}
-            danger={false}
-            loading={assign.isPending}
-            onClose={onClose}
-            onConfirm={() =>
-                assign.mutate(
-                    {id: groupId, mentorId: mentor.id},
-                    {
-                        onSuccess: () => {
-                            toaster.add({name: 'group-primary', theme: 'success', title: t('common.saved')});
-                            onClose();
-                        },
-                        onError: (error) =>
-                            toaster.add({
-                                name: 'group-primary-failed',
-                                theme: 'danger',
-                                title: extractApiErrorMessage(error, t('common.error')),
-                            }),
-                    }
-                )
-            }
-        />
     );
 }
 

@@ -1,20 +1,21 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {
     addGroupStudents,
-    addSupportMentor,
     assignPrimaryMentor,
     createGroup,
     getGroup,
     getGroups,
     getMyGroup,
     getMyGroups,
-    removeGroupMentor,
     removeGroupStudent,
     setGroupActive,
     swapGroupStudent,
+    unassignPrimaryMentor,
     updateGroup,
 } from '@/services/group/api.js';
 
+// A mentor's own profile classification (`Mentor.role`). It no longer maps to
+// any per-group role - it only decides who may be set as a group's mentor.
 export const GROUP_MENTOR_ROLE = {
     PRIMARY: 'primary',
     SUPPORT: 'support',
@@ -39,7 +40,7 @@ export const useGroup = (id) => {
 };
 
 // 100 is the API's own cap on `limit`, comfortably covering every group a
-// mentor leads or supports in one request - a mentor's own groups page has no
+// mentor leads in one request - a mentor's own groups page has no
 // pagination UI, unlike the admin list.
 export const useMyGroups = () => {
     return useQuery({
@@ -60,10 +61,9 @@ export const useMyGroup = (id) => {
 
 // Every mutation invalidates the whole domain: a roster change shows up in the
 // detail page, the list, and a mentor's own groups, and those are keyed by
-// params there is no single key to patch. Student rows may carry their group,
-// so the student domain is refreshed as well, and so is chat: each group owns
-// a room whose header (primary mentor, student count) and access follow the
-// roster.
+// params there is no single key to patch. The student domain is refreshed as
+// well, and so is chat: each group owns a room whose header (mentor, student
+// count) and access follow the roster.
 function useGroupMutation(mutationFn) {
     const queryClient = useQueryClient();
 
@@ -84,5 +84,4 @@ export const useAddGroupStudents = () => useGroupMutation(addGroupStudents);
 export const useRemoveGroupStudent = () => useGroupMutation(removeGroupStudent);
 export const useSwapGroupStudent = () => useGroupMutation(swapGroupStudent);
 export const useAssignPrimaryMentor = () => useGroupMutation(assignPrimaryMentor);
-export const useAddSupportMentor = () => useGroupMutation(addSupportMentor);
-export const useRemoveGroupMentor = () => useGroupMutation(removeGroupMentor);
+export const useUnassignPrimaryMentor = () => useGroupMutation(unassignPrimaryMentor);

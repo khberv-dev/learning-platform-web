@@ -3,7 +3,7 @@ import {Button} from '@gravity-ui/uikit';
 import {Star, UserCheck, Users} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useMySummary} from '@/services/mentor/query.js';
-import {GROUP_MENTOR_ROLE, useMyGroups} from '@/services/group/query.js';
+import {useMyGroups} from '@/services/group/query.js';
 import {countSlots} from '@/shared/utils/schedule.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
@@ -17,10 +17,8 @@ function MentorDashboard() {
     const summary = useMySummary();
     const groups = useMyGroups();
 
-    // Mirrors the groups page itself, which drops support-role groups
-    // entirely - a support mentor has no actions there, so a preview of one
-    // here would only dead-end at "See all".
-    const groupItems = (groups.data?.data ?? []).filter((group) => group.role === GROUP_MENTOR_ROLE.PRIMARY);
+    // Only the groups this mentor leads - the API returns nothing else.
+    const groupItems = groups.data?.data ?? [];
 
     return (
         <>
@@ -79,6 +77,11 @@ function MentorDashboard() {
                             >
                                 <div>
                                     <div style={{fontWeight: 500}}>{group.title}</div>
+                                    {group.course && (
+                                        <div style={{fontSize: 12, color: 'var(--g-color-text-secondary)'}}>
+                                            {group.course.title}
+                                        </div>
+                                    )}
                                     {countSlots(group.schedule) > 0 && (
                                         <div style={{fontSize: 12, color: 'var(--g-color-text-secondary)'}}>
                                             {t('group.schedule')}: {countSlots(group.schedule)}

@@ -1,9 +1,10 @@
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {Button, Select, TextInput} from '@gravity-ui/uikit';
+import {Button, Label, Select, TextInput} from '@gravity-ui/uikit';
 import {Plus, Search} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useGroups} from '@/services/group/query.js';
+import {useCourses} from '@/services/course/query.js';
 import {useDebouncedValue} from '@/shared/hooks/useDebouncedValue.js';
 import {formatDate} from '@/shared/utils/format.js';
 import {DEFAULT_PAGE_SIZE} from '@/shared/pagination.js';
@@ -23,6 +24,7 @@ function AdminGroups() {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
     const [search, setSearch] = useState('');
+    const [courseId, setCourseId] = useState('');
     const [active, setActive] = useState('');
     const [sort, setSort] = useState({sortBy: 'createdAt', sortOrder: 'DESC'});
     const [createOpen, setCreateOpen] = useState(false);
@@ -30,10 +32,12 @@ function AdminGroups() {
     // Only the request is delayed - `page` resets on the keystroke itself.
     const debouncedSearch = useDebouncedValue(search, 400);
 
+    const courses = useCourses();
     const query = useGroups({
         page,
         limit,
         search: debouncedSearch,
+        courseId,
         isActive: active === '' ? undefined : active === 'active',
         ...sort,
     });
@@ -51,9 +55,28 @@ function AdminGroups() {
             template: (row) => <span style={{fontWeight: 500}}>{row.title}</span>,
         },
         {
+            id: 'course',
+            name: t('group.course'),
+            // Groups that predate courses have none until an admin sets one,
+            // and adding students to them skips the one-group-per-course check.
+            template: (row) =>
+                row.course ? (
+                    row.course.title
+                ) : (
+                    <Label theme="warning" size="xs">
+                        {t('group.noCourse')}
+                    </Label>
+                ),
+        },
+        {
             id: 'primaryMentor',
             name: t('group.mentor'),
-            template: (row) => <UserCell user={row.primaryMentor}/>,
+            template: (row) =>
+                row.primaryMentor ? (
+                    <UserCell user={row.primaryMentor}/>
+                ) : (
+                    <span style={{color: 'var(--g-color-text-secondary)'}}>{t('group.noMentor')}</span>
+                ),
         },
         {
             id: 'schedule',
@@ -104,6 +127,23 @@ function AdminGroups() {
                                 }
                                 style={{width: 250}}
                             />
+                        </FormField>
+
+                        <FormField label={t('group.course')}>
+                            <Select
+                                value={[courseId]}
+                                onUpdate={([value]) => withReset(setCourseId)(value)}
+                                width={200}
+                                filterable
+                                loading={courses.isPending}
+                            >
+                                <Select.Option value="">{t('common.all')}</Select.Option>
+                                {(courses.data?.data ?? []).map((course) => (
+                                    <Select.Option key={course.id} value={course.id}>
+                                        {course.title}
+                                    </Select.Option>
+                                ))}
+                            </Select>
                         </FormField>
 
                         <FormField label={t('common.status')}>

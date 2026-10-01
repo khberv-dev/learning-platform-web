@@ -13,6 +13,15 @@ import FormField from '@/ui/components/formField.jsx';
 // A payment type is recognised by its logo first, so the icon leads and the
 // title follows. Pending payments have no type attached yet, and a type may
 // have been created without an icon - both fall back rather than leaving a gap.
+// A payment carries no plan of its own - it funds a Purchase, which names the
+// plan bought. `purchases[0].subscription` is only set once the payment is paid
+// on a subscription plan; rows written before `Purchase.plan` existed reach the
+// plan through that subscription instead.
+function paymentPlan(payment) {
+    const purchase = payment.purchases?.[0];
+    return purchase?.plan ?? purchase?.subscription?.plan ?? null;
+}
+
 function PaymentTypeCell({paymentType}) {
     if (!paymentType) return '—';
 
@@ -57,9 +66,12 @@ function AdminPayments() {
         {
             id: 'course',
             name: t('payment.course'),
-            // A payment funds a Purchase -> Subscription -> Plan -> Course; a
-            // payment carries no direct enrollment/plan FK any more.
-            template: (row) => row.purchases?.[0]?.subscription?.plan?.course?.title ?? '—',
+            template: (row) => paymentPlan(row)?.course?.title ?? '—',
+        },
+        {
+            id: 'plan',
+            name: t('payment.plan'),
+            template: (row) => paymentPlan(row)?.title ?? '—',
         },
         {
             id: 'amount',

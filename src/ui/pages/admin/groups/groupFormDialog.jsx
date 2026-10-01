@@ -1,7 +1,8 @@
 import {useState} from 'react';
-import {Dialog, Switch, TextInput} from '@gravity-ui/uikit';
+import {Dialog, Select, Switch, TextInput} from '@gravity-ui/uikit';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useCreateGroup, useSetGroupActive, useUpdateGroup} from '@/services/group/query.js';
+import {useCourses} from '@/services/course/query.js';
 import {toaster} from '@/shared/toaster.js';
 import {extractApiErrorMessage} from '@/shared/utils/apiError.js';
 import FormField from '@/ui/components/formField.jsx';
@@ -21,22 +22,31 @@ function GroupFormFields({group, onClose, onSaved}) {
     const isEdit = Boolean(group);
     const mutation = isEdit ? updateGroup : createGroup;
 
+    const courses = useCourses();
+
     const [title, setTitle] = useState(group?.title ?? '');
+    // Required on create. Groups that predate courses come back with
+    // `course: null`, so on edit it starts empty until one is picked.
+    const [courseId, setCourseId] = useState(group?.course?.id ?? '');
     const [schedule, setSchedule] = useState(group?.schedule ?? {});
     const [isActive, setIsActive] = useState(group?.isActive ?? true);
-    const [error, setError] = useState(null);
+    const [errors, setErrors] = useState({});
 
     const submit = () => {
-        if (!title.trim()) {
-            setError(t('common.error'));
-            return;
-        }
-        setError(null);
+        const next = {};
+        if (!title.trim()) next.title = t('common.error');
+        if (!courseId) next.courseId = t('common.error');
+        setErrors(next);
+        if (Object.keys(next).length) return;
 
         // Schedule is edited separately, on the group page's own card - this
         // dialog only sets it up front when creating, and never touches it on
         // an edit.
         const payload = {title: title.trim()};
+        // Sent on edit only when it actually changed: moving a group to another
+        // course re-checks every member against that course's other groups, so
+        // an untouched course shouldn't trigger the check (or its 400).
+        if (!isEdit || courseId !== group.course?.id) payload.courseId = courseId;
         if (!isEdit) {
             const cleaned = cleanFreeSchedule(schedule);
             if (countSlots(cleaned) > 0) payload.schedule = cleaned;
@@ -84,8 +94,30 @@ function GroupFormFields({group, onClose, onSaved}) {
         <>
             <Dialog.Body>
                 <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
-                    <FormField label={t('group.name')} required error={error}>
+                    <FormField label={t('group.name')} required error={errors.title}>
                         <TextInput size="l" value={title} onUpdate={setTitle} autoFocus/>
+                    </FormField>
+                    <FormField
+                        label={t('group.course')}
+                        required
+                        error={errors.courseId}
+                        hint={isEdit ? t('group.courseChangeHint') : undefined}
+                    >
+                        <Select
+                            size="l"
+                            width="max"
+                            filterable
+                            placeholder={t('group.pickCourse')}
+                            value={courseId ? [courseId] : []}
+                            onUpdate={([value]) => setCourseId(value ?? '')}
+                            loading={courses.isPending}
+                        >
+                            {(courses.data?.data ?? []).map((course) => (
+                                <Select.Option key={course.id} value={course.id}>
+                                    {course.title}
+                                </Select.Option>
+                            ))}
+                        </Select>
                     </FormField>
                     {isEdit && (
                         <FormField label={t('common.status')}>

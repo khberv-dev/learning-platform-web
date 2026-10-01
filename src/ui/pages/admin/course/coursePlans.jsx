@@ -18,7 +18,7 @@ import FormField from '@/ui/components/formField.jsx';
 import ConfirmDialog from '@/ui/components/confirmDialog.jsx';
 import DataTable from '@/ui/components/dataTable.jsx';
 
-const EMPTY = {title: '', price: '', month: '', isActive: true};
+const EMPTY = {title: '', price: '', month: '', hasSubscription: false, isActive: true};
 
 // A course carries no price of its own - every price/duration pair lives on a
 // plan. Mentors come from the student's group, never from the plan.
@@ -47,6 +47,7 @@ function CoursePlans({courseId}) {
             title: plan.title ?? '',
             price: String(plan.price ?? ''),
             month: String(plan.month ?? ''),
+            hasSubscription: Boolean(plan.hasSubscription),
             isActive: Boolean(plan.isActive),
         });
         setDialog({mode: 'edit', planId: plan.id});
@@ -57,6 +58,7 @@ function CoursePlans({courseId}) {
             title: form.title.trim(),
             price: Number(form.price),
             month: Number(form.month),
+            hasSubscription: form.hasSubscription,
             isActive: form.isActive,
         };
 
@@ -94,6 +96,11 @@ function CoursePlans({courseId}) {
         {id: 'title', name: t('plan.name'), template: (row) => row.title},
         {id: 'price', name: t('plan.price'), template: (row) => formatMoney(row.price)},
         {id: 'month', name: t('plan.month'), template: (row) => row.month},
+        {
+            id: 'hasSubscription',
+            name: t('plan.hasSubscription'),
+            template: (row) => (row.hasSubscription ? t('common.yes') : t('common.no')),
+        },
         {
             id: 'isActive',
             name: t('common.status'),
@@ -164,6 +171,19 @@ function CoursePlans({courseId}) {
                                 onUpdate={setField('month')}
                             />
                         </FormField>
+                        {/* Opt-in: a subscription plan also creates (or, while one is
+                            still running, extends by `month`) the student's
+                            subscription for this course on every enrollment
+                            path. Course access itself is the enrollment either
+                            way. */}
+                        <div>
+                            <Checkbox checked={form.hasSubscription} onUpdate={setField('hasSubscription')}>
+                                {t('plan.hasSubscription')}
+                            </Checkbox>
+                            <div style={{fontSize: 12, color: 'var(--g-color-text-secondary)', marginTop: 4}}>
+                                {t('plan.hasSubscriptionHint')}
+                            </div>
+                        </div>
                         <Checkbox checked={form.isActive} onUpdate={setField('isActive')}>
                             {t('course.isActive')}
                         </Checkbox>

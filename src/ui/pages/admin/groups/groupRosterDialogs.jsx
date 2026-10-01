@@ -4,12 +4,11 @@ import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {
     GROUP_MENTOR_ROLE,
     useAddGroupStudents,
-    useAddSupportMentor,
     useAssignPrimaryMentor,
     useGroups,
     useSwapGroupStudent,
 } from '@/services/group/query.js';
-import {useMentors} from '@/services/mentor/query.js';
+import {MENTOR_STATUS, useMentors} from '@/services/mentor/query.js';
 import {useStudents} from '@/services/student/query.js';
 import {useDebouncedValue} from '@/shared/hooks/useDebouncedValue.js';
 import {formatPhone, fullName} from '@/shared/utils/format.js';
@@ -97,36 +96,34 @@ function notify(t, name, error) {
     });
 }
 
-function mentorLabel(t, mentor) {
-    const role = t(mentor.role === GROUP_MENTOR_ROLE.PRIMARY ? 'group.rolePrimary' : 'group.roleSupport');
-    return [fullName(mentor), role].filter(Boolean).join(' · ');
-}
-
-// `mode` is 'primary' (replaces whoever holds it; a support mentor is promoted)
-// or 'support'. Mentors already on the group are hidden for support, and only
-// the current primary is hidden for primary.
-function MentorFields({mode, groupId, excludeIds, onClose}) {
+// A group has one mentor, and the API only accepts a mentor whose own profile
+// `role` is `primary` - so the picker offers only those (and only working,
+// sign-in-enabled ones), hiding the group's current mentor. Picking replaces
+// whoever holds it.
+function MentorFields({groupId, currentMentorId, onClose}) {
     const {t} = useI18n();
     const assignPrimary = useAssignPrimaryMentor();
-    const addSupport = useAddSupportMentor();
-    const mutation = mode === 'primary' ? assignPrimary : addSupport;
 
     const [search, setSearch] = useState('');
     const [picked, setPicked] = useState([]);
     const debounced = useDebouncedValue(search, 300);
-    // The API rejects a primary-classified mentor for "support" and vice
-    // versa, so the picker only offers mentors who'd actually be accepted.
-    const role = mode === 'primary' ? GROUP_MENTOR_ROLE.PRIMARY : GROUP_MENTOR_ROLE.SUPPORT;
-    const mentors = useMentors({page: 1, limit: 20, search: debounced, status: 'active', isActive: true, role});
+    const mentors = useMentors({
+        page: 1,
+        limit: 20,
+        search: debounced,
+        status: MENTOR_STATUS.WORKING,
+        isActive: true,
+        role: GROUP_MENTOR_ROLE.PRIMARY,
+    });
 
     const items = useMemo(
-        () => (mentors.data?.data ?? []).filter((mentor) => !excludeIds.includes(mentor.id)),
-        [mentors.data, excludeIds]
+        () => (mentors.data?.data ?? []).filter((mentor) => mentor.id !== currentMentorId),
+        [mentors.data, currentMentorId]
     );
 
     const submit = () => {
         if (picked.length === 0) return;
-        mutation.mutate(
+        assignPrimary.mutate(
             {id: groupId, mentorId: picked[0]},
             {
                 onSuccess: () => {
@@ -143,13 +140,17 @@ function MentorFields({mode, groupId, excludeIds, onClose}) {
             <Dialog.Body>
                 <RemoteSelect
                     label={t('group.mentor')}
-                    hint={mode === 'primary' ? t('group.primaryHint') : undefined}
+                    hint={t('group.primaryHint')}
                     items={items}
                     picked={picked}
                     onPick={setPicked}
                     onSearch={setSearch}
                     loading={mentors.isFetching}
-                    getLabel={(mentor) => mentorLabel(t, mentor)}
+                    getLabel={(mentor) =>
+                        [fullName(mentor), mentor.phoneNumber ? formatPhone(mentor.phoneNumber) : null]
+                            .filter(Boolean)
+                            .join(' · ')
+                    }
                 />
             </Dialog.Body>
             <Dialog.Footer
@@ -158,19 +159,19 @@ function MentorFields({mode, groupId, excludeIds, onClose}) {
                 textButtonCancel={t('common.cancel')}
                 textButtonApply={t('common.save')}
                 propsButtonApply={{disabled: picked.length === 0}}
-                loading={mutation.isPending}
+                loading={assignPrimary.isPending}
             />
         </>
     );
 }
 
-export function MentorPickerDialog({open, mode, groupId, excludeIds, onClose}) {
+export function MentorPickerDialog({open, groupId, currentMentorId, onClose}) {
     const {t} = useI18n();
 
     return (
         <Dialog open={open} onClose={onClose} size="s">
-            <Dialog.Header caption={t(mode === 'primary' ? 'group.assignPrimary' : 'group.addSupport')}/>
-            {open && <MentorFields mode={mode} groupId={groupId} excludeIds={excludeIds} onClose={onClose}/>}
+            <Dialog.Header caption={t(currentMentorId ? 'group.changeMentor' : 'group.assignMentor')}/>
+            {open && <MentorFields groupId={groupId} currentMentorId={currentMentorId} onClose={onClose}/>}
         </Dialog>
     );
 }
@@ -250,7 +251,7 @@ export function AddStudentsDialog({open, groupId, excludeIds, onClose}) {
 function SwapFields({groupId, student, onClose, onMoved}) {
     const {t} = useI18n();
     const swap = useSwapGroupStudent();
-    const groups = useGroups({page: 1, limit: 50, isActive: true, sortBy: 'title', sortOrder: 'ASC'});
+    const groups = useGroups({page: 1, limit: 100, isActive: true, sortBy: 'title', sortOrder: 'ASC'});
     const [toGroupId, setToGroupId] = useState('');
 
     const targets = (groups.data?.data ?? []).filter((group) => group.id !== groupId);
@@ -287,8 +288,10 @@ function SwapFields({groupId, student, onClose, onMoved}) {
                             loading={groups.isPending}
                         >
                             {targets.map((group) => (
+                                // Titles can repeat across courses, and the
+                                // course decides where the student ends up.
                                 <Select.Option key={group.id} value={group.id}>
-                                    {group.title}
+                                    {[group.title, group.course?.title].filter(Boolean).join(' · ')}
                                 </Select.Option>
                             ))}
                         </Select>
@@ -307,8 +310,9 @@ function SwapFields({groupId, student, onClose, onMoved}) {
     );
 }
 
-// Moving a placed student is a swap, not remove-then-add: the server closes
-// the old membership and opens the new one in a single transaction.
+// Moving a student is a swap, not remove-then-add: the server closes the old
+// membership and opens the new one in a single transaction. The target may be
+// in another course; it 400s if the student already has an active group there.
 export function SwapStudentDialog({open, groupId, student, onClose, onMoved}) {
     const {t} = useI18n();
 
