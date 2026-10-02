@@ -12,8 +12,9 @@ const THEMES = {
     created: 'info',
     paid: 'success',
     cancelled: 'danger',
-    // PendingEnrollmentStatus
+    // PendingEnrollmentStatus / AssignmentStatus
     pending: 'warning',
+    active: 'success',
     rejected: 'danger',
     accepted: 'success',
 };

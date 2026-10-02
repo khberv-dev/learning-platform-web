@@ -14,12 +14,10 @@ import FormField from '@/ui/components/formField.jsx';
 // title follows. Pending payments have no type attached yet, and a type may
 // have been created without an icon - both fall back rather than leaving a gap.
 // A payment carries no plan of its own - it funds a Purchase, which names the
-// plan bought. `purchases[0].subscription` is only set once the payment is paid
-// on a subscription plan; rows written before `Purchase.plan` existed reach the
-// plan through that subscription instead.
+// plan bought. (`purchases[0].subscription` is just student + course + term
+// now, with no plan, so the purchase is the only path.)
 function paymentPlan(payment) {
-    const purchase = payment.purchases?.[0];
-    return purchase?.plan ?? purchase?.subscription?.plan ?? null;
+    return payment.purchases?.[0]?.plan ?? null;
 }
 
 function PaymentTypeCell({paymentType}) {

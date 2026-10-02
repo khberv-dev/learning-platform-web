@@ -13,6 +13,7 @@ import AdminStudentLessonResults from '@/ui/pages/admin/users/studentLessonResul
 import AdminMentors from '@/ui/pages/admin/users/mentors.jsx';
 import AdminMentorForm from '@/ui/pages/admin/users/mentorForm.jsx';
 import AdminMentorDetail from '@/ui/pages/admin/users/mentorDetail.jsx';
+import AdminAdmins from '@/ui/pages/admin/users/admins.jsx';
 import AdminCourses from '@/ui/pages/admin/course/courses.jsx';
 import AdminCourseManager from '@/ui/pages/admin/course/courseManager.jsx';
 import AdminEnrollments from '@/ui/pages/admin/course/enrollments.jsx';
@@ -28,11 +29,14 @@ import AdminPaymentTypes from '@/ui/pages/admin/payment/paymentTypes.jsx';
 import AdminPushNotifications from '@/ui/pages/admin/marketing/pushNotifications.jsx';
 import AdminGroups from '@/ui/pages/admin/groups/groups.jsx';
 import AdminGroupDetail from '@/ui/pages/admin/groups/groupDetail.jsx';
+import AdminAssignments from '@/ui/pages/admin/assignments/assignments.jsx';
+import AdminAssignmentDetail from '@/ui/pages/admin/assignments/assignmentDetail.jsx';
 import AdminSettings from '@/ui/pages/admin/settings.jsx';
 
 import MentorDashboard from '@/ui/pages/mentor/dashboard.jsx';
 import MentorGroups from '@/ui/pages/mentor/groups.jsx';
 import MentorGroupDetail from '@/ui/pages/mentor/groupDetail.jsx';
+import MentorAssignments from '@/ui/pages/mentor/assignments.jsx';
 import GroupChatPage from '@/ui/pages/groupChat.jsx';
 import MentorSettings from '@/ui/pages/mentor/settings.jsx';
 import SettingsPage from '@/ui/pages/settingsPage.jsx';
@@ -65,6 +69,7 @@ function App() {
                         <Route path="users/mentors/new" element={<AdminMentorForm/>}/>
                         <Route path="users/mentors/:id" element={<AdminMentorDetail/>}/>
                         <Route path="users/mentors/:id/edit" element={<AdminMentorForm/>}/>
+                        <Route path="users/admins" element={<AdminAdmins/>}/>
 
                         <Route path="course/courses" element={<AdminCourses/>}/>
                         <Route path="course/courses/:id" element={<AdminCourseManager/>}/>
@@ -106,6 +111,9 @@ function App() {
                         <Route path="groups/:id" element={<AdminGroupDetail/>}/>
                         <Route path="groups/:id/chat" element={<GroupChatPage/>}/>
 
+                        <Route path="assignments" element={<AdminAssignments/>}/>
+                        <Route path="assignments/:id" element={<AdminAssignmentDetail/>}/>
+
                         <Route path="settings" element={<AdminSettings/>}/>
                     </Route>
                 </Route>
@@ -116,6 +124,7 @@ function App() {
                         <Route path="groups" element={<MentorGroups/>}/>
                         <Route path="groups/:id" element={<MentorGroupDetail/>}/>
                         <Route path="groups/:id/chat" element={<GroupChatPage/>}/>
+                        <Route path="assignments" element={<MentorAssignments/>}/>
                         <Route path="settings" element={<MentorSettings/>}/>
                     </Route>
                 </Route>

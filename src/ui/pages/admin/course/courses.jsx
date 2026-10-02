@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {Button, Checkbox, Dialog, TextArea, TextInput} from '@gravity-ui/uikit';
-import {ImageIcon, Plus} from 'lucide-react';
+import {Plus} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useCourses, useCreateCourse} from '@/services/course/query.js';
 import {formatDate, toOptionalNumber} from '@/shared/utils/format.js';
@@ -15,39 +15,9 @@ import DataTable from '@/ui/components/dataTable.jsx';
 import FormField from '@/ui/components/formField.jsx';
 import {ActiveLabel} from '@/ui/components/statusLabel.jsx';
 import FileDropCard from '@/ui/components/fileDropCard.jsx';
+import CourseCell from '@/ui/components/courseCell.jsx';
 
 // A small thumbnail keeps the visual cue the card grid gave, without the grid.
-function CourseThumb({course}) {
-    const image = course.image || null;
-
-    return (
-        <div
-            style={{
-                width: 56,
-                height: 38,
-                borderRadius: 6,
-                overflow: 'hidden',
-                flexShrink: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'var(--g-color-base-generic)',
-                color: 'var(--g-color-text-secondary)',
-            }}
-        >
-            {image ? (
-                <img
-                    src={image}
-                    alt=""
-                    style={{width: '100%', height: '100%', objectFit: 'cover'}}
-                />
-            ) : (
-                <ImageIcon size={16}/>
-            )}
-        </div>
-    );
-}
-
 function AdminCourses() {
     const {t} = useI18n();
     const navigate = useNavigate();
@@ -107,26 +77,7 @@ function AdminCourses() {
         {
             id: 'title',
             name: t('course.name'),
-            template: (row) => (
-                <div style={{display: 'flex', alignItems: 'center', gap: 12, minWidth: 0}}>
-                    <CourseThumb course={row}/>
-                    <div style={{minWidth: 0}}>
-                        <div style={{fontWeight: 500}}>{row.title}</div>
-                        <div
-                            style={{
-                                fontSize: 12,
-                                color: 'var(--g-color-text-secondary)',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: 420,
-                            }}
-                        >
-                            {row.description || '—'}
-                        </div>
-                    </div>
-                </div>
-            ),
+            template: (row) => <CourseCell course={row}/>,
         },
         {
             id: 'unitsCount',

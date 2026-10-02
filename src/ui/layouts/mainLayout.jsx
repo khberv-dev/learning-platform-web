@@ -7,7 +7,7 @@ import {useMe} from '@/services/user/query.js';
 import {fullName} from '@/shared/utils/format.js';
 import ConfirmDialog from '@/ui/components/confirmDialog.jsx';
 import Sidebar from '@/ui/layouts/sidebar.jsx';
-import {activePath, NAV_BY_ROLE, settingsPath} from '@/ui/layouts/navConfig.js';
+import {activePath, navForUser, settingsPath} from '@/ui/layouts/navConfig.js';
 
 function MainLayout({role}) {
     const [logoutOpen, setLogoutOpen] = useState(false);
@@ -17,7 +17,7 @@ function MainLayout({role}) {
     const {logout} = useAuth();
     const {data: me} = useMe();
 
-    const items = NAV_BY_ROLE[role] ?? [];
+    const items = navForUser(role, me);
     const name = fullName(me) || me?.phoneNumber || '';
 
     return (
@@ -26,7 +26,7 @@ function MainLayout({role}) {
                 items={items}
                 activeItemPath={activePath(items, location.pathname)}
                 roleLabel={
-                    role === ROLE.ADMIN ? 'Admin' : 'Mentor'
+                    role === ROLE.ADMIN ? (me?.isSuperadmin ? 'Superadmin' : 'Admin') : 'Mentor'
                 }
                 user={me}
                 userName={name}

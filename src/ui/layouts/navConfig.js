@@ -5,11 +5,13 @@ import {
     ClipboardCheck,
     CreditCard,
     GraduationCap,
+    Handshake,
     Home,
     LayoutDashboard,
     Megaphone,
     PenLine,
     Settings,
+    ShieldCheck,
     UserCog,
     UsersRound,
     Users,
@@ -23,7 +25,9 @@ import {ROLE} from '@/shared/auth/roles.js';
 // here, with a titleKey present in every locale file.
 //
 // A node with `children` renders as a collapsible group; one with `path`
-// renders as a link. Groups are never themselves navigable.
+// renders as a link. Groups are never themselves navigable. A node marked
+// `superadminOnly` is shown only to an admin whose `me.isSuperadmin` is set -
+// see navForUser below.
 export const NAV_BY_ROLE = {
     [ROLE.ADMIN]: [
         {id: 'home', titleKey: 'nav.home', icon: Home, path: '/admin'},
@@ -34,9 +38,17 @@ export const NAV_BY_ROLE = {
             children: [
                 {id: 'students', titleKey: 'nav.students', icon: GraduationCap, path: '/admin/users/students'},
                 {id: 'mentors', titleKey: 'nav.mentors', icon: UserCog, path: '/admin/users/mentors'},
+                {
+                    id: 'admins',
+                    titleKey: 'nav.admins',
+                    icon: ShieldCheck,
+                    path: '/admin/users/admins',
+                    superadminOnly: true,
+                },
             ],
         },
         {id: 'groups', titleKey: 'nav.groups', icon: UsersRound, path: '/admin/groups'},
+        {id: 'assignments', titleKey: 'nav.assignments', icon: Handshake, path: '/admin/assignments'},
         {
             id: 'course',
             titleKey: 'nav.course',
@@ -90,9 +102,22 @@ export const NAV_BY_ROLE = {
     [ROLE.MENTOR]: [
         {id: 'home', titleKey: 'nav.home', icon: LayoutDashboard, path: '/mentor'},
         {id: 'groups', titleKey: 'nav.groups', icon: UsersRound, path: '/mentor/groups'},
+        {id: 'assignments', titleKey: 'nav.assignments', icon: Handshake, path: '/mentor/assignments'},
         {id: 'settings', titleKey: 'nav.settings', icon: Settings, path: '/mentor/settings'},
     ],
 };
+
+// The role's tree with `superadminOnly` nodes dropped unless `me` is a
+// superadmin. A group left with no children is dropped as well. Hiding the
+// entry is only cosmetic - the API 403s those routes for a plain admin.
+export function navForUser(role, me) {
+    const allowed = (node) => !node.superadminOnly || Boolean(me?.isSuperadmin);
+
+    return (NAV_BY_ROLE[role] ?? [])
+        .filter(allowed)
+        .map((node) => (node.children ? {...node, children: node.children.filter(allowed)} : node))
+        .filter((node) => !node.children || node.children.length > 0);
+}
 
 export function flattenNav(items) {
     return items.flatMap((item) => (item.children ? item.children : [item]));

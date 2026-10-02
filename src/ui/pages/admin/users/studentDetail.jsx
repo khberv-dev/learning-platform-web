@@ -1,23 +1,31 @@
 import {useState} from 'react';
-import {Link, useParams} from 'react-router-dom';
-import {Button, Table} from '@gravity-ui/uikit';
+import {useNavigate, useParams} from 'react-router-dom';
+import {Button} from '@gravity-ui/uikit';
 import {KeyRound, Plus} from 'lucide-react';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
 import {useStudent} from '@/services/student/query.js';
+import {useCourses} from '@/services/course/query.js';
 import {formatDate, formatPhone, fullName} from '@/shared/utils/format.js';
 import PageHeader from '@/ui/components/pageHeader.jsx';
 import PageSection from '@/ui/components/pageSection.jsx';
 import StatCard from '@/ui/components/statCard.jsx';
 import UserAvatar from '@/ui/components/userAvatar.jsx';
 import StatusLabel from '@/ui/components/statusLabel.jsx';
-import {EmptyState, ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
+import DataTable from '@/ui/components/dataTable.jsx';
+import CourseCell from '@/ui/components/courseCell.jsx';
+import {ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 import EnrollStudentDialog from '@/ui/pages/admin/users/enrollStudentDialog.jsx';
 import SetUserPasswordDialog from '@/ui/pages/admin/users/setUserPasswordDialog.jsx';
+import RelatedAssignments from '@/ui/pages/admin/assignments/relatedAssignments.jsx';
 
 function AdminStudentDetail() {
     const {t} = useI18n();
     const {id} = useParams();
+    const navigate = useNavigate();
     const query = useStudent(id);
+    // The student payload carries each course as `{id, title}` only, so the
+    // image, description and counts come from the (cached) course list.
+    const courses = useCourses();
     const [enrollOpen, setEnrollOpen] = useState(false);
     const [passwordOpen, setPasswordOpen] = useState(false);
 
@@ -27,22 +35,22 @@ function AdminStudentDetail() {
     const student = query.data;
     const name = fullName(student);
 
+    const courseById = new Map((courses.data?.data ?? []).map((course) => [course.id, course]));
+    const enrollments = (student.enrollments ?? []).map((enrollment) => ({
+        ...enrollment,
+        course: {...enrollment.course, ...courseById.get(enrollment.course?.id)},
+    }));
+
+    // Same columns as the courses list, with the enrollment's own status and
+    // start in place of the course's. A row opens that enrollment's progress.
     const enrollmentColumns = [
         {
             id: 'course',
-            name: t('enrollment.course'),
-            template: (row) =>
-                row.course?.title ? (
-                    <Link
-                        className="student-course-link"
-                        to={`/admin/users/students/${id}/enrollments/${row.id}/progress`}
-                    >
-                        {row.course.title}
-                    </Link>
-                ) : (
-                    '—'
-                ),
+            name: t('course.name'),
+            template: (row) => <CourseCell course={row.course}/>,
         },
+        {id: 'unitsCount', name: t('course.units'), template: (row) => row.course?.unitsCount ?? '—'},
+        {id: 'lessonsCount', name: t('course.lessonsCount'), template: (row) => row.course?.lessonsCount ?? '—'},
         {
             id: 'status',
             name: t('common.status'),
@@ -109,17 +117,17 @@ function AdminStudentDetail() {
             </div>
 
             <PageSection title={t('student.enrollments')}>
-                {student.enrollments?.length ? (
-                    <Table
-                        data={student.enrollments}
-                        columns={enrollmentColumns}
-                        getRowId={(row) => row.id}
-                        width="max"
-                    />
-                ) : (
-                    <EmptyState/>
-                )}
+                <DataTable
+                    query={query}
+                    rows={enrollments}
+                    columns={enrollmentColumns}
+                    onRowClick={(row) => navigate(`/admin/users/students/${id}/enrollments/${row.id}/progress`)}
+                />
             </PageSection>
+
+            <div style={{marginTop: 16}}>
+                <RelatedAssignments studentId={id}/>
+            </div>
 
             {/* The student is fixed by this page, so the dialog only asks for
                 the course/plan. useCreateEnrollment invalidates ['student'],

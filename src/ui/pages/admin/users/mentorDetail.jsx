@@ -23,6 +23,7 @@ import FileDropCard from '@/ui/components/fileDropCard.jsx';
 import StatusLabel from '@/ui/components/statusLabel.jsx';
 import {EmptyState, ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 import SetUserPasswordDialog from '@/ui/pages/admin/users/setUserPasswordDialog.jsx';
+import RelatedAssignments from '@/ui/pages/admin/assignments/relatedAssignments.jsx';
 
 function Field({label, value}) {
     return (
@@ -270,6 +271,10 @@ function AdminMentorDetail() {
                         </div>
                     </PageSection>
                 </div>
+            </div>
+
+            <div style={{marginTop: 16}}>
+                <RelatedAssignments mentorId={id}/>
             </div>
 
             <PageSection title={t('mentor.statusHistory')} style={{marginTop: 16}}>

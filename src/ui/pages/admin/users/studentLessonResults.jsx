@@ -1,5 +1,5 @@
 import {Label} from '@gravity-ui/uikit';
-import {CheckCircle2, ListChecks} from 'lucide-react';
+import {CheckCircle2, ListChecks, Send, XCircle} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 import {useStudentLessonResults} from '@/services/task-submission/query.js';
 import {useI18n} from '@/shared/i18n/i18nContext.jsx';
@@ -9,8 +9,7 @@ import PageSection from '@/ui/components/pageSection.jsx';
 import StatCard from '@/ui/components/statCard.jsx';
 import {EmptyState, ErrorState, LoadingState} from '@/ui/components/stateViews.jsx';
 
-// The task's own material, rendered the way the admin task pages do it -
-// `contentType` decides, and a plain string is text.
+// The task's own material, kept small - this page is about the answers.
 function TaskContent({task}) {
     if (!task.file) return null;
 
@@ -19,92 +18,16 @@ function TaskContent({task}) {
             <img
                 src={task.file}
                 alt=""
-                style={{display: 'block', maxWidth: '100%', maxHeight: 320, borderRadius: 8, marginBottom: 16}}
+                style={{display: 'block', maxWidth: '100%', maxHeight: 160, borderRadius: 6, marginBottom: 8}}
             />
         );
     }
 
     if (task.contentType === 'audio') {
-        return <audio src={task.file} controls style={{width: '100%', maxWidth: 520, marginBottom: 16}}/>;
+        return <audio src={task.file} controls style={{width: '100%', maxWidth: 420, marginBottom: 8}}/>;
     }
 
-    return (
-        <div style={{fontSize: 14, whiteSpace: 'pre-wrap', marginBottom: 16}}>{task.file}</div>
-    );
-}
-
-// One question: every option is listed, with the student's pick and the answer
-// key marked separately - the same option can carry both, which is what a
-// correct answer looks like.
-function QuestionResult({question, index}) {
-    const {t} = useI18n();
-    const answered = question.studentAnswer !== null && question.studentAnswer !== '';
-
-    return (
-        <div className="submission-question">
-            <div style={{display: 'flex', gap: 10, marginBottom: 12}}>
-                <strong style={{flexShrink: 0}}>{index + 1}.</strong>
-                <div style={{fontWeight: 600, flex: 1, minWidth: 0}}>{question.question}</div>
-                <Label theme={question.isCorrect ? 'success' : 'danger'}>
-                    {question.isCorrect ? t('lessonResults.passed') : t('lessonResults.failed')}
-                </Label>
-            </div>
-
-            {question.options?.length ? (
-                <div style={{display: 'flex', flexDirection: 'column', gap: 8, marginLeft: 26}}>
-                    {question.options.map((option, optionIndex) => {
-                        const picked = answered && matches(option, question.studentAnswer);
-                        const correct = matches(option, question.answer);
-
-                        return (
-                            <div
-                                className="submission-option"
-                                data-picked={picked ? 'true' : undefined}
-                                data-correct={correct ? 'true' : undefined}
-                                key={`${option}-${optionIndex}`}
-                            >
-                                <span>{option}</span>
-                                <span style={{display: 'flex', gap: 6, flexShrink: 0}}>
-                                    {picked && (
-                                        <Label theme={question.isCorrect ? 'success' : 'danger'}>
-                                            {t('lessonResults.studentAnswer')}
-                                        </Label>
-                                    )}
-                                    {correct && <Label theme="success">{t('lessonResults.correctAnswer')}</Label>}
-                                </span>
-                            </div>
-                        );
-                    })}
-                </div>
-            ) : (
-                <div style={{marginLeft: 26, display: 'flex', flexWrap: 'wrap', gap: 24}}>
-                    <AnswerBlock
-                        label={t('lessonResults.studentAnswer')}
-                        value={answered ? question.studentAnswer : t('lessonResults.unanswered')}
-                        muted={!answered}
-                    />
-                    <AnswerBlock label={t('lessonResults.correctAnswer')} value={question.answer}/>
-                </div>
-            )}
-        </div>
-    );
-}
-
-function AnswerBlock({label, value, muted}) {
-    return (
-        <div style={{minWidth: 0}}>
-            <div style={{fontSize: 12, color: 'var(--g-color-text-secondary)', marginBottom: 4}}>{label}</div>
-            <div
-                style={{
-                    fontSize: 14,
-                    whiteSpace: 'pre-wrap',
-                    color: muted ? 'var(--g-color-text-secondary)' : undefined,
-                }}
-            >
-                {value}
-            </div>
-        </div>
-    );
+    return <div style={{fontSize: 13, whiteSpace: 'pre-wrap', marginBottom: 8}}>{task.file}</div>;
 }
 
 // Mirrors `taskAnswersMatch` on the server: case-insensitive, and everything
@@ -116,23 +39,94 @@ function matches(a, b) {
     return normalized.length > 0 && normalize(a) === normalized;
 }
 
+// One question on one row: the text, then the options as inline chips (red is
+// the student's pick, green the answer key - both on one chip is a correct
+// pick), or for a free-text question the two answers side by side.
+//
+// `submitted` is false for a task the student never sent. The server still
+// reports `isCorrect: false` per question there, but that is "no data", not a
+// failure - so no verdict and no pick are shown, only the question and its key.
+function QuestionRow({question, index, submitted}) {
+    const {t} = useI18n();
+    const answered = submitted && question.studentAnswer !== null && question.studentAnswer !== '';
+
+    return (
+        <div className="submission-question">
+            <span className="submission-question__index">{index + 1}.</span>
+            <div style={{minWidth: 0}}>
+                <div className="submission-question__text">{question.question}</div>
+                {question.options?.length ? (
+                    <div className="submission-options">
+                        {question.options.map((option, optionIndex) => (
+                            <span
+                                className="submission-option"
+                                data-picked={answered && matches(option, question.studentAnswer) ? 'true' : undefined}
+                                data-correct={matches(option, question.answer) ? 'true' : undefined}
+                                key={`${option}-${optionIndex}`}
+                            >
+                                {option}
+                            </span>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="submission-answers">
+                        {submitted && (
+                            <span>
+                                <span className="submission-answers__label">{t('lessonResults.studentAnswer')}:</span>{' '}
+                                {answered ? (
+                                    question.studentAnswer
+                                ) : (
+                                    <span style={{color: 'var(--g-color-text-secondary)'}}>
+                                        {t('lessonResults.unanswered')}
+                                    </span>
+                                )}
+                            </span>
+                        )}
+                        {/* Only worth repeating when it differs from what the
+                            student wrote. */}
+                        {!(submitted && question.isCorrect) && (
+                            <span>
+                                <span className="submission-answers__label">{t('lessonResults.correctAnswer')}:</span>{' '}
+                                {question.answer}
+                            </span>
+                        )}
+                    </div>
+                )}
+            </div>
+            <span className="submission-question__verdict">
+                {submitted &&
+                    (question.isCorrect ? (
+                        <CheckCircle2 size={16} color="var(--g-color-text-positive)" aria-label={t('lessonResults.passed')}/>
+                    ) : (
+                        <XCircle size={16} color="var(--g-color-text-danger)" aria-label={t('lessonResults.failed')}/>
+                    ))}
+            </span>
+        </div>
+    );
+}
+
 function TaskResult({task, position}) {
     const {t} = useI18n();
     const submitted = task.submittedAt !== null;
 
     return (
         <PageSection
-            title={task.name || `${t('lessonResults.title')} ${position}`}
+            style={{padding: 16}}
+            title={task.name || `${t('lessonResults.task')} ${position}`}
             actions={
-                <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                    <span style={{fontSize: 12, color: 'var(--g-color-text-secondary)'}}>
-                        {submitted
-                            ? `${t('lessonResults.submittedAt')}: ${formatDateTime(task.submittedAt)}`
-                            : t('lessonResults.notSubmitted')}
-                    </span>
+                <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
                     {submitted && (
-                        <Label theme={task.isCorrect ? 'success' : 'warning'}>
+                        <span style={{fontSize: 12, color: 'var(--g-color-text-secondary)'}}>
+                            {formatDateTime(task.submittedAt)}
+                        </span>
+                    )}
+                    {submitted ? (
+                        <Label theme={task.isCorrect ? 'success' : 'danger'} size="xs">
                             {task.isCorrect ? t('lessonResults.passed') : t('lessonResults.failed')}
+                        </Label>
+                    ) : (
+                        <Label theme="unknown" size="xs">
+                            {t('lessonResults.notSubmitted')}
                         </Label>
                     )}
                 </div>
@@ -140,11 +134,15 @@ function TaskResult({task, position}) {
         >
             <TaskContent task={task}/>
             {task.questions.length ? (
-                task.questions.map((question, index) => (
-                    <QuestionResult key={index} question={question} index={index}/>
-                ))
+                <div>
+                    {task.questions.map((question, index) => (
+                        <QuestionRow key={index} question={question} index={index} submitted={submitted}/>
+                    ))}
+                </div>
             ) : (
-                <EmptyState title={t('lessonResults.noQuestions')}/>
+                <div style={{fontSize: 13, color: 'var(--g-color-text-secondary)'}}>
+                    {t('lessonResults.noQuestions')}
+                </div>
             )}
         </PageSection>
     );
@@ -163,12 +161,14 @@ function AdminStudentLessonResults() {
 
     const {lesson, tasks} = query.data;
 
-    // A task with no questions cannot be passed (the server never marks one
-    // correct), so it is left out of both totals rather than counted as failed.
+    // Totals cover only what the student actually sent: an unsubmitted task
+    // is neither passed nor failed, and a question-less one can never be
+    // marked passed by the server, so both stay out of the counts.
     const gradedTasks = tasks.filter((task) => task.questions.length > 0);
-    const passedTasks = gradedTasks.filter((task) => task.isCorrect).length;
-    const questions = tasks.flatMap((task) => task.questions);
-    const correctQuestions = questions.filter((question) => question.isCorrect).length;
+    const submittedTasks = gradedTasks.filter((task) => task.submittedAt !== null);
+    const passedTasks = submittedTasks.filter((task) => task.isCorrect).length;
+    const answeredQuestions = submittedTasks.flatMap((task) => task.questions);
+    const correctQuestions = answeredQuestions.filter((question) => question.isCorrect).length;
 
     return (
         <>
@@ -186,19 +186,24 @@ function AdminStudentLessonResults() {
 
             <div className="submission-summary-grid">
                 <StatCard
+                    icon={Send}
+                    label={t('lessonResults.tasksSubmitted')}
+                    value={`${submittedTasks.length}/${gradedTasks.length}`}
+                />
+                <StatCard
                     icon={CheckCircle2}
                     label={t('lessonResults.tasksPassed')}
-                    value={`${passedTasks}/${gradedTasks.length}`}
+                    value={`${passedTasks}/${submittedTasks.length}`}
                 />
                 <StatCard
                     icon={ListChecks}
                     label={t('lessonResults.questionsCorrect')}
-                    value={`${correctQuestions}/${questions.length}`}
+                    value={`${correctQuestions}/${answeredQuestions.length}`}
                 />
             </div>
 
             {tasks.length ? (
-                <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
                     {tasks.map((task, index) => (
                         <TaskResult key={task.taskId} task={task} position={index + 1}/>
                     ))}
